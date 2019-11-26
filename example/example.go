@@ -12,9 +12,23 @@ func show(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func postme(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("post me!!!!"))
+	return
+}
+
+// 默认已经是这样的了，  如果有其他的请自定义
+func Options() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		return
+	})
+}
+
 func main() {
 	router := xmux.NewRouter()
-	router.HandleFunc("/get").Get(show)
+	router.Options = Options()                       // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
+	router.HandleFunc("/get").Get(show).Post(postme) // 不同请求分别处理
 	router.AddGroup(aritclegroup.Article())
 
 	log.Fatal(http.ListenAndServe(":8080", router))
