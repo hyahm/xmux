@@ -1,7 +1,7 @@
 # xmux
 之前一直使用的 mux， 但是xmux 已经无法满足自己优化代码的需求
 
-### 初始阶段， 为了满足自己代码的高封装， 暂时不支持匹配路由
+### 初始阶段， 为了满足自己代码的高封装， 暂时不支持正则匹配路由
 
 ### 添加了组的概念
 
@@ -47,5 +47,25 @@ func main() {
 
 
 ```
+articlegroup/route.go
+```go
+package aritclegroup
 
+import (
+	"net/http"
+	"xmux"
+)
+
+func hello(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello world!!!!"))
+	return
+}
+
+func Article() *xmux.GroupRoute {
+	article := xmux.NewGroupRoute("/article")
+	article.HandleFunc("name").Get(hello)
+	return article
+}
+
+```
 ### 因为没有正则， 全部采用map匹配路由， 速度肯定是快速的(后面会增加)
