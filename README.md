@@ -32,7 +32,7 @@ func main() {
 }
 
 ```
-articlegroup
+articlegroup/route.go
 ```go
 package aritclegroup
 
