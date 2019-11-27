@@ -1,7 +1,7 @@
 # xmux
-之前一直使用的 mux， 但是xmux 已经无法满足自己优化代码的需求
+之前一直使用的 mux， 但是xmux 已经无法满足自己优化代码的需求  
 
-### 初始阶段， 为了满足自己代码的高封装， 暂时不支持正则匹配路由
+作者在蒙圈研究go test 测试，  估计还有问题， 请勿在生产环境使用
 
 ### 添加了组的概念
 
@@ -12,6 +12,7 @@ example.go
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"xmux"
@@ -25,6 +26,13 @@ func show(w http.ResponseWriter, r *http.Request) {
 
 func postme(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("post me!!!!"))
+	return
+}
+
+func Who(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(xmux.Var["name"])
+	fmt.Println(xmux.Var["age"])
+	w.Write([]byte("yes is mine"))
 	return
 }
 
@@ -42,6 +50,7 @@ func main() {
 	router.HandleFunc("/get").Get(show).Post(postme) // 不同请求分别处理
 	router.AddGroup(aritclegroup.Article())
 
+	router.HandleFunc("/people/{string:name}/{int:age}").Get(Who)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
@@ -52,20 +61,23 @@ articlegroup/route.go
 package aritclegroup
 
 import (
+	"fmt"
 	"net/http"
 	"xmux"
 )
 
 func hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(xmux.Var["id"])
 	w.Write([]byte("hello world!!!!"))
 	return
 }
 
 func Article() *xmux.GroupRoute {
 	article := xmux.NewGroupRoute("/article")
-	article.HandleFunc("name").Get(hello)
+	article.HandleFunc("{int:id}").Get(hello)
 	return article
 }
 
+
 ```
-### 因为没有正则， 全部采用map匹配路由， 速度肯定是快速的(后面会增加)
+### 为了加速匹配， 增加路由表概念， 一担添加进去无法修改， 不会过期， 重启会清空
