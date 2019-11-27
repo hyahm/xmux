@@ -36,6 +36,7 @@ type Router struct {
 	HandleNotFound http.Handler
 	groupKey       map[string]bool // 组路由
 	routeTable     map[string]*rt  // 路由表
+	header         map[string]string
 }
 
 func (r *Router) Group(patter string) *GroupRoute {
@@ -213,6 +214,7 @@ func NewRouter() *Router {
 		groupKey:       make(map[string]bool),
 		HandleNotFound: notHandle(),
 		routeTable:     make(map[string]*rt),
+		header:         make(map[string]string),
 	}
 }
 

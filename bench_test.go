@@ -20,7 +20,7 @@ func BenchmarkMux(b *testing.B) {
 func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.HandleFunc("/v1/{v1:(?:a|b)}").Get(handler)
+	router.HandleFunc("/v1/{v1}").Get(handler)
 
 	requestA, _ := http.NewRequest("GET", "/v1/a", nil)
 	requestB, _ := http.NewRequest("GET", "/v1/b", nil)
