@@ -52,20 +52,23 @@ articlegroup/route.go
 package aritclegroup
 
 import (
+	"fmt"
 	"net/http"
 	"xmux"
 )
 
 func hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(xmux.Var["id"])
 	w.Write([]byte("hello world!!!!"))
 	return
 }
 
 func Article() *xmux.GroupRoute {
 	article := xmux.NewGroupRoute("/article")
-	article.HandleFunc("name").Get(hello)
+	article.HandleFunc("{int:id}").Get(hello)
 	return article
 }
+
 
 ```
 ### 因为没有正则， 全部采用map匹配路由， 速度肯定是快速的(后面会增加)
