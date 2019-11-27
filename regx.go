@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -24,7 +23,6 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 			panic("invaild uri " + path)
 		} else {
 			prefix := path[:start]
-			fmt.Println(prefix)
 			//判断:
 			ts := strings.Split(re, ":")
 			if len(ts) == 2 {

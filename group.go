@@ -43,6 +43,7 @@ func (g *GroupRoute) HandleFunc(pattern string) *Route {
 	lv := make([]string, 0)
 	pattern = g.prefix + "/" + pattern
 	if v, listvar, ok := match(pattern, "^", lv); ok {
+
 		reUrl[v] = &reroute{
 			R:   route,
 			Var: listvar,

@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -20,8 +19,8 @@ type reroute struct {
 }
 
 type Router struct {
-	G              map[string]*GroupRoute // 组路由
-	S              map[string]*Route      // 单实例路由
+	g              map[string]*GroupRoute // 组路由
+	s              map[string]*Route      // 单实例路由
 	IgnoreIco      bool                   // 是否忽略 /favicon.ico 请求。 默认忽略
 	Options        http.Handler           // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	NotFound       http.Handler
@@ -44,13 +43,13 @@ func (r *Router) Group(patter string) *GroupRoute {
 		suffix: make(map[string]*Route),
 	}
 
-	r.G[patter] = g
+	r.g[patter] = g
 	r.groupKey[patter] = true
 	return g
 }
 
 func (r *Router) AddGroup(groute *GroupRoute) *Router {
-	r.G[groute.prefix] = groute
+	r.g[groute.prefix] = groute
 	r.groupKey[groute.prefix] = true
 	return r
 }
@@ -82,7 +81,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// 判断是不是组成员
 		if _, ok := r.groupKey[first_key]; ok {
 			//如果存在就是组成员， 继续判断二段路径是否存在
-			if route, subok := r.G[first_key].suffix[key[end+2:]]; subok {
+			if route, subok := r.g[first_key].suffix[key[end+2:]]; subok {
 				if handle, metok := route.method[req.Method]; metok {
 					r.routeTable[key+req.Method] = handle
 					handle.ServeHTTP(w, req)
@@ -97,7 +96,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	}
 	// 单一的路径，  不是组成员
-	if route, ok := r.S[key]; ok {
+	if route, ok := r.s[key]; ok {
 		if handle, metok := route.method[req.Method]; metok {
 			r.routeTable[key+req.Method] = handle
 			handle.ServeHTTP(w, req)
@@ -131,7 +130,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 	}
-	fmt.Println("not found")
+
 	r.routeTable[key+req.Method] = r.NotFound
 	r.NotFound.ServeHTTP(w, req)
 	return
@@ -158,14 +157,14 @@ func (r *Router) HandleFunc(pattern string) *Route {
 		}
 		return route
 	}
-	r.S[pattern] = route
+	r.s[pattern] = route
 	return route
 }
 
 func NewRouter() *Router {
 	return &Router{
-		G:              make(map[string]*GroupRoute),
-		S:              make(map[string]*Route),
+		g:              make(map[string]*GroupRoute),
+		s:              make(map[string]*Route),
 		IgnoreIco:      true,
 		Options:        options(),
 		NotFound:       notFound(),
