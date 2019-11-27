@@ -7,8 +7,10 @@ import (
 	"strings"
 )
 
+var Var map[string]map[string]string
+
 func init() {
-	Var = make(map[string]string)
+	Var = make(map[string]map[string]string)
 	reUrl = make(map[string]*reroute)
 }
 
@@ -106,15 +108,17 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	// 没找到路由
+	// 最后正则里面寻找路由
 	for k, route := range reUrl {
 		re := regexp.MustCompile(k)
 		if re.MatchString(key) {
 			// 获取var
 			x := re.FindStringSubmatch(key)
+			myvar := make(map[string]string)
 			for i, v := range route.Var {
-				Var[v] = x[i+1]
+				myvar[v] = x[i+1]
 			}
+			Var[key] = myvar
 			if handle, metok := route.R.method[req.Method]; metok {
 				r.routeTable[key+req.Method] = handle
 				handle.ServeHTTP(w, req)

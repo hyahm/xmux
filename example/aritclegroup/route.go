@@ -7,7 +7,7 @@ import (
 )
 
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var["id"])
+	fmt.Println(xmux.Var[r.URL.Path]["id"])
 	w.Write([]byte("hello world!!!!"))
 	return
 }

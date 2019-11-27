@@ -6,7 +6,6 @@ import (
 )
 
 //var Var map[string]interface{}
-var Var map[string]string
 
 // match url , is true is a regx, false is fullurl
 func match(path string, newpath string, varlist []string) (string, []string, bool) {
