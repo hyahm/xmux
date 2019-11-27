@@ -4,8 +4,8 @@ import "net/http"
 
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	method    map[string]http.Handler
-	allHandle http.Handler
+	method map[string]http.Handler
+	//allHandle http.Handler
 }
 
 func (rt *Route) Post(handler func(http.ResponseWriter, *http.Request)) *Route {
@@ -53,7 +53,7 @@ func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
 	return rt
 }
 
-func (rt *Route) All(handler func(http.ResponseWriter, *http.Request)) *Route {
-	rt.allHandle = http.HandlerFunc(handler)
-	return rt
-}
+//func (rt *Route) All(handler func(http.ResponseWriter, *http.Request)) *Route {
+//	rt.allHandle = http.HandlerFunc(handler)
+//	return rt
+//}

@@ -1,9 +1,21 @@
 package xmux
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 )
+
+func init() {
+	Var = make(map[string]string)
+	reUrl = make(map[string]*reroute)
+}
+
+type reroute struct {
+	R   *Route
+	Var []string
+}
 
 type Router struct {
 	G              map[string]*GroupRoute // 组路由
@@ -12,7 +24,9 @@ type Router struct {
 	Options        http.Handler           // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	NotFound       http.Handler
 	MethodNotAllow http.Handler
-	GroupKey       map[string]bool
+	HandleNotFound http.Handler
+	groupKey       map[string]bool         // 组路由
+	routeTable     map[string]http.Handler // 路由表
 }
 
 func (r *Router) Group(patter string) *GroupRoute {
@@ -29,23 +43,31 @@ func (r *Router) Group(patter string) *GroupRoute {
 	}
 
 	r.G[patter] = g
-	r.GroupKey[patter] = true
+	r.groupKey[patter] = true
 	return g
 }
 
 func (r *Router) AddGroup(groute *GroupRoute) *Router {
 	r.G[groute.prefix] = groute
-	r.GroupKey[groute.prefix] = true
+	r.groupKey[groute.prefix] = true
 	return r
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+
 	if r.Options != nil && req.Method == http.MethodOptions {
 		r.Options.ServeHTTP(w, req)
 		return
 	}
+
 	key := req.URL.Path
 	if r.IgnoreIco && key == "/favicon.ico" {
+		return
+	}
+
+	// 先进行路由表缓存寻找
+	if route, ok := r.routeTable[key+req.Method]; ok {
+		route.ServeHTTP(w, req)
 		return
 	}
 	// 先判断有几段
@@ -56,45 +78,60 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		end := strings.Index(key[1:], "/")
 		first_key := key[:end+1]
 		// 判断是不是组成员
-		if _, ok := r.GroupKey[first_key]; ok {
+		if _, ok := r.groupKey[first_key]; ok {
 			//如果存在就是组成员， 继续判断二段路径是否存在
 			if route, subok := r.G[first_key].suffix[key[end+2:]]; subok {
-				if route.allHandle == nil {
-					// 如果不存在不限制的路由， 那么一定限制了method
-					if handle, metok := route.method[req.Method]; metok {
-						handle.ServeHTTP(w, req)
-						return
-					}
+				if handle, metok := route.method[req.Method]; metok {
+					r.routeTable[key+req.Method] = handle
+					handle.ServeHTTP(w, req)
+					return
 				} else {
-					route.allHandle.ServeHTTP(w, req)
+					r.routeTable[key+req.Method] = r.HandleNotFound
+					r.HandleNotFound.ServeHTTP(w, req)
 					return
 				}
-			} else {
-				r.NotFound.ServeHTTP(w, req)
-				return
 			}
 		}
 
 	}
 	// 单一的路径，  不是组成员
 	if route, ok := r.S[key]; ok {
-		if route.allHandle == nil {
-			if handle, metok := route.method[req.Method]; metok {
+		if handle, metok := route.method[req.Method]; metok {
+			r.routeTable[key+req.Method] = handle
+			handle.ServeHTTP(w, req)
+			return
+		} else {
+			r.routeTable[key+req.Method] = r.HandleNotFound
+			r.HandleNotFound.ServeHTTP(w, req)
+			return
+		}
+	}
+	// 没找到路由
+	for k, route := range reUrl {
+		re := regexp.MustCompile(k)
+		if re.MatchString(key) {
+			// 获取var
+			x := re.FindStringSubmatch(key)
+			for i, v := range route.Var {
+				Var[v] = x[i+1]
+			}
+			if handle, metok := route.R.method[req.Method]; metok {
+				r.routeTable[key+req.Method] = handle
 				handle.ServeHTTP(w, req)
 				return
 			} else {
-				r.MethodNotAllow.ServeHTTP(w, req)
+				r.routeTable[key+req.Method] = r.HandleNotFound
+				r.HandleNotFound.ServeHTTP(w, req)
 				return
 			}
-		} else {
-			route.allHandle.ServeHTTP(w, req)
-			return
 		}
-	} else {
-		// 没找到路由
-		r.NotFound.ServeHTTP(w, req)
-		return
+
 	}
+	fmt.Println("not found")
+	r.routeTable[key+req.Method] = r.NotFound
+	r.NotFound.ServeHTTP(w, req)
+	return
+
 }
 
 // 组里面也包括路由 后面的其实还是patter和handle
@@ -105,8 +142,17 @@ func (r *Router) HandleFunc(pattern string) *Route {
 	if pattern[len(pattern)-1:len(pattern)] == "/" {
 		pattern = pattern[:len(pattern)-1]
 	}
+
 	route := &Route{
 		method: make(map[string]http.Handler),
+	}
+	lv := make([]string, 0)
+	if v, listvar, ok := match(pattern, "^", lv); ok {
+		reUrl[v] = &reroute{
+			R:   route,
+			Var: listvar,
+		}
+		return route
 	}
 	r.S[pattern] = route
 	return route
@@ -120,7 +166,9 @@ func NewRouter() *Router {
 		Options:        options(),
 		NotFound:       notFound(),
 		MethodNotAllow: methodNotAllowed(),
-		GroupKey:       make(map[string]bool),
+		groupKey:       make(map[string]bool),
+		HandleNotFound: notHandle(),
+		routeTable:     make(map[string]http.Handler),
 	}
 }
 
@@ -141,6 +189,13 @@ func notFound() http.Handler {
 func options() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		return
+	})
+}
+
+func notHandle() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("not found handle"))
 		return
 	})
 }

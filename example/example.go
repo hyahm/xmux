@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"xmux"
@@ -14,6 +15,13 @@ func show(w http.ResponseWriter, r *http.Request) {
 
 func postme(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("post me!!!!"))
+	return
+}
+
+func Who(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(xmux.Var["name"])
+	fmt.Println(xmux.Var["age"])
+	w.Write([]byte("yes is mine"))
 	return
 }
 
@@ -31,5 +39,6 @@ func main() {
 	router.HandleFunc("/get").Get(show).Post(postme) // 不同请求分别处理
 	router.AddGroup(aritclegroup.Article())
 
+	router.HandleFunc("/people/{string:name}/{int:age}").Get(Who)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
