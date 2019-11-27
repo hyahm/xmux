@@ -30,8 +30,8 @@ func postme(w http.ResponseWriter, r *http.Request) {
 }
 
 func Who(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var["name"])
-	fmt.Println(xmux.Var["age"])
+	fmt.Println(xmux.Var[r.URL.Path]["name"])
+	fmt.Println(xmux.Var[r.URL.Path]["age"])
 	w.Write([]byte("yes is mine"))
 	return
 }
@@ -54,7 +54,6 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
-
 ```
 articlegroup/route.go
 ```go
@@ -67,7 +66,7 @@ import (
 )
 
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var["id"])
+	fmt.Println(xmux.Var[r.URL.Path]["id"])
 	w.Write([]byte("hello world!!!!"))
 	return
 }
