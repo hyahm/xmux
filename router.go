@@ -9,13 +9,21 @@ import (
 var Var map[string]map[string]string
 
 func init() {
+	// 存储变量
 	Var = make(map[string]map[string]string)
+	// 存储正则的地址
 	reUrl = make(map[string]*reroute)
 }
 
 type reroute struct {
-	R   *Route
-	Var []string
+	R      *Route
+	name   []string
+	header map[string]string
+}
+
+type rt struct {
+	Handle http.Handler
+	Header map[string]string
 }
 
 type Router struct {
@@ -26,8 +34,8 @@ type Router struct {
 	NotFound       http.Handler
 	MethodNotAllow http.Handler
 	HandleNotFound http.Handler
-	groupKey       map[string]bool         // 组路由
-	routeTable     map[string]http.Handler // 路由表
+	groupKey       map[string]bool // 组路由
+	routeTable     map[string]*rt  // 路由表
 }
 
 func (r *Router) Group(patter string) *GroupRoute {
@@ -41,6 +49,7 @@ func (r *Router) Group(patter string) *GroupRoute {
 	g := &GroupRoute{
 		prefix: patter,
 		suffix: make(map[string]*Route),
+		header: make(map[string]string),
 	}
 
 	r.g[patter] = g
@@ -68,7 +77,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable[key+req.Method]; ok {
-		route.ServeHTTP(w, req)
+		for k, v := range route.Header {
+			w.Header().Set(k, v)
+		}
+		route.Handle.ServeHTTP(w, req)
 		return
 	}
 	// 先判断有几段
@@ -83,11 +95,20 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			//如果存在就是组成员， 继续判断二段路径是否存在
 			if route, subok := r.g[first_key].suffix[key[end+2:]]; subok {
 				if handle, metok := route.method[req.Method]; metok {
-					r.routeTable[key+req.Method] = handle
+
+					r.routeTable[key+req.Method] = &rt{
+						Handle: handle,
+						Header: route.header,
+					}
+					for k, v := range route.header {
+						w.Header().Set(k, v)
+					}
 					handle.ServeHTTP(w, req)
 					return
 				} else {
-					r.routeTable[key+req.Method] = r.HandleNotFound
+					r.routeTable[key+req.Method] = &rt{
+						Handle: r.HandleNotFound,
+					}
 					r.HandleNotFound.ServeHTTP(w, req)
 					return
 				}
@@ -98,11 +119,19 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// 单一的路径，  不是组成员
 	if route, ok := r.s[key]; ok {
 		if handle, metok := route.method[req.Method]; metok {
-			r.routeTable[key+req.Method] = handle
+			r.routeTable[key+req.Method] = &rt{
+				Handle: handle,
+				Header: route.header,
+			}
+			for k, v := range route.header {
+				w.Header().Add(k, v)
+			}
 			handle.ServeHTTP(w, req)
 			return
 		} else {
-			r.routeTable[key+req.Method] = r.HandleNotFound
+			r.routeTable[key+req.Method] = &rt{
+				Handle: r.HandleNotFound,
+			}
 			r.HandleNotFound.ServeHTTP(w, req)
 			return
 		}
@@ -114,16 +143,24 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			// 获取var
 			x := re.FindStringSubmatch(key)
 			myvar := make(map[string]string)
-			for i, v := range route.Var {
+			for i, v := range route.name {
 				myvar[v] = x[i+1]
 			}
 			Var[key] = myvar
 			if handle, metok := route.R.method[req.Method]; metok {
-				r.routeTable[key+req.Method] = handle
+				r.routeTable[key+req.Method] = &rt{
+					Handle: handle,
+					Header: route.header,
+				}
+				for k, v := range route.header {
+					w.Header().Set(k, v)
+				}
 				handle.ServeHTTP(w, req)
 				return
 			} else {
-				r.routeTable[key+req.Method] = r.HandleNotFound
+				r.routeTable[key+req.Method] = &rt{
+					Handle: r.HandleNotFound,
+				}
 				r.HandleNotFound.ServeHTTP(w, req)
 				return
 			}
@@ -131,7 +168,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	}
 
-	r.routeTable[key+req.Method] = r.NotFound
+	r.routeTable[key+req.Method] = &rt{
+		Handle: r.NotFound,
+	}
 	r.NotFound.ServeHTTP(w, req)
 	return
 
@@ -148,12 +187,14 @@ func (r *Router) HandleFunc(pattern string) *Route {
 
 	route := &Route{
 		method: make(map[string]http.Handler),
+		header: make(map[string]string),
 	}
 	lv := make([]string, 0)
 	if v, listvar, ok := match(pattern, "^", lv); ok {
 		reUrl[v] = &reroute{
-			R:   route,
-			Var: listvar,
+			R:      route,
+			name:   listvar,
+			header: route.header,
 		}
 		return route
 	}
@@ -171,7 +212,7 @@ func NewRouter() *Router {
 		MethodNotAllow: methodNotAllowed(),
 		groupKey:       make(map[string]bool),
 		HandleNotFound: notHandle(),
-		routeTable:     make(map[string]http.Handler),
+		routeTable:     make(map[string]*rt),
 	}
 }
 

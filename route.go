@@ -5,6 +5,7 @@ import "net/http"
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
 	method map[string]http.Handler
+	header map[string]string
 	//allHandle http.Handler
 }
 
@@ -53,7 +54,7 @@ func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
 	return rt
 }
 
-//func (rt *Route) All(handler func(http.ResponseWriter, *http.Request)) *Route {
-//	rt.allHandle = http.HandlerFunc(handler)
-//	return rt
-//}
+func (rt *Route) SetHeader(k, v string) *Route {
+	rt.header[k] = v
+	return rt
+}

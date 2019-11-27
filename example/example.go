@@ -39,6 +39,6 @@ func main() {
 	router.HandleFunc("/get").Get(show).Post(postme) // 不同请求分别处理
 	router.AddGroup(aritclegroup.Article())
 
-	router.HandleFunc("/people/{string:name}/{int:age}").Get(Who)
+	router.HandleFunc("/people/{string:name}/{int:age}").Get(Who).SetHeader("Host", "two")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

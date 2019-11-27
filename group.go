@@ -9,7 +9,7 @@ type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
 	suffix map[string]*Route
 	prefix string // 组才有
-
+	header map[string]string
 }
 
 var reUrl map[string]*reroute
@@ -19,6 +19,11 @@ func NewGroupRoute(pattern string) *GroupRoute {
 		suffix: make(map[string]*Route),
 		prefix: pattern,
 	}
+}
+
+func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
+	g.header[k] = v
+	return g
 }
 
 // 组里面也包括路由 后面的其实还是patter和handle
@@ -39,14 +44,15 @@ func (g *GroupRoute) HandleFunc(pattern string) *Route {
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),
+		header: make(map[string]string),
 	}
 	lv := make([]string, 0)
 	pattern = g.prefix + "/" + pattern
 	if v, listvar, ok := match(pattern, "^", lv); ok {
-
 		reUrl[v] = &reroute{
-			R:   route,
-			Var: listvar,
+			R:      route,
+			name:   listvar,
+			header: route.header,
 		}
 		return route
 	}
