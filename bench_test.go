@@ -33,7 +33,7 @@ func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 func BenchmarkManyPathVariables(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.HandleFunc("/v1/{v1}/{v2}/{v3}/{v4}/{v5}").Get(handler)
+	router.Pattern("/v1/{v1}/{v2}/{v3}/{v4}/{v5}").Get(handler)
 
 	matchingRequest, _ := http.NewRequest("GET", "/v1/1/2/3/4/5", nil)
 	notMatchingRequest, _ := http.NewRequest("GET", "/v1/1/2/3/4", nil)
