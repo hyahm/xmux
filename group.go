@@ -1,23 +1,25 @@
 package xmux
 
 import (
-	"log"
 	"net/http"
+	"strings"
 )
 
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
-	suffix map[string]*Route
-	prefix string // 组才有
+	route  map[string]*Route
+	name   string // 组名
 	header map[string]string
+	tpl    map[string]*Route
 }
 
 var reUrl map[string]*reroute
 
-func NewGroupRoute(pattern string) *GroupRoute {
+func NewGroupRoute() *GroupRoute {
 	return &GroupRoute{
-		suffix: make(map[string]*Route),
-		prefix: pattern,
+		route:  make(map[string]*Route),
+		header: make(map[string]string),
+		tpl:    make(map[string]*Route),
 	}
 }
 
@@ -27,35 +29,59 @@ func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
 }
 
 // 组里面也包括路由 后面的其实还是patter和handle
-func (g *GroupRoute) HandleFunc(pattern string) *Route {
+func (g *GroupRoute) Pattern(pattern string) *Route {
 	// name   if /name to name ; if name/shdk/ to name/shdk
-	if pattern == "" {
-		log.Fatal("pattern is error")
+	pattern = strings.Trim(pattern, " ")
+	if pattern == "" || pattern[0:1] != "/" {
+		panic("pattern is error")
 	}
 
-	if pattern[0:1] == "/" {
-		pattern = pattern[1:]
-		if pattern == "" {
-			log.Fatal("pattern is error")
-		}
-	}
-	if pattern[len(pattern)-1:len(pattern)] == "/" {
-		pattern = pattern[:len(pattern)-1]
-	}
+	lv := make([]string, 0)
 	route := &Route{
 		method: make(map[string]http.Handler),
 		header: make(map[string]string),
+		args:   make([]string, 0),
 	}
-	lv := make([]string, 0)
-	pattern = g.prefix + "/" + pattern
 	if v, listvar, ok := match(pattern, "^", lv); ok {
-		reUrl[v] = &reroute{
-			R:      route,
-			name:   listvar,
-			header: route.header,
-		}
-		return route
+		g.tpl[v] = route
+		g.tpl[v].args = append(g.tpl[v].args, listvar...)
+		return g.tpl[v]
 	}
-	g.suffix[pattern] = route
-	return route
+	g.route[pattern] = route
+	return g.route[pattern]
+}
+
+func (r *Router) Group(name string) *GroupRoute {
+	//   /article if /article/ to /article;  if article to /article
+	name = strings.Trim(name, " ")
+	g := &GroupRoute{
+		name:   name,
+		route:  make(map[string]*Route),
+		header: make(map[string]string),
+	}
+
+	r.groupKey[name] = g.header
+	return g
+}
+
+func (r *Router) AddGroup(groute *GroupRoute) *Router {
+	for k, v := range groute.route {
+
+		if _, ok := r.tpl[k]; ok {
+			//路径检测
+			panic("pattern duplicate for " + k)
+		}
+		r.groupKey[k] = groute.header
+		r.route[k] = v
+	}
+	for k, v := range groute.tpl {
+		if _, ok := r.tpl[k]; ok {
+			//路径检测
+			panic("pattern duplicate for " + k)
+		}
+		r.tpl[k] = v
+		r.groupKey[k] = groute.header
+	}
+
+	return r
 }

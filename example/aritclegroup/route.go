@@ -13,7 +13,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func Article() *xmux.GroupRoute {
-	article := xmux.NewGroupRoute("/article")
-	article.HandleFunc("{int:id}").Get(hello)
+	article := xmux.NewGroupRoute()
+	article.Pattern("/{int:id}").Get(hello)
 	return article
 }

@@ -9,7 +9,7 @@ import (
 func BenchmarkMux(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.HandleFunc("/v1/{v1}").Get(handler)
+	router.Pattern("/v1/{v1}").Get(handler)
 
 	request, _ := http.NewRequest("GET", "/v1/anything", nil)
 	for i := 0; i < b.N; i++ {
@@ -20,7 +20,7 @@ func BenchmarkMux(b *testing.B) {
 func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.HandleFunc("/v1/{v1}").Get(handler)
+	router.Pattern("/v1/{v1}").Get(handler)
 
 	requestA, _ := http.NewRequest("GET", "/v1/a", nil)
 	requestB, _ := http.NewRequest("GET", "/v1/b", nil)
