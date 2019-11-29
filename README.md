@@ -1,7 +1,7 @@
 # xmux
 之前一直使用的 mux， 但是xmux 已经无法满足自己优化代码的需求  
 
-作者在蒙圈研究go test 测试，  估计还有问题， 请勿在生产环境使用
+目前还有不足，本人是小白鼠，  估计还有问题， 请勿在生产环境使用
 
 ### 添加了组的概念
 几十个路由写一个文件里面， 嗯， 还好， 但是多了呢， 眼睛是不是有点花， 并且某些名字重名了也不知道
@@ -115,7 +115,7 @@ func main() {
 当get请求的时候， 页面返回了这个. 应该就明白了
 <h1>when you see this page, it means you forget set handle in /home/id</h1>
 
-### 四大全局方法
+### 四大全局handle
 ```go
 Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 NotFound:       notFound(),   // 404 返回
