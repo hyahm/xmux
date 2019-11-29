@@ -1,7 +1,7 @@
 package xmux
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -15,9 +15,12 @@ type Route struct {
 
 // 组里面也包括路由 后面的其实还是patter和handle
 func (r *Router) Pattern(pattern string) *Route {
+	if _, ok := r.route[pattern]; ok {
+		log.Fatalf("pattern duplicate for %s" , pattern)
+	}
 	pattern = strings.Trim(pattern, " ")
 	if pattern == "" || pattern[0:1] != "/" {
-		panic("pattern error")
+		log.Fatalf("pattern error for %s" , pattern)
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),
@@ -30,6 +33,7 @@ func (r *Router) Pattern(pattern string) *Route {
 		r.tpl[v].args = append(r.tpl[v].args, listvar...)
 		return r.tpl[v]
 	}
+
 	r.route[pattern] = route
 	return r.route[pattern]
 }
@@ -80,7 +84,6 @@ func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
 }
 
 func (rt *Route) SetHeader(k, v string) *Route {
-	fmt.Println(rt)
 	rt.header[k] = v
 	return rt
 }

@@ -123,6 +123,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				w.Header().Set(k, v)
 			}
 			// 是否能找到方法
+
 			if handle, metok := r.route[key].method[req.Method]; metok {
 				r.routeTable[key+req.Method] = &rt{
 					Handle: handle,
@@ -272,7 +273,7 @@ func options() http.Handler {
 
 func handleNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("<h1>when you see this page, it means you forget set handle in %s" + r.URL.Path + "<h1>"))
+		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
 		return
 	})
 }

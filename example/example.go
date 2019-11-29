@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"xmux"
@@ -19,8 +18,8 @@ func postme(w http.ResponseWriter, r *http.Request) {
 }
 
 func Who(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["name"])
-	fmt.Println(xmux.Var[r.URL.Path]["age"])
+	//fmt.Println(xmux.Var[r.URL.Path]["name"])
+	//fmt.Println(xmux.Var[r.URL.Path]["age"])
 	w.Write([]byte("yes is mine"))
 	return
 }
@@ -37,9 +36,11 @@ func main() {
 	router := xmux.NewRouter()
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
+	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
 
-	router.AddGroup(aritclegroup.Article())
+	router.AddGroup(aritclegroup.Article)
 
-	router.Pattern("/people/{string:name}/{int:age}").Get(Who).SetHeader("Host", "two")
+	router.Pattern("/{string:age}").Get(Who).SetHeader("Host", "two")
+	router.Pattern("/home/id").SetHeader("Host", "two")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
