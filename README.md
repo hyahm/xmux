@@ -53,7 +53,7 @@ func init() {
 ```
 func main() {
 	router := xmux.NewRouter()
-	router.AddGroup(aritclegroup.Article())
+	router.AddGroup(aritclegroup.Article)
 }
 
 ```
