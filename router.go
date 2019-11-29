@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 )
@@ -74,8 +73,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// 判断是不是组成员
 		if header, gok := r.groupKey[key]; gok {
 			//是组成员的话， 3头合一
-			tmpheader := r.header
+			tmpheader := make(map[string]string)
+
 			for k, v := range r.header {
+				tmpheader[k] = v
 				w.Header().Set(k, v)
 			}
 
@@ -153,7 +154,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if header, ok := r.groupKey[reurl]; ok {
 				tmpheader := make(map[string]string)
 
-				fmt.Println("perfix", r.header)
 				for k, v := range r.header {
 					tmpheader[k] = v
 					w.Header().Set(k, v)
@@ -168,7 +168,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					tmpheader[k] = v
 					w.Header().Set(k, v)
 				}
-				fmt.Println("after", r.header)
+
 				// 是否能找到方法
 				if handle, metok := route.method[req.Method]; metok {
 					//保存到路由表
