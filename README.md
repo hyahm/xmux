@@ -46,13 +46,15 @@ func Options() http.Handler {
 
 func main() {
 	router := xmux.NewRouter()
-	router.Options = Options()                       // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
-	router.HandleFunc("/get").Get(show).Post(postme) // 不同请求分别处理
+	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
+	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
+
 	router.AddGroup(aritclegroup.Article())
 
-	router.HandleFunc("/people/{string:name}/{int:age}").Get(Who)
+	router.Pattern("/people/{string:name}/{int:age}").Get(Who).SetHeader("Host", "two")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
+
 
 ```
 articlegroup/route.go
@@ -72,10 +74,11 @@ func hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func Article() *xmux.GroupRoute {
-	article := xmux.NewGroupRoute("/article")
-	article.HandleFunc("{int:id}").Get(hello)
+	article := xmux.NewGroupRoute()
+	article.Pattern("/{int:id}").Get(hello)
 	return article
 }
+
 
 
 ```
