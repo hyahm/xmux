@@ -68,7 +68,7 @@ func main() {
 }
 ```
 
-记住， 是100%，  此框架优先匹配完全匹配规则， 匹配不到再寻找 正则匹配， 加快了寻址速度  
+记住， 是100%，  此路由优先匹配完全匹配规则， 匹配不到再寻找 正则匹配， 加快了寻址速度  
 访问 /get -> 返回 show   
 访问  /post   -> 返回 Who  
 
@@ -116,20 +116,13 @@ func main() {
 当get请求的时候， 页面返回了这个. 应该就明白了  
 <h1>when you see this page, it means you forget set handle in /home/id</h1>  
 
-### 四大全局handle
+### 三大全局handle
 ```go
 Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 NotFound:       notFound(),   // 404 返回
-MethodNotAllow: methodNotAllowed(),  // method 不支持
 HandleNotFound: handleNotFound(),   // 这个就是上面提示的忘了写handle 的提示页面
-// 默认调用的方法如下
-func methodNotAllowed() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	})
-}
 
+// 默认调用的方法如下
 func notFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -191,6 +184,17 @@ type rt struct {
 
 routeTable     map[string]*rt   // 就是这个东西了， 保存了handle和请求头信息
 ```
+
+### 匹配路由
+如上面代码所示
+/aaa/{name}          这个和下面一个一样， 省略类型， 默认是string
+/aaa/{string:name}   这个和上面一样， string类型
+/aaa/{int:name}       这个匹配int类型
+```
+xmux.Var[r.URL.Path]["name"]  // 获取方法
+```
+后面会增加自定义正则匹配
+
 ### 看看速度对比吧
 里面有个bench_test.go 文件  
 从mux里面来的  
