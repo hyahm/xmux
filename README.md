@@ -213,6 +213,16 @@ type rt struct {
 routeTable     map[string]*rt   // 就是这个东西了， 保存了handle和请求头信息
 ```
 
+### 自动修复请求的url
+例如： 请求的url 是这个样子的
+http://www.hyahm.com/mmm///af/af,  默认是请求不到的
+但是设置后
+```go
+router := xmux.NewRouter()
+router.Slash = true
+```
+是可以直接访问 http://www.hyahm.com/mmm/af/af 这个地址的请求
+
 ### 匹配路由
 如上面代码所示  
   
@@ -232,6 +242,17 @@ xmux.Var[r.URL.Path]["name"]  // 获取方法
 后面会增加自定义正则匹配
 
 ### 压力测试
+```
+canderdeAir:xmux cander$ go test -bench=. -benchmem
+goos: darwin
+goarch: amd64
+pkg: xmux
+BenchmarkMux-4                          22398705                53.5 ns/op             0 B/op          0 allocs/op
+BenchmarkMuxAlternativeInRegexp-4       11393886               106 ns/op               0 B/op          0 allocs/op
+BenchmarkManyPathVariables-4            10317334               110 ns/op               0 B/op          0 allocs/op
+PASS
+ok      xmux    5.674s
+```
 mux 框架的, 他的框架更新了， 注释掉空函数  
 ```go
 canderdeMacBook-Air:mux cander$ go test -bench=.
@@ -246,7 +267,7 @@ ok      mux     7.402s
 canderdeMacBook-Air:mux cander$ 
 
 ```
-嗯， 不比不知道， 一比吓一跳，20倍以上的速度， 不知道是寻址的问题还是路由表的功劳  
+嗯， 不比不知道， 一比吓一跳，20倍以上的速度， 内存分配有点假 
 
 
 ### exmaple下面的例子
