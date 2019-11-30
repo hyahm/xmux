@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"xmux"
@@ -25,6 +26,18 @@ func Who(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func testbool(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.FormValue("username"))
+	fmt.Println(r.FormValue("password"))
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
+	fmt.Println(string(b))
+	w.Write([]byte("yes is mine"))
+	return
+}
+
 // 默认已经是这样的了，  如果有其他的请自定义
 func Options() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +55,7 @@ func main() {
 	router.AddGroup(aritclegroup.Article)
 
 	router.Pattern("/{string:age}").Get(Who).SetHeader("Host", "two")
-	router.Pattern("/home/id").SetHeader("Host", "two")
+	router.Pattern("/home/id").SetHeader("Host", "two").Post(testbool)
 	router.Pattern("/home/{re:([a-z]{1,3})AAA([0-9]{1,3}):ch,zz}").SetHeader("Host", "two").Get(re)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

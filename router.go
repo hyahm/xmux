@@ -28,6 +28,7 @@ type Router struct {
 	Options        http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	NotFound       http.Handler
 	HandleNotFound http.Handler
+	MethodNotAllowed http.Handler
 	route          map[string]*Route            // 单实例路由
 	groupKey       map[string]map[string]string // 组路由, 存的组路由的请求头
 	routeTable     map[string]*rt               // 路由表
@@ -99,6 +100,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 				handle.ServeHTTP(w, req)
 				return
+			} else if r.route[key] != nil {
+				r.routeTable[key+req.Method] = &rt{
+					Handle: r.MethodNotAllowed,
+					Header: tmpheader,
+				}
+				r.MethodNotAllowed.ServeHTTP(w, req)
 			} else {
 				if r.HandleNotFound == nil {
 					r.HandleNotFound = handleNotFound()
@@ -133,6 +140,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 				handle.ServeHTTP(w, req)
 				return
+			} else if r.route[key] != nil {
+				r.routeTable[key+req.Method] = &rt{
+					Handle: r.MethodNotAllowed,
+					Header: tmpheader,
+				}
+				r.MethodNotAllowed.ServeHTTP(w, req)
 			} else {
 				if r.HandleNotFound == nil {
 					r.HandleNotFound = handleNotFound()
@@ -248,6 +261,7 @@ func NewRouter() *Router {
 		Options:        options(),
 		NotFound:       notFound(),
 		HandleNotFound: handleNotFound(),
+		MethodNotAllowed: methodNotAllowed(),
 		groupKey:       make(map[string]map[string]string),
 		routeTable:     make(map[string]*rt),
 		header:         make(map[string]string),
@@ -271,6 +285,13 @@ func options() http.Handler {
 }
 
 func handleNotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
+		return
+	})
+}
+
+func methodNotAllowed() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
 		return
