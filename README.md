@@ -83,7 +83,7 @@ func main() {
 ```
 /get get 请求 返回 show，    post 请求 返回 postme
 
-### 自动检测重复项
+### 自动检测重复项,
 ```go
 func main() {
 	router := xmux.NewRouter()
@@ -93,6 +93,21 @@ func main() {
 }
 写一大堆路由，  有没有重复的都不知道  
 运行上面将会报错， 如下  
+2019/11/29 21:51:11 pattern duplicate for /get
+
+```
+###  自动格式化url
+将任意多余的斜杠去掉例如
+/asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
+```go
+func main() {
+	router := xmux.NewRouter()
+	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
+	router.Pattern("/get/").Get(show).Post(postme) // 不同请求分别处理
+
+}
+
+所以运行上面将会报错，/get/被转为 /get 如下  
 2019/11/29 21:51:11 pattern duplicate for /get
 
 ```
