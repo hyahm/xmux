@@ -131,11 +131,12 @@ func main() {
 当get请求的时候， 页面返回了这个. 应该就明白了  
 <h1>when you see this page, it means you forget set handle in /home/id</h1>  
 
-### 三大全局handle
+### 四大全局handle
 ```go
 Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 NotFound:       notFound(),   // 404 返回
 HandleNotFound: handleNotFound(),   // 这个就是上面提示的忘了写handle 的提示页面
+MethodNotAllowed http.Handler
 
 // 默认调用的方法如下
 func notFound() http.Handler {
@@ -159,9 +160,21 @@ func handleNotFound() http.Handler {
 	})
 }
 
+func methodNotAllowed() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	})
+}
+
+
 可以选择自定义的， 只要new路由赋值即可
 router := xmux.NewRouter()
 router.Options = Options()  
+methodNotAllowed 和  handleNotFound的区别
+当存在handle 但找不到 method 就返回 methodNotAllowed
+不存在handle 就返回 handleNotFound的
+
 
 ```
 
@@ -218,22 +231,7 @@ xmux.Var[r.URL.Path]["name"]  // 获取方法
 ```
 后面会增加自定义正则匹配
 
-### 看看速度对比吧
-里面有个bench_test.go 文件  
-从mux里面来的  
-本框架的压力测试数据  
-```
-canderdeMacBook-Air:xmux cander$ go test -bench=.
-goos: darwin
-goarch: amd64
-pkg: xmux
-BenchmarkMux-4                          21019719                52.3 ns/op
-BenchmarkMuxAlternativeInRegexp-4       11333706               105 ns/op
-BenchmarkManyPathVariables-4            10704848               106 ns/op
-PASS
-ok      xmux    4.993s
-canderdeMacBook-Air:xmux cander$ 
-```
+### 压力测试
 mux 框架的, 他的框架更新了， 注释掉空函数  
 ```go
 canderdeMacBook-Air:mux cander$ go test -bench=.
@@ -249,6 +247,7 @@ canderdeMacBook-Air:mux cander$
 
 ```
 嗯， 不比不知道， 一比吓一跳，20倍以上的速度， 不知道是寻址的问题还是路由表的功劳  
+
 
 ### exmaple下面的例子
 
