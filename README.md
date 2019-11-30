@@ -131,11 +131,12 @@ func main() {
 当get请求的时候， 页面返回了这个. 应该就明白了  
 <h1>when you see this page, it means you forget set handle in /home/id</h1>  
 
-### 三大全局handle
+### 四大全局handle
 ```go
 Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 NotFound:       notFound(),   // 404 返回
 HandleNotFound: handleNotFound(),   // 这个就是上面提示的忘了写handle 的提示页面
+MethodNotAllowed http.Handler
 
 // 默认调用的方法如下
 func notFound() http.Handler {
@@ -159,9 +160,19 @@ func handleNotFound() http.Handler {
 	})
 }
 
+func methodNotAllowed() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	})
+}
+
+
 可以选择自定义的， 只要new路由赋值即可
 router := xmux.NewRouter()
 router.Options = Options()  
+methodNotAllowed 和  handleNotFound
+
 
 ```
 
