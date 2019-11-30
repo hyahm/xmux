@@ -231,38 +231,6 @@ xmux.Var[r.URL.Path]["name"]  // 获取方法
 ```
 后面会增加自定义正则匹配
 
-### 看看速度对比吧
-里面有个bench_test.go 文件  
-从mux里面来的  
-本框架的压力测试数据  
-```
-canderdeMacBook-Air:xmux cander$ go test -bench=.
-goos: darwin
-goarch: amd64
-pkg: xmux
-BenchmarkMux-4                          21019719                52.3 ns/op
-BenchmarkMuxAlternativeInRegexp-4       11333706               105 ns/op
-BenchmarkManyPathVariables-4            10704848               106 ns/op
-PASS
-ok      xmux    4.993s
-canderdeMacBook-Air:xmux cander$ 
-```
-mux 框架的, 他的框架更新了， 注释掉空函数  
-```go
-canderdeMacBook-Air:mux cander$ go test -bench=.
-goos: darwin
-goarch: amd64
-pkg: mux
-BenchmarkMux-4                            689672              1835 ns/op
-BenchmarkMuxAlternativeInRegexp-4         461038              2579 ns/op
-BenchmarkManyPathVariables-4              453232              2604 ns/op
-PASS
-ok      mux     7.402s
-canderdeMacBook-Air:mux cander$ 
-
-```
-嗯， 不比不知道， 一比吓一跳，20倍以上的速度， 不知道是寻址的问题还是路由表的功劳  
-
 ### exmaple下面的例子
 
 example.go
