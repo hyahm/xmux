@@ -31,11 +31,9 @@ func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
 
 // 组里面也包括路由 后面的其实还是patter和handle
 func (g *GroupRoute) Pattern(pattern string) *Route {
-	// name   if /name to name ; if name/shdk/ to name/shdk
-	pattern = strings.Trim(pattern, " ")
-	if pattern == "" || pattern[0:1] != "/" {
-		panic("pattern is error")
-	}
+
+	// 格式路径
+	pattern = slash(pattern)
 
 	lv := make([]string, 0)
 	route := &Route{

@@ -42,6 +42,8 @@ func (r *Router) SetHeader(k, v string) *Router {
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Path
+	// 格式路径
+	key = slash(key)
 	if r.IgnoreIco && key == "/favicon.ico" {
 		return
 	}

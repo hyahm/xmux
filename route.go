@@ -15,6 +15,8 @@ type Route struct {
 
 // 组里面也包括路由 后面的其实还是patter和handle
 func (r *Router) Pattern(pattern string) *Route {
+	// 格式路径
+	pattern = slash(pattern)
 	if _, ok := r.route[pattern]; ok {
 		log.Fatalf("pattern duplicate for %s" , pattern)
 	}
