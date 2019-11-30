@@ -293,7 +293,7 @@ func handleNotFound() http.Handler {
 
 func methodNotAllowed() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	})
 }
