@@ -27,7 +27,6 @@ type Router struct {
 	IgnoreIco      bool         // 是否忽略 /favicon.ico 请求。 默认忽略
 	Options        http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	NotFound       http.Handler
-	MethodNotAllow http.Handler
 	HandleNotFound http.Handler
 	route          map[string]*Route            // 单实例路由
 	groupKey       map[string]map[string]string // 组路由, 存的组路由的请求头
@@ -240,7 +239,6 @@ func NewRouter() *Router {
 		IgnoreIco:      true,
 		Options:        options(),
 		NotFound:       notFound(),
-		MethodNotAllow: methodNotAllowed(),
 		HandleNotFound: handleNotFound(),
 		groupKey:       make(map[string]map[string]string),
 		routeTable:     make(map[string]*rt),
@@ -248,13 +246,6 @@ func NewRouter() *Router {
 		route:          make(map[string]*Route),
 		tpl:            make(map[string]*Route),
 	}
-}
-
-func methodNotAllowed() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	})
 }
 
 func notFound() http.Handler {
