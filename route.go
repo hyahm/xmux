@@ -18,11 +18,11 @@ func (r *Router) Pattern(pattern string) *Route {
 	// 格式路径
 	pattern = slash(pattern)
 	if _, ok := r.route[pattern]; ok {
-		log.Fatalf("pattern duplicate for %s" , pattern)
+		log.Fatalf("pattern duplicate for %s", pattern)
 	}
 	pattern = strings.Trim(pattern, " ")
 	if pattern == "" || pattern[0:1] != "/" {
-		log.Fatalf("pattern error for %s" , pattern)
+		log.Fatalf("pattern error for %s", pattern)
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),

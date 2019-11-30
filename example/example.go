@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"xmux"
@@ -29,11 +28,7 @@ func Who(w http.ResponseWriter, r *http.Request) {
 func testbool(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.FormValue("username"))
 	fmt.Println(r.FormValue("password"))
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return
-	}
-	fmt.Println(string(b))
+
 	w.Write([]byte("yes is mine"))
 	return
 }
@@ -48,6 +43,7 @@ func Options() http.Handler {
 
 func main() {
 	router := xmux.NewRouter()
+	//router.Slash = true
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
 	//router.Pattern("/get/").Get(show).Post(postme) // 不同请求分别处理

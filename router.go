@@ -24,16 +24,17 @@ type rt struct {
 }
 
 type Router struct {
-	IgnoreIco      bool         // 是否忽略 /favicon.ico 请求。 默认忽略
-	Options        http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	NotFound       http.Handler
-	HandleNotFound http.Handler
+	IgnoreIco        bool         // 是否忽略 /favicon.ico 请求。 默认忽略
+	Slash            bool         // 是否检测请求的url
+	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
+	NotFound         http.Handler
+	HandleNotFound   http.Handler
 	MethodNotAllowed http.Handler
-	route          map[string]*Route            // 单实例路由
-	groupKey       map[string]map[string]string // 组路由, 存的组路由的请求头
-	routeTable     map[string]*rt               // 路由表
-	header         map[string]string            // 全局路由头
-	tpl            map[string]*Route            // 正则路由
+	route            map[string]*Route            // 单实例路由
+	groupKey         map[string]map[string]string // 组路由, 存的组路由的请求头
+	routeTable       map[string]*rt               // 路由表
+	header           map[string]string            // 全局路由头
+	tpl              map[string]*Route            // 正则路由
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
@@ -44,7 +45,10 @@ func (r *Router) SetHeader(k, v string) *Router {
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Path
 	// 格式路径
-	key = slash(key)
+	if r.Slash {
+		key = slash(key)
+	}
+
 	if r.IgnoreIco && key == "/favicon.ico" {
 		return
 	}
@@ -257,16 +261,17 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco:      true,
-		Options:        options(),
-		NotFound:       notFound(),
-		HandleNotFound: handleNotFound(),
+		IgnoreIco:        true,
+		Slash:            false,
+		Options:          options(),
+		NotFound:         notFound(),
+		HandleNotFound:   handleNotFound(),
 		MethodNotAllowed: methodNotAllowed(),
-		groupKey:       make(map[string]map[string]string),
-		routeTable:     make(map[string]*rt),
-		header:         make(map[string]string),
-		route:          make(map[string]*Route),
-		tpl:            make(map[string]*Route),
+		groupKey:         make(map[string]map[string]string),
+		routeTable:       make(map[string]*rt),
+		header:           make(map[string]string),
+		route:            make(map[string]*Route),
+		tpl:              make(map[string]*Route),
 	}
 }
 

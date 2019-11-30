@@ -27,7 +27,7 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 	//找到最后一个}
 	//strings.LastIndex()
 
-	if start == -1  {
+	if start == -1 {
 		//非正则的
 
 	} else if start >= 0 && end > 0 && end > start {
@@ -60,7 +60,7 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 				} else {
 					log.Fatal("invalid uri ," + path)
 				}
-			} else 	if len(ts) == 2 {
+			} else if len(ts) == 2 {
 				if ts[0] == "int" {
 					prefix += "(\\d+)"
 				} else {
@@ -86,9 +86,8 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 	} else {
 		log.Fatal("invalid uri ," + path)
 	}
-	return "", nil,false
+	return "", nil, false
 }
-
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as

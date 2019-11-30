@@ -68,7 +68,7 @@ func (r *Router) AddGroup(groute *GroupRoute) *Router {
 
 		if _, ok := r.tpl[k]; ok {
 			//路径检测
-			log.Fatalf("pattern duplicate for %s" , k)
+			log.Fatalf("pattern duplicate for %s", k)
 		}
 		r.groupKey[k] = groute.header
 		r.route[k] = v
@@ -76,7 +76,7 @@ func (r *Router) AddGroup(groute *GroupRoute) *Router {
 	for k, v := range groute.tpl {
 		if _, ok := r.tpl[k]; ok {
 			//路径检测
-			log.Fatalf("pattern duplicate for %s" , k)
+			log.Fatalf("pattern duplicate for %s", k)
 		}
 		r.tpl[k] = v
 		r.groupKey[k] = groute.header
