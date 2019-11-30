@@ -151,6 +151,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	for reurl, route := range r.tpl {
 		re := regexp.MustCompile(reurl)
 		if re.MatchString(key) {
+			vl := re.FindStringSubmatch(key)
+			vm := make(map[string]string)
+			for i, v := range route.args {
+				vm[v] = vl[i+1]
+			}
+			Var[key] = vm
 			// 获取var
 			//判断是不是组路由
 			if header, ok := r.groupKey[reurl]; ok {

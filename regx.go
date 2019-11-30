@@ -9,12 +9,29 @@ import (
 
 // match url , is true is a regx, false is fullurl
 func match(path string, newpath string, varlist []string) (string, []string, bool) {
+
 	start := strings.Index(path, "{")
-	end := strings.Index(path, "}")
-	if start == -1 && end == -1 {
-		//非正则的
+	if start == -1 {
 		return path, varlist, false
+	}
+	end := -1
+
+	sc := strings.Index(path[start:], "/")
+
+	if sc != -1 {
+		pp := path[:start+sc]
+		end = strings.LastIndex(pp, "}")
+	} else {
+		end = strings.LastIndex(path, "}")
+	}
+	//找到最后一个}
+	//strings.LastIndex()
+
+	if start == -1  {
+		//非正则的
+
 	} else if start >= 0 && end > 0 && end > start {
+
 		//正则匹配的
 		re := strings.Trim(path[start+1:end], " ")
 		if re == "" {
@@ -56,6 +73,7 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 			} else {
 				log.Fatal("invalid uri ," + path)
 			}
+
 			newpath += prefix
 			if end+1 == len(path) {
 				// last url
