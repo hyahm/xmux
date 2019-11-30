@@ -171,7 +171,9 @@ func methodNotAllowed() http.Handler {
 可以选择自定义的， 只要new路由赋值即可
 router := xmux.NewRouter()
 router.Options = Options()  
-methodNotAllowed 和  handleNotFound
+methodNotAllowed 和  handleNotFound的区别
+当存在handle 但找不到 method 就返回 methodNotAllowed
+不存在handle 就返回 handleNotFound的
 
 
 ```
