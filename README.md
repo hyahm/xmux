@@ -10,7 +10,8 @@
 - [x] 自动检查pattern
 - [x] 支持修复pattern
 - [x] 自定修复请求的url
-- [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）
+- [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
+
 V1 版功能就这些， 暂时不会增加了
 
 ### 添加了组的概念
