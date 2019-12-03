@@ -41,46 +41,73 @@ func (r *Router) Pattern(pattern string) *Route {
 }
 
 func (rt *Route) Post(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodPost]; ok {
+		log.Fatal("method post duplicate")
+	}
 	rt.method[http.MethodPost] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Get(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodGet]; ok {
+		log.Fatal("method get duplicate")
+	}
 	rt.method[http.MethodGet] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Delete(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodDelete]; ok {
+		log.Fatal("method Delete duplicate")
+	}
 	rt.method[http.MethodDelete] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Head(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodHead]; ok {
+		log.Fatal("method Head duplicate")
+	}
 	rt.method[http.MethodHead] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Options(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodOptions]; ok {
+		log.Fatal("method Options duplicate")
+	}
 	rt.method[http.MethodOptions] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Connect(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodConnect]; ok {
+		log.Fatal("method Connect duplicate")
+	}
 	rt.method[http.MethodConnect] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Patch(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodPatch]; ok {
+		log.Fatal("method Patch duplicate")
+	}
 	rt.method[http.MethodPatch] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Trace(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodTrace]; ok {
+		log.Fatal("method Trace duplicate")
+	}
 	rt.method[http.MethodTrace] = http.HandlerFunc(handler)
 	return rt
 }
 
 func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
+	if _, ok := rt.method[http.MethodPut]; ok {
+		log.Fatal("method put duplicate")
+	}
 	rt.method[http.MethodPut] = http.HandlerFunc(handler)
 	return rt
 }
