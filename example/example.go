@@ -29,7 +29,7 @@ func testbool(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.FormValue("username"))
 	fmt.Println(r.FormValue("password"))
 
-	w.Write([]byte("yes is mine"))
+	w.Write([]byte("yes is mine asdf"))
 	return
 }
 
@@ -45,7 +45,9 @@ func main() {
 	router := xmux.NewRouter()
 	//router.Slash = true
 	router.SetHeader("mm", "moo")
-	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
+	router.Options = Options()
+
+	// 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
 	//router.Pattern("/get/").Get(show).Post(postme) // 不同请求分别处理
 
