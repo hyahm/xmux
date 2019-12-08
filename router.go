@@ -26,6 +26,7 @@ type rt struct {
 
 type Router struct {
 	IgnoreIco        bool         // 是否忽略 /favicon.ico 请求。 默认忽略
+	DisableOption    bool         // 禁止全局option
 	Slash            bool         // 是否检测请求的url
 	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	NotFound         http.Handler
@@ -39,6 +40,9 @@ type Router struct {
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
+	if r.header == nil {
+		panic("please use xmux.NewRouter()")
+	}
 	r.header[k] = v
 	return r
 }
@@ -70,7 +74,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	var thisHandle http.Handler
 	// option 请求处理
-	if req.Method == http.MethodOptions {
+	if !r.DisableOption && req.Method == http.MethodOptions {
 		if r.Options == nil {
 			r.Options = options()
 		}

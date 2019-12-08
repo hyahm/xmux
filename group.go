@@ -25,13 +25,18 @@ func NewGroupRoute() *GroupRoute {
 }
 
 func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
+	if g.header == nil {
+		panic("please use xmux.NewGroupRoute()")
+	}
 	g.header[k] = v
 	return g
 }
 
 // 组里面也包括路由 后面的其实还是patter和handle
 func (g *GroupRoute) Pattern(pattern string) *Route {
-
+	if g.header == nil {
+		panic("please use xmux.NewGroupRoute()")
+	}
 	// 格式路径
 	pattern = slash(pattern)
 
@@ -51,6 +56,9 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 }
 
 func (r *Router) Group(name string) *GroupRoute {
+	if r.header == nil {
+		panic("please use xmux.NewRouter()")
+	}
 	//   /article if /article/ to /article;  if article to /article
 	name = strings.Trim(name, " ")
 	g := &GroupRoute{
@@ -64,6 +72,9 @@ func (r *Router) Group(name string) *GroupRoute {
 }
 
 func (r *Router) AddGroup(groute *GroupRoute) *Router {
+	if r.header == nil {
+		panic("please use xmux.NewRouter()")
+	}
 	for k, v := range groute.route {
 
 		if _, ok := r.tpl[k]; ok {

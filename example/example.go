@@ -42,7 +42,7 @@ func Options() http.Handler {
 }
 
 func main() {
-	router := xmux.NewRouter()
+	router := &xmux.Router{}
 	//router.Slash = true
 	router.SetHeader("mm", "moo")
 	router.Options = Options()
