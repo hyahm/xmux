@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -134,8 +133,6 @@ func testPattern(t *testing.T, test routerTest) {
 
 	test.pattern = slash(test.pattern)
 	r.Pattern(test.pattern)
-	fmt.Println(test.pattern)
-	fmt.Println(test.url)
 	patternMatched := false
 	if _, ok := r.route[test.pattern]; ok {
 		patternMatched = true
