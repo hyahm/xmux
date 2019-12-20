@@ -64,11 +64,11 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 				if ts[0] == "int" {
 					prefix += "(\\d+)"
 				} else {
-					prefix += "(\\w+)"
+					prefix += "(.*?)"
 				}
 				varlist = append(varlist, strings.Trim(ts[1], " "))
 			} else if len(ts) == 1 {
-				prefix += "(\\w+)"
+				prefix += "(.*?)"
 				varlist = append(varlist, strings.Trim(ts[0], " "))
 			} else {
 				log.Fatal("invalid uri ," + path)
