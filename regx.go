@@ -63,7 +63,7 @@ func match(path string, newpath string, varlist []string) (string, []string, boo
 			} else if len(ts) == 2 {
 				if ts[0] == "int" {
 					prefix += "(\\d+)"
-				} else if t[0] == "word" {
+				} else if ts[0] == "word" {
 					prefix += "(\\w+)"
 				} else {
 					prefix += "(.*?)"
