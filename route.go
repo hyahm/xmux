@@ -75,6 +75,14 @@ func (rt *Route) Head(handler func(http.ResponseWriter, *http.Request)) *Route {
 	return rt
 }
 
+//func (rt *Route) WebSocket(func(conn net.Conn, q chan int)) *Route {
+//	if _, ok := rt.method[http.MethodGet]; ok {
+//		log.Fatal("method Head duplicate")
+//	}
+//	rt.method[http.MethodGet] = http.HandlerFunc(websocket)
+//	return rt
+//}
+
 func (rt *Route) Options(handler func(http.ResponseWriter, *http.Request)) *Route {
 	if _, ok := rt.method[http.MethodOptions]; ok {
 		log.Fatal("method Options duplicate")
