@@ -6,7 +6,7 @@
 </head>
 <body>
 <script type="text/javascript">
-    var wsUri ="ws://localhost:7000/ws";
+    var wsUri ="ws://localhost:7000/player";
     var output;
 
     function init() {
@@ -15,7 +15,7 @@
     }
 
     function testWebSocket() {
-        websocket = new WebSocket(wsUri);
+        websocket = new WebSocket(wsUri, WebSocket.binaryType);
         websocket.onopen = function(evt) {
             onOpen(evt)
         };
@@ -40,6 +40,8 @@
     }
 
     function onMessage(evt) {
+        msg = String.fromCharCode(evt.data)
+        console.log(msg)
         writeToScreen('<span style="color: blue;">RESPONSE: '+ evt.data+'</span>');
         // websocket.close();
     }
@@ -56,6 +58,7 @@
     function writeToScreen(message) {
         var pre = document.createElement("p");
         pre.style.wordWrap = "break-word";
+
         pre.innerHTML = message;
         output.appendChild(pre);
     }
