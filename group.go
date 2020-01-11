@@ -40,13 +40,12 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 	// 格式路径
 	pattern = slash(pattern)
 
-	lv := make([]string, 0)
 	route := &Route{
 		method: make(map[string]http.Handler),
 		header: make(map[string]string),
 		args:   make([]string, 0),
 	}
-	if v, listvar, ok := match(pattern, "^", lv); ok {
+	if v, listvar := match(pattern); len(listvar) > 0 {
 		g.tpl[v] = route
 		g.tpl[v].args = append(g.tpl[v].args, listvar...)
 		return g.tpl[v]

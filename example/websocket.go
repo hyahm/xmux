@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"xmux"
+
+	"github.com/hyahm/xmux"
 )
 
 type player struct {

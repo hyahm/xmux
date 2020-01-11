@@ -32,8 +32,7 @@ func (r *Router) Pattern(pattern string) *Route {
 		header: make(map[string]string),
 		args:   make([]string, 0),
 	}
-	lv := make([]string, 0)
-	if v, listvar, ok := match(pattern, "^", lv); ok {
+	if v, listvar := match(pattern); len(listvar) > 0 {
 		r.tpl[v] = route
 		r.tpl[v].args = append(r.tpl[v].args, listvar...)
 		return r.tpl[v]

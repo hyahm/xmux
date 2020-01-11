@@ -1,95 +1,18 @@
 package xmux
 
 import (
-	"log"
 	"strings"
 )
 
-//var Var map[string]interface{}
+const (
+	PATH   = "([^/ ])"
+	WORD   = "(\\w+)"
+	INT    = "(\\d+)"
+	STRING = "(.*?)"
+	SEP    = ","
+)
 
-// match url , is true is a regx, false is fullurl
-func match(path string, newpath string, varlist []string) (string, []string, bool) {
-
-	start := strings.Index(path, "{")
-	if start == -1 {
-		return path, varlist, false
-	}
-	end := -1
-
-	sc := strings.Index(path[start:], "/")
-
-	if sc != -1 {
-		pp := path[:start+sc]
-		end = strings.LastIndex(pp, "}")
-	} else {
-		end = strings.LastIndex(path, "}")
-	}
-	//找到最后一个}
-	//strings.LastIndex()
-
-	if start == -1 {
-		//非正则的
-
-	} else if start >= 0 && end > 0 && end > start {
-
-		//正则匹配的
-		re := strings.Trim(path[start+1:end], " ")
-		if re == "" {
-			log.Fatal("invalid uri " + path)
-		} else {
-			prefix := path[:start]
-			//判断:
-			ts := strings.Split(re, ":")
-			if len(ts) == 3 {
-				//正则 匹配
-				// /asdf/{re:([a-z]{1,3})([0-9]{1,2}):ch,num}
-				if ts[0] == "re" {
-					// 检测参数是否匹配, 同时禁止匹配()
-					pfc := strings.Count(ts[1], "(")
-					sfc := strings.Count(ts[1], ")")
-					if pfc != sfc {
-						log.Fatal("can not include ( or ) ," + path)
-					}
-					//查看后面参数是否匹配
-					vl := strings.Split(ts[2], ",")
-					if len(vl) != sfc {
-						log.Fatal("variable not matched , " + path)
-					}
-					prefix += ts[1]
-					varlist = append(varlist, vl...)
-				} else {
-					log.Fatal("invalid uri ," + path)
-				}
-			} else if len(ts) == 2 {
-				if ts[0] == "int" {
-					prefix += "(\\d+)"
-				} else if ts[0] == "word" {
-					prefix += "(\\w+)"
-				} else {
-					prefix += "(.*?)"
-				}
-				varlist = append(varlist, strings.Trim(ts[1], " "))
-			} else if len(ts) == 1 {
-				prefix += "(.*?)"
-				varlist = append(varlist, strings.Trim(ts[0], " "))
-			} else {
-				log.Fatal("invalid uri ," + path)
-			}
-
-			newpath += prefix
-			if end+1 == len(path) {
-				// last url
-				newpath += "$"
-				return newpath, varlist, true
-			} else {
-				return match(path[end+1:], newpath, varlist)
-			}
-		}
-	} else {
-		log.Fatal("invalid uri ," + path)
-	}
-	return "", nil, false
-}
+var DEFALT = PATH
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
@@ -102,4 +25,153 @@ func slash(s string) string {
 		}
 	}
 	return "/" + strings.Join(n, "/")
+}
+
+func match(path string) (string, []string) {
+	// 如果是空的，直接报错
+	if strings.Trim(path, " ") == "" {
+		panic("pattern empty")
+	}
+	// 返回三个参数，  （正则）路径， 正则的参数， 是否是正则
+	// 分段
+	pl := strings.Split(path, "/")
+	pathlist := make([]string, 0)
+	varlist := make([]string, 0)
+	for _, v := range pl {
+		newpath, vl := macheOne(v)
+		pathlist = append(pathlist, newpath)
+		varlist = append(varlist, vl...)
+	}
+	var newpath string
+	// 合拼路径
+	if len(varlist) == 0 {
+		// 完全匹配
+		newpath = strings.Join(pathlist, "/")
+	} else {
+		// 正则匹配
+		newpath = "^" + strings.Join(pathlist, "/") + "$"
+	}
+
+	return newpath, varlist
+}
+
+func macheOne(path string) (string, []string) {
+	varlist := make([]string, 0)
+	// 找第一个{
+
+	start := strings.Index(path, "{")
+	if start == -1 {
+		// 找不到就是完全匹配
+		return path, varlist
+	}
+	// 保存头部可能存在的字符串
+	head := path[:start]
+	end := -1
+
+	// 找最后一个}
+	end = strings.LastIndex(path, "}")
+	if end == -1 {
+		// 找不到就是完全匹配,只是路径带了{
+		return path, varlist
+	}
+	// 过来的都是有正则规则
+	if start > end {
+		// }{ 这样的也是完全匹配
+		return path, varlist
+	}
+	// 保存尾部可能存在的字符串
+	tail := path[end+1:]
+	//   ==========  进入正则匹配区
+	// 去掉{} 和 2边的空格
+	re := strings.Trim(path[start+1:end], " ")
+	if re == "" {
+		// /{}  类似这样的会
+		panic("invalid uri " + path)
+	} else {
+		//判断: 目前只支持
+		// 没有:, {name}, {int:id}, {re:(.khjk)dfdf([a|b]):path,word}
+		// 一个:
+		// 二个 :
+		// 其他的全是错误的匹配
+		ts := strings.Split(re, ":")
+		switch len(ts) {
+
+		case 1:
+			// 没有:
+			opt := strings.Trim(ts[0], " ")
+			varlist = append(varlist, opt)
+			return head + DEFALT + tail, varlist
+		case 2:
+			// 一个:
+			// 判断类型
+			typ := strings.Trim(ts[0], " ")
+			typ = strings.ToLower(typ)
+			opt := strings.Trim(ts[1], " ")
+			varlist = append(varlist, opt)
+			switch typ {
+			case "int":
+				return head + INT + tail, varlist
+			case "word":
+				return head + WORD + tail, varlist
+			case "path":
+				return head + PATH + tail, varlist
+			case "string":
+				return head + STRING + tail, varlist
+			default:
+				// 默认使用path匹配
+				return head + DEFALT + tail, varlist
+			}
+
+		case 3:
+			// 二个:
+			// 参数必须是re， 如果不是。 默认改成re
+			typ := strings.Trim(ts[0], " ")
+			typ = strings.ToLower(typ)
+			opts := strings.Split(ts[2], SEP)
+			for _, opt := range opts {
+				opt = strings.Trim(opt, " ")
+				varlist = append(varlist, opt)
+			}
+
+			if typ != "re" {
+				// panic
+				panic("pattern not support" + path)
+			}
+			// 正则2边不能有空格
+			if len(ts[1]) != len(strings.Trim(ts[1], " ")) {
+				panic("pattern not support" + path)
+			}
+			// 正则必须与参数个数匹配
+			// 参数必须是, 分割
+			// 查找有多少对小括号
+			pc := parenthesesCount(ts[1], 0)
+			if pc != len(varlist) {
+				panic("pattern not support" + path)
+			}
+			return head + ts[1] + tail, varlist
+		default:
+			panic("pattern not support" + path)
+		}
+	}
+
+}
+
+func parenthesesCount(s string, c int) int {
+	// 计算有多少对小括号s
+	start := strings.Index(s, "(")
+	if start == -1 {
+		return c
+	}
+
+	end := strings.Index(s, ")")
+	if end == -1 {
+		return c
+	}
+	if end < start {
+		s = s[end+1:]
+		return parenthesesCount(s, c)
+	}
+	s = s[end+1:]
+	c++
+	return parenthesesCount(s, c)
 }
