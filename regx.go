@@ -138,9 +138,8 @@ func macheOne(path string) (string, []string) {
 				panic("pattern not support" + path)
 			}
 			// 正则2边不能有空格
-			if len(ts[1]) != len(strings.Trim(ts[1], " ")) {
-				panic("pattern not support" + path)
-			}
+			ts[1] = strings.Trim(ts[1], " ")
+
 			// 正则必须与参数个数匹配
 			// 参数必须是, 分割
 			// 查找有多少对小括号
