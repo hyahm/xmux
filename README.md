@@ -77,7 +77,7 @@ func main() {
 	router := xmux.NewRouter()
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
-	router.Pattern("/{string:age}").Get(Who)
+	router.Pattern("/{string:age}").Get(Who)   // 这个可以匹配任何路由
 }
 ```
 
