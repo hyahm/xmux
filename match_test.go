@@ -93,6 +93,18 @@ func TestPath(t *testing.T) {
 			url:   "/aaaa/bbb/{name}",
 			reUrl: "/aaaa/bbb/ccc.asdf.png/",
 		},
+		{
+			url:   "/aaaa/bbb/{string:name}",
+			reUrl: "/aaaa/bbb/ccc.asdf.png/",
+		},
+		{
+			url:   "/aaaa/bbb/{int:name}",
+			reUrl: "/aaaa/bbb/345345/",
+		},
+		{
+			url:   "/aaaa/bbb/{word:name}",
+			reUrl: "/aaaa/bbb/ccc/",
+		},
 	}
 	for _, test := range tests {
 		path, vl := match(test.url)
