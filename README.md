@@ -10,7 +10,7 @@
 - [x] 自动检查pattern
 - [x] 支持修复pattern
 - [x] 自定修复请求的url
-- [x] 正则匹配支持（int(\d+), word(\w+), re, string(.*?)）
+- [x] 正则匹配支持（int(\d+), word(\w+), re, string(.*?)，不写默认 path([^\/])）建议使用path
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
 - [x] 增加websocket， 可以学习，不建议使用
 
