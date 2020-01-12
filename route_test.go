@@ -208,3 +208,4 @@ func testFormat(path string, newpath string) string {
 	return ""
 
 }
+

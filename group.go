@@ -46,6 +46,9 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 		args:   make([]string, 0),
 	}
 	if v, listvar := match(pattern); len(listvar) > 0 {
+		if _, ok := g.tpl[v]; ok {
+			panic("Pattern Duplicate")
+		}
 		g.tpl[v] = route
 		g.tpl[v].args = append(g.tpl[v].args, listvar...)
 		return g.tpl[v]

@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
@@ -26,11 +25,12 @@ type rt struct {
 }
 
 type Router struct {
-	IgnoreIco        bool         // 是否忽略 /favicon.ico 请求。 默认忽略
+	IgnoreIco        bool // 是否忽略 /favicon.ico 请求。 默认忽略
+	HanleFavicon     http.Handler
 	DisableOption    bool         // 禁止全局option
 	Slash            bool         // 是否检测请求的url
 	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	NotFound         http.Handler
+	UrlNotFound      http.Handler
 	HandleNotFound   http.Handler
 	MethodNotAllowed http.Handler
 	route            map[string]*Route            // 单实例路由
@@ -38,6 +38,8 @@ type Router struct {
 	routeTable       *sync.Map                    // 路由表
 	header           map[string]string            // 全局路由头
 	tpl              map[string]*Route            // 正则路由
+	midware          map[string][]http.Handler    // 全局中间件
+	once             sync.Once
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
@@ -49,64 +51,69 @@ func (r *Router) SetHeader(k, v string) *Router {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.serveHTTP(w, req).ServeHTTP(w, req)
-	// 格式路径
-	return
 
-}
-
-func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) http.Handler {
-	key := req.URL.Path
+	r.once.Do(func() {
+		r.initHandler()
+	})
+	url := req.URL.Path
 	if r.Slash {
-		key = slash(key)
+		url = slash(url)
 	}
-
-	if r.IgnoreIco && key == "/favicon.ico" {
-		return favicon()
-	}
-
-	// 先进行路由表缓存寻找
-	if route, ok := r.routeTable.Load(key + req.Method); ok {
-		for k, v := range route.(*rt).Header {
-			w.Header().Set(k, v)
-		}
-		return route.(*rt).Handle
-	}
+	// 更新请求头
 	tmpHeader := make(map[string]string)
 
 	for k, v := range r.header {
 		tmpHeader[k] = v
 		w.Header().Set(k, v)
 	}
-	var thisHandle http.Handler
+	// tmpHeader := r.addHeader(url, w)
+
+	
+	if r.assetHandler(url, w, req) {
+		return
+	}
+	// 中间件预留
+
+	
+	// 获取handler
+	// 有没有过来
+	 r.serveHTTP(url,tmpHeader, w, req)
+	return
+
+}
+
+// 这个作为中间件测试
+func (r *Router) assetHandler(url string, w http.ResponseWriter, req *http.Request) bool {
+	if r.IgnoreIco && url == "/favicon.ico" {
+		r.HanleFavicon.ServeHTTP(w, req)
+		return true
+	}
+
+	// 先进行路由表缓存寻找
+	if route, ok := r.routeTable.Load(url + req.Method); ok {
+		route.(*rt).Handle.ServeHTTP(w, req)
+		return  true
+	}
+
 	// option 请求处理
 	if !r.DisableOption && req.Method == http.MethodOptions {
-		if r.Options == nil {
-			r.Options = options()
-		}
-		return r.Options
-
+		r.Options.ServeHTTP(w, req)
+		return true
 	}
-	// 先匹配
-	if _, ok := r.route[key]; ok {
-		// 判断是不是组成员
-		if header, gok := r.groupKey[key]; gok {
-			//是组成员的话， 3头合一
-			for k, v := range header {
-				tmpHeader[k] = v
-				w.Header().Set(k, v)
-			}
-		}
-		//然后就是本身的头
-		for k, v := range r.route[key].header {
-			tmpHeader[k] = v
-			w.Header().Set(k, v)
-		}
+	return false
+}
+
+func (r *Router) serveHTTP(url string,tmpHeader map[string]string , w http.ResponseWriter, req *http.Request) {
+	// 应该弄成中间件形式
+
+	var thisHandle http.Handler
+	// 先寻找完全匹配的
+	if _, ok := r.route[url]; ok {
 		// 是否能找到方法
-		if handle, mok := r.route[key].method[req.Method]; mok {
+		if handle, mok := r.route[url].method[req.Method]; mok {
 			thisHandle = handle
 		} else {
-			if r.route[key] != nil {
+			if r.route[url] != nil {
 				thisHandle = r.MethodNotAllowed
 			} else {
 				if r.HandleNotFound == nil {
@@ -120,91 +127,95 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) http.Handle
 		// 最后正则里面寻找路由
 		for reUrl, route := range r.tpl {
 			re := regexp.MustCompile(reUrl)
-			if re.MatchString(key) {
-				vl := re.FindStringSubmatch(key)
+			if re.MatchString(url) {
+				vl := re.FindStringSubmatch(url)
 				vm := make(map[string]string)
 				for i, v := range route.args {
 					vm[v] = vl[i+1]
 				}
-				Var[key] = vm
 				// 获取var
-				//判断是不是组路由
-
-				if header, ok := r.groupKey[reUrl]; ok {
-					for k, v := range header {
-						tmpHeader[k] = v
-						w.Header().Set(k, v)
-					}
-				}
-				//然后就是本身的头
-				for k, v := range route.header {
-					tmpHeader[k] = v
-					w.Header().Set(k, v)
-				}
+				Var[url] = vm
 
 				// 是否能找到方法
 				if handle, mok := route.method[req.Method]; mok {
 					//保存到路由表
 					thisHandle = handle
+					goto endloop
 				} else {
-					if r.route[key] != nil {
+					if r.route[url] != nil {
 						thisHandle = r.MethodNotAllowed
-					} else {
-						if r.HandleNotFound == nil {
-							thisHandle = handleNotFound()
-						} else {
-							thisHandle = r.HandleNotFound
-						}
-					}
+						goto endloop
+					} 
 				}
 			}
 
 		}
-		if thisHandle == nil {
-			if r.NotFound == nil {
-				thisHandle = notFound()
-			} else {
-				thisHandle = r.NotFound
-			}
-		}
+				// 没有匹配到
+			thisHandle = r.HandleNotFound
 
 	}
+	endloop:
+	if header, gok := r.groupKey[url]; gok {
+		//是组成员的话， 3头合一
+		for k, v := range header {
+			tmpHeader[k] = v
+			w.Header().Set(k, v)
+		}
+	}
+	//然后就是本身的头
+	if r.route[url] != nil {
+		for k, v := range r.route[url].header {
+			tmpHeader[k] = v
+			w.Header().Set(k, v)
+		}
+	}
+	
+	// 缓存handler
 
-	r.routeTable.Store(key+req.Method, &rt{
+	r.routeTable.Store(url+req.Method, &rt{
 		Handle: thisHandle,
 		Header: tmpHeader,
 	})
-	return thisHandle
+	thisHandle.ServeHTTP(w, req)
 }
 
-func matchUrlTest(path string, reUrl string) bool {
-	// 测试正则匹配路径
-	path = slash(path)
 
-	re := regexp.MustCompile(reUrl)
-	fmt.Println("path:", path)
-	vl := re.FindStringSubmatch(path)
-	fmt.Println(vl)
-	return re.MatchString(path)
+func (r *Router) initHandler() {
+	// 匹配完成后，最先执行这个， 初始化当前方法
+	if r.MethodNotAllowed == nil {
+		r.MethodNotAllowed = methodNotAllowed()
+	}
+
+	if r.HandleNotFound == nil {
+		r.HandleNotFound = handleNotFound()
+	}
+
+	if r.HanleFavicon == nil {
+		r.HanleFavicon = favicon()
+	}
+
+	if r.Options == nil {
+		r.Options = options()
+	}
+
 }
+
+
 
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco:        true,
-		Slash:            false,
-		Options:          options(),
-		NotFound:         notFound(),
-		HandleNotFound:   handleNotFound(),
-		MethodNotAllowed: methodNotAllowed(),
-		groupKey:         make(map[string]map[string]string),
-		routeTable:       &sync.Map{},
-		header:           make(map[string]string),
-		route:            make(map[string]*Route),
-		tpl:              make(map[string]*Route),
+		IgnoreIco:      true,
+		Slash:          false,
+		groupKey:       make(map[string]map[string]string),
+		routeTable:     &sync.Map{},
+		header:         make(map[string]string),
+		route:          make(map[string]*Route),
+		tpl:            make(map[string]*Route),
+		once: sync.Once{},
 	}
 }
 
-func notFound() http.Handler {
+func urlNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return

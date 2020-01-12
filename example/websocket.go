@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
 
 	"github.com/hyahm/xmux"
 )
@@ -29,17 +27,17 @@ func (p *player) ws() {
 	}
 }
 
-func main() {
-	router := xmux.NewRouter()
-	player := &player{
-		xmux.NewWebSocket(),
-	}
-	player.Handle = player.ws
-	router.SetHeader("Access-Control-Allow-Origin", "*")
-	router.Pattern("/player").WebSocket(player)
-	//router.Pattern("/ws").WebSocket(ws)
-	if err := http.ListenAndServe(":7000", router); err != nil {
-		log.Fatal(err)
-	}
+// func main() {
+// 	router := xmux.NewRouter()
+// 	player := &player{
+// 		xmux.NewWebSocket(),
+// 	}
+// 	player.Handle = player.ws
+// 	router.SetHeader("Access-Control-Allow-Origin", "*")
+// 	router.Pattern("/player").WebSocket(player)
+// 	//router.Pattern("/ws").WebSocket(ws)
+// 	if err := http.ListenAndServe(":7000", router); err != nil {
+// 		log.Fatal(err)
+// 	}
 
-}
+// }

@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"testing"
+	"regexp"
 )
 
 type matchStruct struct {
@@ -26,7 +27,7 @@ func TestMatch(t *testing.T) {
 		{
 			title:      "默认正则",
 			path:       "/{name}/bbb",
-			expect:     "^/([^/ ])/bbb$",
+			expect:     "^/([^\\/]+)/bbb$",
 			expectlist: []string{"name"},
 		},
 		{
@@ -98,6 +99,14 @@ func TestPath(t *testing.T) {
 			reUrl: "/aaaa/bbb/ccc.asdf.png/",
 		},
 		{
+			url:   "/aaaa/bbb/{path:name}",
+			reUrl: "/aaaa/bbb/ccc.asdf.png/",
+		},
+		{
+			url:   "/aaaa/bbb/{name}",
+			reUrl: "/aaaa/bbb/ccc.asdf.png/",
+		},
+		{
 			url:   "/aaaa/bbb/{int:name}",
 			reUrl: "/aaaa/bbb/345345/",
 		},
@@ -107,11 +116,20 @@ func TestPath(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		path, vl := match(test.url)
-		t.Log(vl)
+		path, _ := match(test.url)
+		t.Log(path)
 		if !matchUrlTest(test.reUrl, path) {
 			t.Fatal("not match")
 		}
 	}
 
+}
+
+func matchUrlTest(path string, reUrl string) bool {
+	// 测试正则匹配路径
+	path = slash(path)
+
+	re := regexp.MustCompile(reUrl)
+	re.FindStringSubmatch(path)
+	return re.MatchString(path)
 }
