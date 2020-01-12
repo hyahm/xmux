@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	PATH   = "([^/ ])"
+	PATH   = "([^\\/]+)"
 	WORD   = "(\\w+)"
 	INT    = "(\\d+)"
 	STRING = "(.*?)"
@@ -156,7 +156,7 @@ func macheOne(path string) (string, []string) {
 }
 
 func parenthesesCount(s string, c int) int {
-	// 计算有多少对小括号s
+	// 计算有多少对小括号
 	start := strings.Index(s, "(")
 	if start == -1 {
 		return c

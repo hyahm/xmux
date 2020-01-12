@@ -42,6 +42,12 @@ func TestMatch(t *testing.T) {
 			expectlist: []string{"name"},
 		},
 		{
+			title:      "path正则1",
+			path:       "/{re:(.?+):name}/bbb",
+			expect:     "^/(.?+)/bbb$",
+			expectlist: []string{"name"},
+		},
+		{
 			title:      "re多参数正则",
 			path:       "/{re:([a-z])444([0-9]):word,num}/bbb",
 			expect:     "^/([a-z])444([0-9])/bbb$",
@@ -74,4 +80,26 @@ func TestCount(t *testing.T) {
 	if c != 8 {
 		t.Fatal("error count")
 	}
+}
+
+type tPath struct {
+	url   string
+	reUrl string
+}
+
+func TestPath(t *testing.T) {
+	tests := []tPath{
+		{
+			url:   "/aaaa/bbb/{name}",
+			reUrl: "/aaaa/bbb/ccc.asdf.png/",
+		},
+	}
+	for _, test := range tests {
+		path, vl := match(test.url)
+		t.Log(vl)
+		if !matchUrlTest(test.reUrl, path) {
+			t.Fatal("not match")
+		}
+	}
+
 }

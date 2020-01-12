@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
@@ -48,14 +49,20 @@ func (r *Router) SetHeader(k, v string) *Router {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	key := req.URL.Path
+	r.serveHTTP(w, req).ServeHTTP(w, req)
 	// 格式路径
+	return
+
+}
+
+func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) http.Handler {
+	key := req.URL.Path
 	if r.Slash {
 		key = slash(key)
 	}
 
 	if r.IgnoreIco && key == "/favicon.ico" {
-		return
+		return favicon()
 	}
 
 	// 先进行路由表缓存寻找
@@ -63,13 +70,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		for k, v := range route.(*rt).Header {
 			w.Header().Set(k, v)
 		}
-		route.(*rt).Handle.ServeHTTP(w, req)
-		return
+		return route.(*rt).Handle
 	}
-	tmpheader := make(map[string]string)
+	tmpHeader := make(map[string]string)
 
 	for k, v := range r.header {
-		tmpheader[k] = v
+		tmpHeader[k] = v
 		w.Header().Set(k, v)
 	}
 	var thisHandle http.Handler
@@ -78,8 +84,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if r.Options == nil {
 			r.Options = options()
 		}
-		r.Options.ServeHTTP(w, req)
-		return
+		return r.Options
 
 	}
 	// 先匹配
@@ -88,17 +93,17 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if header, gok := r.groupKey[key]; gok {
 			//是组成员的话， 3头合一
 			for k, v := range header {
-				tmpheader[k] = v
+				tmpHeader[k] = v
 				w.Header().Set(k, v)
 			}
 		}
 		//然后就是本身的头
 		for k, v := range r.route[key].header {
-			tmpheader[k] = v
+			tmpHeader[k] = v
 			w.Header().Set(k, v)
 		}
 		// 是否能找到方法
-		if handle, metok := r.route[key].method[req.Method]; metok {
+		if handle, mok := r.route[key].method[req.Method]; mok {
 			thisHandle = handle
 		} else {
 			if r.route[key] != nil {
@@ -113,8 +118,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		// 最后正则里面寻找路由
-		for reurl, route := range r.tpl {
-			re := regexp.MustCompile(reurl)
+		for reUrl, route := range r.tpl {
+			re := regexp.MustCompile(reUrl)
 			if re.MatchString(key) {
 				vl := re.FindStringSubmatch(key)
 				vm := make(map[string]string)
@@ -125,20 +130,20 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				// 获取var
 				//判断是不是组路由
 
-				if header, ok := r.groupKey[reurl]; ok {
+				if header, ok := r.groupKey[reUrl]; ok {
 					for k, v := range header {
-						tmpheader[k] = v
+						tmpHeader[k] = v
 						w.Header().Set(k, v)
 					}
 				}
 				//然后就是本身的头
 				for k, v := range route.header {
-					tmpheader[k] = v
+					tmpHeader[k] = v
 					w.Header().Set(k, v)
 				}
 
 				// 是否能找到方法
-				if handle, metok := route.method[req.Method]; metok {
+				if handle, mok := route.method[req.Method]; mok {
 					//保存到路由表
 					thisHandle = handle
 				} else {
@@ -167,11 +172,20 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	r.routeTable.Store(key+req.Method, &rt{
 		Handle: thisHandle,
-		Header: tmpheader,
+		Header: tmpHeader,
 	})
-	thisHandle.ServeHTTP(w, req)
-	return
+	return thisHandle
+}
 
+func matchUrlTest(path string, reUrl string) bool {
+	// 测试正则匹配路径
+	path = slash(path)
+
+	re := regexp.MustCompile(reUrl)
+	fmt.Println("path:", path)
+	vl := re.FindStringSubmatch(path)
+	fmt.Println(vl)
+	return re.MatchString(path)
 }
 
 func NewRouter() *Router {
@@ -214,6 +228,13 @@ func handleNotFound() http.Handler {
 func methodNotAllowed() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	})
+}
+
+func favicon() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 		return
 	})
 }
