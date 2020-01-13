@@ -5,14 +5,14 @@ import (
 )
 
 const (
-	PATH   = "([^\\/]+)"
+	STRING = "([^\\/]+)"
 	WORD   = "(\\w+)"
 	INT    = "(\\d+)"
-	STRING = "(.*?)"
+	ALL    = "(.*?)"
 	SEP    = ","
 )
 
-var DEFALT = PATH
+var DEFALT = STRING
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
@@ -113,8 +113,8 @@ func macheOne(path string) (string, []string) {
 				return head + INT + tail, varlist
 			case "word":
 				return head + WORD + tail, varlist
-			case "path":
-				return head + PATH + tail, varlist
+			case "all":
+				return head + ALL + tail, varlist
 			case "string":
 				return head + STRING + tail, varlist
 			default:
