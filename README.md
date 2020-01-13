@@ -10,7 +10,7 @@
 - [x] 自动检查pattern
 - [x] 支持修复pattern
 - [x] 自定修复请求的url
-- [x] 正则匹配支持（int(\d+), word(\w+), re, string(.*?)，不写默认 path([^\/])）建议使用path
+- [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
 - [x] 增加websocket， 可以学习，不建议使用
 
@@ -77,7 +77,7 @@ func main() {
 	router := xmux.NewRouter()
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
-	router.Pattern("/{string:age}").Get(Who)   // 这个可以匹配任何路由
+	router.Pattern("/{all:age}").Get(Who)   // 这个可以匹配任何路由
 }
 ```
 
