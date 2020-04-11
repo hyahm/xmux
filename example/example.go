@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -27,8 +26,8 @@ func me(w http.ResponseWriter, r *http.Request) {
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
-	golog.Info(xmux.Var[r.URL.Path]["all"])
-	golog.Info(xmux.Var[r.URL.Path]["oid"])
+	fmt.Println(xmux.Var[r.URL.Path]["all"])
+	fmt.Println(xmux.Var[r.URL.Path]["oid"])
 	w.Write([]byte("hello world all"))
 	return
 }
