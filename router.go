@@ -28,7 +28,7 @@ type Router struct {
 	IgnoreIco        bool // 是否忽略 /favicon.ico 请求。 默认忽略
 	HanleFavicon     http.Handler
 	DisableOption    bool         // 禁止全局option
-	Slash            bool         // 是否检测请求的url
+	Slash            bool         // 是否检测请求的url， 如果是， 匹配前自动去除多余的斜杠
 	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	UrlNotFound      http.Handler
 	HandleNotFound   http.Handler
@@ -68,16 +68,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	// tmpHeader := r.addHeader(url, w)
 
-	
 	if r.assetHandler(url, w, req) {
 		return
 	}
 	// 中间件预留
 
-	
 	// 获取handler
 	// 有没有过来
-	 r.serveHTTP(url,tmpHeader, w, req)
+	r.serveHTTP(url, tmpHeader, w, req)
 	return
 
 }
@@ -92,7 +90,7 @@ func (r *Router) assetHandler(url string, w http.ResponseWriter, req *http.Reque
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable.Load(url + req.Method); ok {
 		route.(*rt).Handle.ServeHTTP(w, req)
-		return  true
+		return true
 	}
 
 	// option 请求处理
@@ -103,7 +101,7 @@ func (r *Router) assetHandler(url string, w http.ResponseWriter, req *http.Reque
 	return false
 }
 
-func (r *Router) serveHTTP(url string,tmpHeader map[string]string , w http.ResponseWriter, req *http.Request) {
+func (r *Router) serveHTTP(url string, tmpHeader map[string]string, w http.ResponseWriter, req *http.Request) {
 	// 应该弄成中间件形式
 
 	var thisHandle http.Handler
@@ -145,16 +143,16 @@ func (r *Router) serveHTTP(url string,tmpHeader map[string]string , w http.Respo
 					if r.route[url] != nil {
 						thisHandle = r.MethodNotAllowed
 						goto endloop
-					} 
+					}
 				}
 			}
 
 		}
-				// 没有匹配到
-			thisHandle = r.HandleNotFound
+		// 没有匹配到
+		thisHandle = r.HandleNotFound
 
 	}
-	endloop:
+endloop:
 	if header, gok := r.groupKey[url]; gok {
 		//是组成员的话， 3头合一
 		for k, v := range header {
@@ -169,7 +167,7 @@ func (r *Router) serveHTTP(url string,tmpHeader map[string]string , w http.Respo
 			w.Header().Set(k, v)
 		}
 	}
-	
+
 	// 缓存handler
 
 	r.routeTable.Store(url+req.Method, &rt{
@@ -178,7 +176,6 @@ func (r *Router) serveHTTP(url string,tmpHeader map[string]string , w http.Respo
 	})
 	thisHandle.ServeHTTP(w, req)
 }
-
 
 func (r *Router) initHandler() {
 	// 匹配完成后，最先执行这个， 初始化当前方法
@@ -200,18 +197,16 @@ func (r *Router) initHandler() {
 
 }
 
-
-
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco:      true,
-		Slash:          false,
-		groupKey:       make(map[string]map[string]string),
-		routeTable:     &sync.Map{},
-		header:         make(map[string]string),
-		route:          make(map[string]*Route),
-		tpl:            make(map[string]*Route),
-		once: sync.Once{},
+		IgnoreIco:  true,
+		Slash:      false,
+		groupKey:   make(map[string]map[string]string),
+		routeTable: &sync.Map{},
+		header:     make(map[string]string),
+		route:      make(map[string]*Route),
+		tpl:        make(map[string]*Route),
+		once:       sync.Once{},
 	}
 }
 
