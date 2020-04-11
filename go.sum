@@ -1,5 +1,7 @@
 9fans.net/go v0.0.0-20181112161441-237454027057 h1:OcHlKWkAMJEF1ndWLGxp5dnJQkYM/YImUOvsBoz6h5E=
 9fans.net/go v0.0.0-20181112161441-237454027057/go.mod h1:diCsxrliIURU9xsYtjCp5AbpQKqdhKmf0ujWDUSkfoY=
+github.com/hyahm/golog v0.0.0-20200319122124-04b0a58a15ff h1:IbGT9W1zsOFUtLE9d9BlQjZPOfWbC6Qf0Ax1jxlhcUY=
+github.com/hyahm/golog v0.0.0-20200319122124-04b0a58a15ff/go.mod h1:zKiO0JeV7UoTS6Gx7jZaGr+GblF6B57e04Q+/+ChEZA=
 github.com/karrick/godirwalk v1.13.4 h1:wp3Qzj/e359x2xv4q38WLjYGNpTMrmr5gQe2IfBKQx0=
 github.com/karrick/godirwalk v1.13.4/go.mod h1:H5KPZjojv4lE+QYImBI8xVtrBRgYrIVsaRPx4tDPEn4=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

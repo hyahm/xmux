@@ -72,7 +72,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// 中间件预留
-
 	// 获取handler
 	// 有没有过来
 	r.serveHTTP(url, tmpHeader, w, req)
@@ -103,7 +102,6 @@ func (r *Router) assetHandler(url string, w http.ResponseWriter, req *http.Reque
 
 func (r *Router) serveHTTP(url string, tmpHeader map[string]string, w http.ResponseWriter, req *http.Request) {
 	// 应该弄成中间件形式
-
 	var thisHandle http.Handler
 	// 先寻找完全匹配的
 	if _, ok := r.route[url]; ok {
@@ -126,6 +124,7 @@ func (r *Router) serveHTTP(url string, tmpHeader map[string]string, w http.Respo
 		for reUrl, route := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
+
 				vl := re.FindStringSubmatch(url)
 				vm := make(map[string]string)
 				for i, v := range route.args {
@@ -133,7 +132,7 @@ func (r *Router) serveHTTP(url string, tmpHeader map[string]string, w http.Respo
 				}
 				// 获取var
 				Var[url] = vm
-
+				Var[req.URL.Path] = vm
 				// 是否能找到方法
 				if handle, mok := route.method[req.Method]; mok {
 					//保存到路由表
