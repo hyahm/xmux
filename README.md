@@ -199,9 +199,9 @@ methodNotAllowed 和  handleNotFound的区别
 优先级  
 私有路由 > 组路由 > 全局路由  
 
-中间类似上面header
-优先级 
-私有路由 < 组路由 < 全局路由  
+中间类似上面header   
+不过优先级相反    
+私有路由 < 组路由 < 全局路由    
 ```
 func mid() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
