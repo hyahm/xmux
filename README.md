@@ -12,6 +12,7 @@
 - [x] 自定修复请求的url
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
+- [x] 支持中间件  
 - [x] 增加websocket， 可以学习，不建议使用
 
 V1 版功能就这些， 暂时不会增加了
