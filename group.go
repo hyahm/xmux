@@ -14,7 +14,7 @@ type GroupRoute struct {
 	name    string
 	header  map[string]string
 	tpl     map[string]*Route
-	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)
+	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)
 	pattern map[string]int
 }
 
@@ -26,7 +26,7 @@ func NewGroupRoute(name string) *GroupRoute {
 		route:   make(map[string]*Route),
 		header:  make(map[string]string),
 		tpl:     make(map[string]*Route),
-		midware: make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request), 0),
+		midware: make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0),
 		pattern: make(map[string]int),
 	}
 }
@@ -51,10 +51,10 @@ func (g *GroupRoute) SetName(name string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)) *GroupRoute {
+func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)) *GroupRoute {
 
 	if g.midware == nil {
-		g.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request), 0)
+		g.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0)
 	}
 	g.midware = append(g.midware, handle)
 	return g
