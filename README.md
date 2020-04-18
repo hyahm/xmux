@@ -58,7 +58,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 var Article *xmux.GroupRoute
 
 func init() {
-	Article = xmux.NewGroupRoute()
+	Article = xmux.NewGroupRoute("article")
 	Article.Pattern("/{int:id}").Get(hello)
 
 }
