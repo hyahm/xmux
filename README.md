@@ -1,5 +1,5 @@
 # xmux， go语言 路由(router)
-目前是基于原生net.http包的最快的路由
+目前是基于原生net.http包的最快的路由,  目前只有作者本人的项目在使用， 没有发现bug， 有什么问题欢迎反馈
 
 ### 已完成功能
 - [x] 支持路由分组
@@ -12,9 +12,9 @@
 - [x] 自定修复请求的url
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
+- [x] 支持中间件  
 - [x] 增加websocket， 可以学习，不建议使用
 
-V1 版功能就这些， 暂时不会增加了
 
 ### 添加了组的概念
 几十个路由写一个文件里面， 嗯， 还好， 但是多了呢， 眼睛是不是有点花， 并且某些名字重名了也不知道
@@ -191,14 +191,56 @@ methodNotAllowed 和  handleNotFound的区别
 
 ```
 
-### 嗯， 注意的人应该注意了，  上面有header  
+###  header 和 中间件 func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)  
 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
 私有路由： 单一路由的请求头， 属于某组的话， 带上组路由头， 全局的话带上全局的  
 优先级  
 私有路由 > 组路由 > 全局路由  
-会覆盖， 后面会补充删除的， 不提供add头， 不然又复杂了，  
+
+中间类似上面header   
+不过优先级相反    
+私有路由 < 组路由 < 全局路由    
+```go
+func mid() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Println("77777")
+		return
+	})
+}
+
+func hf(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	fmt.Println("44444444444444444444444444")
+	r.Header.Set("name", "cander")
+	return w, r
+}
+
+func hf1(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	fmt.Println("66666")
+	fmt.Println(r.Header.Get("name"))
+	return w, r
+}
+
+func TestHome(t *testing.T) {
+	router := xmux.NewRouter()
+	router.Pattern("/home/{test}").Get(home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
+	var a string
+	// client := http.Client{}
+	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+	t.Log(w.Code)
+
+	t.Log(w.Body.String())
+}
+
+```
+
 
 
 ### 获取正则匹配的参数
