@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -109,7 +110,7 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 // 组路由起的名字
 func (r *Router) AddGroup(group *GroupRoute) *Router {
 	if group.name == "" {
-		group.name = time.Now().String()
+		group.name = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	if r.header == nil {
 		r.header = make(map[string]string)
@@ -137,26 +138,5 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		r.groupname[k] = group.name
 	}
 	r.group[group.name] = group
-	// for k, v := range group.route {
-
-	// 	if _, ok := r.tpl[k]; ok {
-	// 		//路径检测
-	// 		log.Fatalf("pattern duplicate for %s", k)
-	// 	}
-	// 	r.group[k] = group.header
-	// 	r.route[k] = v
-	// }
-	// for k, v := range group.tpl {
-	// 	if _, ok := r.tpl[k]; ok {
-	// 		//路径检测
-	// 		log.Fatalf("pattern duplicate for %s", k)
-	// 	}
-	// 	r.tpl[k] = v
-	// 	r.group[k] = group.header
-	// }
-	// if r.cacheMidware == nil {
-	// 	r.cacheMidware = make(map[string]*GroupRoute)
-	// }
-	// r.cacheMidware = append(r.cacheMidware, gr)
 	return r
 }

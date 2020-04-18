@@ -43,6 +43,8 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = false
 
+	fmt.Println()
+
 	router.Pattern("/home").Get(home)
 	router.Pattern("/aaa/{name}").Get(name)
 	router.Pattern("/aaa/bbbb/{path:me}").Get(me)

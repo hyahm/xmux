@@ -199,7 +199,10 @@ methodNotAllowed 和  handleNotFound的区别
 优先级  
 私有路由 > 组路由 > 全局路由  
 
-中间类似上面header   
+中间类似上面header, 最后一个返回值是表示是否直接返回， 如果直接返回， 后面的方法将不会执行, 例如下面的方法， 执行的话， 将不会打印66666  
+```
+go test -v -run TestHome github.com/hyahm/xmux/example
+```       
 不过优先级相反    
 私有路由 < 组路由 < 全局路由    
 ```go
@@ -214,13 +217,14 @@ func mid() http.Handler {
 func hf(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request,  bool) {
 	fmt.Println("44444444444444444444444444")
 	r.Header.Set("name", "cander")
-	return w, r
+	
+	return w, r, true
 }
 
 func hf1(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, bool) {
 	fmt.Println("66666")
 	fmt.Println(r.Header.Get("name"))
-	return w, r
+	return w, r, true
 }
 
 func TestHome(t *testing.T) {
