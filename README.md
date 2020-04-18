@@ -202,7 +202,7 @@ methodNotAllowed 和  handleNotFound的区别
 中间类似上面header   
 不过优先级相反    
 私有路由 < 组路由 < 全局路由    
-```
+```go
 func mid() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
