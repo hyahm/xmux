@@ -191,14 +191,56 @@ methodNotAllowed 和  handleNotFound的区别
 
 ```
 
-### 嗯， 注意的人应该注意了，  上面有header  
+###  header 和 中间件 func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)  
 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
 私有路由： 单一路由的请求头， 属于某组的话， 带上组路由头， 全局的话带上全局的  
 优先级  
 私有路由 > 组路由 > 全局路由  
-会覆盖， 后面会补充删除的， 不提供add头， 不然又复杂了，  
+
+中间类似上面header
+优先级 
+私有路由 < 组路由 < 全局路由  
+```
+func mid() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Println("77777")
+		return
+	})
+}
+
+func hf(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	fmt.Println("44444444444444444444444444")
+	r.Header.Set("name", "cander")
+	return w, r
+}
+
+func hf1(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	fmt.Println("66666")
+	fmt.Println(r.Header.Get("name"))
+	return w, r
+}
+
+func TestHome(t *testing.T) {
+	router := xmux.NewRouter()
+	router.Pattern("/home/{test}").Get(home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
+	var a string
+	// client := http.Client{}
+	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+	t.Log(w.Code)
+
+	t.Log(w.Body.String())
+}
+
+```
+
 
 
 ### 获取正则匹配的参数
