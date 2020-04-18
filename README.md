@@ -210,21 +210,8 @@ w.Write([]byte("yes is mine"))
 return
 }
 
-```
-有没有一种坑爹的冲动， 加上这个也是为了高并发使用，引入了路由表而这么做的  
-多写个[r.URL.Path]就好了， 实在是有不得不放弃简化的理由  
+``` 
 
-### 路由表，  嗯， 就是这个东西了
-只有几个路由是看不到效果的， 成千上万个路由， 虽然也不会有那么多， 优势越大， 其实就是路由缓存  
-第一次匹配到某路由的handle后， 下次不用寻址了， 直接从路由表获取即可  
-```go
-type rt struct {
-	Handle http.Handler
-	Header map[string]string
-}
-
-routeTable     map[string]*rt   // 就是这个东西了， 保存了handle和请求头信息
-```
 
 ### 自动修复请求的url
 例如： 请求的url 是这个样子的

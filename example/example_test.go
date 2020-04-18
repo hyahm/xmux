@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,12 +10,32 @@ import (
 	"github.com/hyahm/xmux"
 )
 
+func mid() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Println("77777")
+		return
+	})
+}
+
+func hf(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	fmt.Println("44444444444444444444444444")
+	r.Header.Set("name", "cander")
+	return w, r
+}
+
+func hf1(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	fmt.Println("66666")
+	fmt.Println(r.Header.Get("name"))
+	return w, r
+}
+
 func TestHome(t *testing.T) {
 	router := xmux.NewRouter()
-	router.Pattern("/home").Get(home)
+	router.Pattern("/home/{test}").Get(home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
 	var a string
 	// client := http.Client{}
-	r, err := http.NewRequest("GET", "/home", strings.NewReader(a))
+	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
 	if err != nil {
 		t.Fatal(err)
 	}

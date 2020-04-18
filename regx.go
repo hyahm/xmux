@@ -17,6 +17,7 @@ var DEFALT = STRING
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
 func slash(s string) string {
+
 	sl := strings.Split(s, "/")
 	n := make([]string, 0, len(sl))
 	for _, v := range sl {
@@ -27,6 +28,7 @@ func slash(s string) string {
 	return "/" + strings.Join(n, "/")
 }
 
+// 返回正则表达式 和 参数
 func match(path string) (string, []string) {
 	// 如果是空的，直接报错
 	if strings.Trim(path, " ") == "" {

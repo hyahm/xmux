@@ -6,41 +6,52 @@ import (
 	"strings"
 )
 
+// 初始化临时使用， 最后会合并到 router
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	method map[string]http.Handler
-	header map[string]string
-	args   []string // 保存正则的变量名
+	method  map[string]http.Handler
+	header  map[string]string
+	args    []string // 保存正则的变量名
+	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)
 }
 
 // 组里面也包括路由 后面的其实还是patter和handle
 func (r *Router) Pattern(pattern string) *Route {
-	if r.header == nil {
-		panic("please use xmux.NewRouter()")
+	// 格式化路径
+	if r.route == nil {
+		r.route = make(map[string]*Route)
 	}
-	// 格式路径
+	if r.pattern == nil {
+		r.pattern = make(map[string]int)
+	}
+	if r.tplpattern == nil {
+		r.tplpattern = make(map[string]int)
+	}
 	pattern = slash(pattern)
-	if _, ok := r.route[pattern]; ok {
-		log.Fatalf("pattern duplicate for %s", pattern)
+	if _, ok := r.pattern[pattern]; ok {
+		log.Fatalf("Pattern Duplicate for %s", pattern)
 	}
-	pattern = strings.Trim(pattern, " ")
-	if pattern == "" || pattern[0:1] != "/" {
-		log.Fatalf("pattern error for %s", pattern)
+
+	if pattern == "" || pattern[0:1] != "/" || strings.ContainsAny(pattern, " \t\n") {
+		log.Fatalf("Pattern Error for %s", pattern)
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),
 		header: make(map[string]string),
 		args:   make([]string, 0),
 	}
+	// 增加pattern 判断
+
 	if v, listvar := match(pattern); len(listvar) > 0 {
-		if _, ok := r.tpl[v]; ok {
-			panic("Pattern Duplicate: " + pattern)
+		if _, ok := r.pattern[v]; ok {
+			log.Fatalf("Pattern Duplicate for %s", v)
 		}
 		r.tpl[v] = route
+		r.tplpattern[v] = 1
 		r.tpl[v].args = append(r.tpl[v].args, listvar...)
 		return r.tpl[v]
 	}
-
+	r.pattern[pattern] = 0
 	r.route[pattern] = route
 	return r.route[pattern]
 }
@@ -126,6 +137,17 @@ func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
 }
 
 func (rt *Route) SetHeader(k, v string) *Route {
+	if rt.header == nil {
+		rt.header = make(map[string]string)
+	}
 	rt.header[k] = v
+	return rt
+}
+
+func (rt *Route) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)) *Route {
+	if rt.midware == nil {
+		rt.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request), 0)
+	}
+	rt.midware = append(rt.midware, handle)
 	return rt
 }

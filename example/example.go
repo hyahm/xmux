@@ -9,6 +9,7 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(xmux.Var[r.URL.Path]["test"])
 	w.Write([]byte("hello world home"))
 	return
 }
@@ -32,11 +33,16 @@ func all(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func login(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("login mw")
+	w.Write([]byte("hello world all"))
+	return
+}
+
 func main() {
 	router := xmux.NewRouter()
-	router.Slash = true
 	router.IgnoreIco = false
-	fmt.Println(router.Slash)
+
 	router.Pattern("/home").Get(home)
 	router.Pattern("/aaa/{name}").Get(name)
 	router.Pattern("/aaa/bbbb/{path:me}").Get(me)

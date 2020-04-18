@@ -4,96 +4,159 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
+// 临时的， 最后会合并到route
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
-	route  map[string]*Route
-	name   string // 组名
-	header map[string]string
-	tpl    map[string]*Route
+	route   map[string]*Route
+	name    string
+	header  map[string]string
+	tpl     map[string]*Route
+	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)
+	pattern map[string]int
 }
 
 var reUrl map[string]*reroute
 
-func NewGroupRoute() *GroupRoute {
+func NewGroupRoute(name string) *GroupRoute {
 	return &GroupRoute{
-		route:  make(map[string]*Route),
-		header: make(map[string]string),
-		tpl:    make(map[string]*Route),
+		name:    name,
+		route:   make(map[string]*Route),
+		header:  make(map[string]string),
+		tpl:     make(map[string]*Route),
+		midware: make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request), 0),
+		pattern: make(map[string]int),
 	}
 }
 
 func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
+
 	if g.header == nil {
-		panic("please use xmux.NewGroupRoute()")
+		g.header = make(map[string]string)
 	}
 	g.header[k] = v
 	return g
 }
 
+func (g *GroupRoute) SetName(name string) *GroupRoute {
+	if g.name == "" {
+		g.name = time.Now().String()
+	}
+	if name != "" {
+		g.name = name
+	}
+
+	return g
+}
+
+func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)) *GroupRoute {
+
+	if g.midware == nil {
+		g.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request), 0)
+	}
+	g.midware = append(g.midware, handle)
+	return g
+}
+
 // 组里面也包括路由 后面的其实还是patter和handle
 func (g *GroupRoute) Pattern(pattern string) *Route {
-	if g.header == nil {
-		panic("please use xmux.NewGroupRoute()")
+	if g.name == "" {
+		g.name = time.Now().String()
+	}
+	if g.route == nil {
+		g.route = make(map[string]*Route)
+	}
+	if g.tpl == nil {
+		g.tpl = make(map[string]*Route)
+	}
+	if g.pattern == nil {
+		g.pattern = make(map[string]int)
+	}
+	if g.pattern == nil {
+		g.pattern = make(map[string]int)
 	}
 	// 格式路径
 	pattern = slash(pattern)
 
+	if _, ok := g.pattern[pattern]; ok {
+		log.Fatalf("Pattern Duplicate for %s", pattern)
+	}
+
+	if pattern == "" || pattern[0:1] != "/" || strings.ContainsAny(pattern, " \t\n") {
+		log.Fatalf("Pattern Error for %s", pattern)
+	}
 	route := &Route{
 		method: make(map[string]http.Handler),
 		header: make(map[string]string),
 		args:   make([]string, 0),
 	}
 	if v, listvar := match(pattern); len(listvar) > 0 {
-		if _, ok := g.tpl[v]; ok {
-			panic("Pattern Duplicate")
+		if _, ok := g.pattern[v]; ok {
+			log.Fatalf("Pattern Duplicate for %s", v)
 		}
 		g.tpl[v] = route
 		g.tpl[v].args = append(g.tpl[v].args, listvar...)
+		g.pattern[v] = 3
 		return g.tpl[v]
 	}
+	g.pattern[pattern] = 2
 	g.route[pattern] = route
 	return g.route[pattern]
 }
 
-func (r *Router) Group(name string) *GroupRoute {
+// 组路由起的名字
+func (r *Router) AddGroup(group *GroupRoute) *Router {
+	if group.name == "" {
+		group.name = time.Now().String()
+	}
 	if r.header == nil {
-		panic("please use xmux.NewRouter()")
+		r.header = make(map[string]string)
 	}
-	//   /article if /article/ to /article;  if article to /article
-	name = strings.Trim(name, " ")
-	g := &GroupRoute{
-		name:   name,
-		route:  make(map[string]*Route),
-		header: make(map[string]string),
+	if r.pattern == nil {
+		r.pattern = make(map[string]int)
+	}
+	if r.tplpattern == nil {
+		r.tplpattern = make(map[string]int)
+	}
+	if r.groupname == nil {
+		r.groupname = make(map[string]string)
 	}
 
-	r.groupKey[name] = g.header
-	return g
-}
-
-func (r *Router) AddGroup(groute *GroupRoute) *Router {
-	if r.header == nil {
-		panic("please use xmux.NewRouter()")
-	}
-	for k, v := range groute.route {
-
-		if _, ok := r.tpl[k]; ok {
-			//路径检测
-			log.Fatalf("pattern duplicate for %s", k)
+	// 计算pattern 是否有重复的
+	for k, v := range group.pattern {
+		if _, ok := r.pattern[k]; ok {
+			log.Fatalf("Pattern Duplicate for %s", k)
 		}
-		r.groupKey[k] = groute.header
-		r.route[k] = v
-	}
-	for k, v := range groute.tpl {
-		if _, ok := r.tpl[k]; ok {
-			//路径检测
-			log.Fatalf("pattern duplicate for %s", k)
+		if v == 2 {
+			r.pattern[k] = v
+		} else {
+			r.tplpattern[k] = v
 		}
-		r.tpl[k] = v
-		r.groupKey[k] = groute.header
+		r.groupname[k] = group.name
 	}
+	r.group[group.name] = group
+	// for k, v := range group.route {
 
+	// 	if _, ok := r.tpl[k]; ok {
+	// 		//路径检测
+	// 		log.Fatalf("pattern duplicate for %s", k)
+	// 	}
+	// 	r.group[k] = group.header
+	// 	r.route[k] = v
+	// }
+	// for k, v := range group.tpl {
+	// 	if _, ok := r.tpl[k]; ok {
+	// 		//路径检测
+	// 		log.Fatalf("pattern duplicate for %s", k)
+	// 	}
+	// 	r.tpl[k] = v
+	// 	r.group[k] = group.header
+	// }
+	// if r.cacheMidware == nil {
+	// 	r.cacheMidware = make(map[string]*GroupRoute)
+	// }
+	// r.cacheMidware = append(r.cacheMidware, gr)
 	return r
 }
