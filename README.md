@@ -7,9 +7,6 @@
 - [x] 支持自定义method， 多method
 - [x] 支持正则匹配和参数获取
 - [x] 完全匹配优先于正则匹配
-- [x] 自动检查pattern
-- [x] 支持修复pattern
-- [x] 自定修复请求的url
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
 - [x] 支持中间件  
