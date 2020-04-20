@@ -302,7 +302,7 @@ endloop:
 
 	// 缓存handler
 
-	if r.Slash {
+	if r.Slash && req.URL.Path != url {
 		r.routeTable.Store(req.URL.Path+req.Method, &rt{
 			Handle:  thisHandle,
 			Header:  tmpHeader,
