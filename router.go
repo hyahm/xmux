@@ -302,19 +302,20 @@ endloop:
 
 	// 缓存handler
 
-	if r.Slash {
-		r.routeTable.Store(url+req.Method, &rt{
-			Handle:  thisHandle,
-			Header:  tmpHeader,
-			Midware: tmpMidware,
-		})
-	} else {
+	if !r.Slash {
 		r.routeTable.Store(req.URL.Path+req.Method, &rt{
 			Handle:  thisHandle,
 			Header:  tmpHeader,
 			Midware: tmpMidware,
 		})
+
 	}
+
+	r.routeTable.Store(url+req.Method, &rt{
+		Handle:  thisHandle,
+		Header:  tmpHeader,
+		Midware: tmpMidware,
+	})
 
 	thisHandle.ServeHTTP(w, req)
 }
