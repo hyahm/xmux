@@ -293,9 +293,9 @@ canderdeAir:xmux cander$ go test -bench=. -benchmem
 goos: darwin
 goarch: amd64
 pkg: xmux
-BenchmarkMux-4                          22398705                53.5 ns/op             0 B/op          0 allocs/op
-BenchmarkMuxAlternativeInRegexp-4       11393886               106 ns/op               0 B/op          0 allocs/op
-BenchmarkManyPathVariables-4            10317334               110 ns/op               0 B/op          0 allocs/op
+BenchmarkMux-6                           2913423               397 ns/op             128 B/op          4 allocs/op
+BenchmarkMuxAlternativeInRegexp-6        1489166               799 ns/op             224 B/op          8 allocs/op
+BenchmarkManyPathVariables-6              802186              1404 ns/op             841 B/op         10 allocs/op
 PASS
 ok      xmux    5.674s
 ```
