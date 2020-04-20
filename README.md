@@ -1,5 +1,5 @@
 # xmux， go语言 路由(router)
-基于原生net.http包的路由,  目前只有作者本人的项目在使用， 没有发现bug， 有什么问题欢迎反馈
+应该是基于原生net.http包唯一一个带缓存， 使用简单的路由,  目前只有作者本人的项目在使用， 没有发现bug， 有什么问题欢迎反馈
 
 ### 已完成功能
 - [x] 支持路由分组
@@ -7,9 +7,6 @@
 - [x] 支持自定义method， 多method
 - [x] 支持正则匹配和参数获取
 - [x] 完全匹配优先于正则匹配
-- [x] 自动检查pattern
-- [x] 支持修复pattern
-- [x] 自定修复请求的url
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
 - [x] 支持中间件  
@@ -293,9 +290,9 @@ canderdeAir:xmux cander$ go test -bench=. -benchmem
 goos: darwin
 goarch: amd64
 pkg: xmux
-BenchmarkMux-4                          22398705                53.5 ns/op             0 B/op          0 allocs/op
-BenchmarkMuxAlternativeInRegexp-4       11393886               106 ns/op               0 B/op          0 allocs/op
-BenchmarkManyPathVariables-4            10317334               110 ns/op               0 B/op          0 allocs/op
+BenchmarkMux-6                           2913423               397 ns/op             128 B/op          4 allocs/op
+BenchmarkMuxAlternativeInRegexp-6        1489166               799 ns/op             224 B/op          8 allocs/op
+BenchmarkManyPathVariables-6              802186              1404 ns/op             841 B/op         10 allocs/op
 PASS
 ok      xmux    5.674s
 ```
