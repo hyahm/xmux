@@ -1,5 +1,5 @@
 # xmux， go语言 路由(router)
-目前是基于原生net.http包的最快的路由,  目前只有作者本人的项目在使用， 没有发现bug， 有什么问题欢迎反馈
+基于原生net.http包的路由,  目前只有作者本人的项目在使用， 没有发现bug， 有什么问题欢迎反馈
 
 ### 已完成功能
 - [x] 支持路由分组
@@ -58,7 +58,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 var Article *xmux.GroupRoute
 
 func init() {
-	Article = xmux.NewGroupRoute()
+	Article = xmux.NewGroupRoute("article")
 	Article.Pattern("/{int:id}").Get(hello)
 
 }
@@ -299,21 +299,6 @@ BenchmarkManyPathVariables-4            10317334               110 ns/op        
 PASS
 ok      xmux    5.674s
 ```
-mux 框架的, 他的框架更新了， 注释掉空函数  
-```go
-canderdeMacBook-Air:mux cander$ go test -bench=.
-goos: darwin
-goarch: amd64
-pkg: mux
-BenchmarkMux-4                            689672              1835 ns/op
-BenchmarkMuxAlternativeInRegexp-4         461038              2579 ns/op
-BenchmarkManyPathVariables-4              453232              2604 ns/op
-PASS
-ok      mux     7.402s
-canderdeMacBook-Air:mux cander$ 
-
-```
-嗯， 不比不知道， 一比吓一跳，20倍以上的速度， 内存分配有点假 
 
 
 ### exmaple下面的例子
