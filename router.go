@@ -91,21 +91,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		url = slash(req.URL.Path)
 	}
 
-	// 中间件预留
-	// 更新请求头
-	// tmpHeader := make(map[string]string)
-
-	// for k, v := range r.header {
-	// 	tmpHeader[k] = v
-	// 	w.Header().Set(k, v)
-	// }
-
-	// tmpMidware := make([]http.Handler, 0)
-	// // tmpHeader := r.addHeader(url, w)
-	// for _, v := range r.midware {
-	// 	tmpMidware = append(tmpMidware, v)
-	// }
-
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和中间件
 	if r.IgnoreIco && url == "/favicon.ico" {
 		r.HanleFavicon.ServeHTTP(w, req)
@@ -129,9 +114,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			v(w, req)
 		}
 		route.(*rt).Handle.ServeHTTP(w, req)
+
 	} else {
 		// 获取handler
-
+		// fmt.Println("no cached")
 		r.serveHTTP(url, w, req)
 	}
 }
@@ -315,11 +301,20 @@ endloop:
 	}
 
 	// 缓存handler
-	r.routeTable.Store(matchurl+req.Method, &rt{
-		Handle:  thisHandle,
-		Header:  tmpHeader,
-		Midware: tmpMidware,
-	})
+
+	if r.Slash {
+		r.routeTable.Store(url+req.Method, &rt{
+			Handle:  thisHandle,
+			Header:  tmpHeader,
+			Midware: tmpMidware,
+		})
+	} else {
+		r.routeTable.Store(req.URL.Path+req.Method, &rt{
+			Handle:  thisHandle,
+			Header:  tmpHeader,
+			Midware: tmpMidware,
+		})
+	}
 
 	thisHandle.ServeHTTP(w, req)
 }

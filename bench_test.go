@@ -10,7 +10,6 @@ func BenchmarkMux(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
 	router.Pattern("/v1/{v1}").Get(handler)
-
 	request, _ := http.NewRequest("GET", "/v1/anything", nil)
 	for i := 0; i < b.N; i++ {
 		router.ServeHTTP(nil, request)
