@@ -33,10 +33,18 @@ func all(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	w.Write([]byte("hello world all"))
-	return
+	fmt.Println(r.Header.Get("bbb"))
+	return false
+}
+
+func filter(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("login mw")
+	r.Header.Set("bbb", "ccc")
+	w.Write([]byte("hello world all"))
+	return false
 }
 
 func main() {
@@ -46,7 +54,7 @@ func main() {
 	fmt.Println()
 
 	router.Pattern("/home").Get(home)
-	router.Pattern("/aaa/{name}").Get(name)
+	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
 	router.Pattern("/aaa/bbbb/{path:me}").Get(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
 	if err := http.ListenAndServe(":9000", router); err != nil {
