@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
@@ -192,9 +193,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						}
 						// 获取var
 						if r.Slash {
-							Var[url] = vm
-						} else {
 							Var[req.URL.Path] = vm
+						} else {
+							Var[url] = vm
 						}
 						tp = 1
 						thisHandle = handle
@@ -219,9 +220,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						}
 						// 获取var
 						if r.Slash {
-							Var[url] = vm
-						} else {
 							Var[req.URL.Path] = vm
+						} else {
+							Var[url] = vm
 						}
 						tp = 3
 						thisHandle = handle
@@ -313,6 +314,7 @@ endloop:
 		cacheurl = req.URL.Path
 
 	}
+	fmt.Println("cacheurl: ", cacheurl)
 	r.routeTable.Store(cacheurl+req.Method, thisRouter)
 
 	// 执行 中间件
