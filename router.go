@@ -24,7 +24,7 @@ type reroute struct {
 type rt struct {
 	Handle  http.Handler
 	Header  map[string]string
-	Midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)
+	Midware []func(http.ResponseWriter, *http.Request) bool
 }
 
 type Router struct {
@@ -48,8 +48,8 @@ type Router struct {
 
 	groupname map[string]string // 根据 pattern 寻找 组
 	// cacheMidware     map[string][]http.Handler    // 组路由, 存的组路由的请求头
-	header  map[string]string                                                                     // 全局路由头
-	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool) // 全局中间件
+	header  map[string]string                               // 全局路由头
+	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 
 	routeTable *sync.Map // 路由表
 
@@ -64,9 +64,9 @@ func (r *Router) SetHeader(k, v string) *Router {
 	return r
 }
 
-func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)) *Router {
+func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool) *Router {
 	if r.midware == nil {
-		r.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0)
+		r.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
 	r.midware = append(r.midware, handle)
 	return r
@@ -244,7 +244,7 @@ endloop:
 		tmpHeader[k] = v
 	}
 
-	tmpMidware := make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0)
+	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
 	for _, v := range r.midware {
 		tmpMidware = append(tmpMidware, v)
@@ -294,7 +294,7 @@ endloop:
 	// 执行 中间件
 	for _, v := range tmpMidware {
 		var ok bool
-		w, req, ok = v(w, req)
+		ok = v(w, req)
 		if ok {
 			return
 		}

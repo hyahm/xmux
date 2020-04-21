@@ -12,7 +12,7 @@ type Route struct {
 	method  map[string]http.Handler
 	header  map[string]string
 	args    []string // 保存正则的变量名
-	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)
+	midware []func(http.ResponseWriter, *http.Request) bool
 }
 
 // 组里面也包括路由 后面的其实还是patter和handle
@@ -144,9 +144,9 @@ func (rt *Route) SetHeader(k, v string) *Route {
 	return rt
 }
 
-func (rt *Route) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)) *Route {
+func (rt *Route) AddMidware(handle func(http.ResponseWriter, *http.Request) bool) *Route {
 	if rt.midware == nil {
-		rt.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0)
+		rt.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
 	rt.midware = append(rt.midware, handle)
 	return rt

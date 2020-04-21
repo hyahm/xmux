@@ -188,7 +188,7 @@ methodNotAllowed 和  handleNotFound的区别
 
 ```
 
-###  header 和 中间件 func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, bool)  
+###  header 和 中间件 func(w http.ResponseWriter, r *http.Request)  bool  
 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
@@ -211,17 +211,17 @@ func mid() http.Handler {
 	})
 }
 
-func hf(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request,  bool) {
+func hf(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("44444444444444444444444444")
 	r.Header.Set("name", "cander")
 	
-	return w, r, true
+	return true
 }
 
-func hf1(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, bool) {
+func hf1(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("66666")
 	fmt.Println(r.Header.Get("name"))
-	return w, r, true
+	return true
 }
 
 func TestHome(t *testing.T) {
