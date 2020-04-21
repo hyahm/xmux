@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 var Var map[string]map[string]string
@@ -22,6 +24,7 @@ type reroute struct {
 }
 
 type rt struct {
+	ctx     context.Context
 	Handle  http.Handler
 	Header  map[string]string
 	Midware []func(http.ResponseWriter, *http.Request) bool
@@ -109,9 +112,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		for k, v := range route.(*rt).Header {
 			w.Header().Set(k, v)
 		}
+		defer delete(Ctx, url)
 		// 请求中间件
+		var ok bool
 		for _, v := range route.(*rt).Midware {
-			v(w, req)
+			ok = v(w, req)
+			if ok {
+				return
+			}
 		}
 		route.(*rt).Handle.ServeHTTP(w, req)
 
@@ -291,31 +299,33 @@ endloop:
 
 	default:
 	}
+
+	// 缓存handler
+	thisRouter := &rt{
+		ctx:     context.Background(),
+		Handle:  thisHandle,
+		Header:  tmpHeader,
+		Midware: tmpMidware,
+	}
+
+	cacheurl := url
+	if r.Slash && req.URL.Path != url {
+		cacheurl = req.URL.Path
+
+	}
+	r.routeTable.Store(cacheurl+req.Method, thisRouter)
+
 	// 执行 中间件
+	defer delete(Ctx, cacheurl)
+	var ok bool
+
 	for _, v := range tmpMidware {
-		var ok bool
+
 		ok = v(w, req)
 		if ok {
 			return
 		}
 	}
-
-	// 缓存handler
-
-	if r.Slash && req.URL.Path != url {
-		r.routeTable.Store(req.URL.Path+req.Method, &rt{
-			Handle:  thisHandle,
-			Header:  tmpHeader,
-			Midware: tmpMidware,
-		})
-
-	}
-
-	r.routeTable.Store(url+req.Method, &rt{
-		Handle:  thisHandle,
-		Header:  tmpHeader,
-		Midware: tmpMidware,
-	})
 
 	thisHandle.ServeHTTP(w, req)
 }

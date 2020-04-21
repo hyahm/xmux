@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,17 +18,17 @@ func mid() http.Handler {
 	})
 }
 
-func hf(w http.ResponseWriter, r *http.Request) (context.Context, bool) {
+func hf(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("44444444444444444444444444")
 	r.Header.Set("name", "cander")
 	w.Write([]byte("return"))
-	return nil, true
+	return true
 }
 
-func hf1(w http.ResponseWriter, r *http.Request) (context.Context, bool) {
+func hf1(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("66666")
 	fmt.Println(r.Header.Get("name"))
-	return nil, true
+	return true
 }
 
 func TestHome(t *testing.T) {
