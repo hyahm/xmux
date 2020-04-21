@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,12 +17,14 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func name(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["name"])
+	fmt.Println(xmux.Ctx[r.URL.Path].Value("conf"))
 	w.Write([]byte("hello world name"))
 	return
 }
 
 func me(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["me"])
+	fmt.Println(xmux.Ctx[r.URL.Path].Value("conf"))
 	w.Write([]byte("hello world me"))
 	return
 }
@@ -35,7 +38,7 @@ func all(w http.ResponseWriter, r *http.Request) {
 
 func login(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
-	w.Write([]byte("hello world all"))
+
 	fmt.Println(r.Header.Get("bbb"))
 	return false
 }
@@ -43,7 +46,8 @@ func login(w http.ResponseWriter, r *http.Request) bool {
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	r.Header.Set("bbb", "ccc")
-	w.Write([]byte("hello world all"))
+
+	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
 	return false
 }
 
