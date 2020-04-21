@@ -10,6 +10,7 @@
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
 - [x] 支持中间件  
+- [x] 增加全局上下文， 方便中间件传递值
 - [x] 增加websocket， 可以学习，不建议使用
 
 
@@ -242,6 +243,24 @@ func TestHome(t *testing.T) {
 
 ```
 
+### 全局 context.Context
+```go
+func filter(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("login mw")
+	r.Header.Set("bbb", "ccc")
+
+	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")   # 这里的Ctx的key 类似 Var, key 统一为r.URL.Path 
+	return false
+}
+
+func name(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(xmux.Var[r.URL.Path]["name"])
+	fmt.Println(xmux.Ctx[r.URL.Path].Value("conf"))
+	w.Write([]byte("hello world name"))
+	return
+}
+router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
+```
 
 
 ### 获取正则匹配的参数
