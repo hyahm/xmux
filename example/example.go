@@ -55,7 +55,7 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = false
 
-	fmt.Println()
+	fmt.Println(router.Slash)
 
 	router.Pattern("/home").Get(home)
 	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
