@@ -17,14 +17,12 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func name(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["name"])
-	fmt.Println(xmux.Ctx[r.URL.Path].Value("conf"))
 	w.Write([]byte("hello world name"))
 	return
 }
 
 func me(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["me"])
-	fmt.Println(xmux.Ctx[r.URL.Path].Value("conf"))
 	w.Write([]byte("hello world me"))
 	return
 }
@@ -46,21 +44,35 @@ func login(w http.ResponseWriter, r *http.Request) bool {
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	r.Header.Set("bbb", "ccc")
-
 	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
 	return false
 }
 
+type aaa struct {
+	Age int
+}
+
+type bbb struct {
+	Name string
+}
+
+type Home struct {
+	Addr   string `json:"addr" type:"string" need:"是" default:"深圳" information:"家庭住址"`
+	People int    `json:"people" type:"int" need:"是" default:"1" information:"有多少个人"`
+}
+
 func main() {
+
 	router := xmux.NewRouter()
 	router.IgnoreIco = false
 
 	fmt.Println(router.Slash)
 
-	router.Pattern("/home").Get(home)
+	router.Pattern("/home").Get(home).Title("作者是一个测试").Describe("这是home接口的测试").ReqHeader(map[string]string{"content-type": "application/json"}).ReqStruct(&Home{})
 	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
 	router.Pattern("/aaa/bbbb/{path:me}").Get(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
+	router.ShowApi("/doc")
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)
 	}

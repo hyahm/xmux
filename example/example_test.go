@@ -10,13 +10,11 @@ import (
 	"github.com/hyahm/xmux"
 )
 
-func mid() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Println("77777")
-		return
-	})
-}
+// func home(w http.ResponseWriter, r *http.Request) {
+// 	w.WriteHeader(http.StatusOK)
+// 	fmt.Println("77777")
+// 	return
+// }
 
 func hf(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("44444444444444444444444444")
