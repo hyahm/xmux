@@ -229,7 +229,7 @@ func hf1(w http.ResponseWriter, r *http.Request)  bool {
 
 func TestHome(t *testing.T) {
 	router := xmux.NewRouter()
-	router.Pattern("/home/{test}").Get(home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
+	router.Pattern("/home/{test}").Get(home).AddMidware(hf).AddHeader("name", "cander").AddMidware(hf1)
 	var a string
 	// client := http.Client{}
 	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
