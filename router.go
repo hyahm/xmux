@@ -201,6 +201,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.HanleFavicon.ServeHTTP(w, req)
 		return
 	}
+	// option 请求处理
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		for k, v := range r.header {
+			w.Header().Set(k, v)
+		}
+		r.Options.ServeHTTP(w, req)
+		return
+	}
 
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable.Load(url + req.Method); ok {
@@ -358,11 +366,6 @@ endloop:
 		w.Header().Set(k, v)
 	}
 
-	// option 请求处理
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		r.Options.ServeHTTP(w, req)
-		return
-	}
 	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
 	for _, v := range r.midware {
