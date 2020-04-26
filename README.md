@@ -33,7 +33,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func Article() *xmux.GroupRoute {
-	article := xmux.NewGroupRoute()
+	article := xmux.NewGroupRoute("article")
 	article.Pattern("/{int:id}").Get(hello)
 	return article
 }
