@@ -372,21 +372,53 @@ endloop:
 	switch tp {
 	case 0, 2:
 		if tp == 2 {
-			group := r.group[r.groupname[matchurl]].route[matchurl]
-			for _, v := range group.midware {
+
+			group, ok := r.group[r.groupname[matchurl]].route[matchurl]
+			if ok {
+				for _, v := range group.midware {
+					tmpMidware = append(tmpMidware, v)
+				}
+				for k, v := range group.header {
+					tmpHeader[k] = v
+					w.Header().Add(k, v)
+				}
+				// 删除多余的header
+				for _, v := range group.delheader {
+					delete(tmpHeader, v)
+					w.Header().Del(v)
+				}
+				// 删除多余的中间件
+				for _, v := range group.delmidware {
+					for i, tmd := range tmpMidware {
+						if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+							tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+							tmp = append(tmp, tmpMidware[0:i]...)
+							tmp = append(tmp, tmpMidware[i+1:]...)
+							tmpMidware = tmp
+							break
+						}
+					}
+
+				}
+			}
+
+		}
+
+		rt, ok := r.route[matchurl]
+		if ok {
+			for _, v := range rt.midware {
 				tmpMidware = append(tmpMidware, v)
 			}
-			for k, v := range group.header {
+			for k, v := range rt.header {
 				tmpHeader[k] = v
 				w.Header().Add(k, v)
 			}
-			// 删除多余的header
-			for _, v := range group.delheader {
+			for _, v := range rt.delheader {
 				delete(tmpHeader, v)
 				w.Header().Del(v)
 			}
 			// 删除多余的中间件
-			for _, v := range group.delmidware {
+			for _, v := range rt.delmidware {
 				for i, tmd := range tmpMidware {
 					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
 						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
@@ -398,52 +430,58 @@ endloop:
 				}
 
 			}
-		}
-		for _, v := range r.route[matchurl].midware {
-			tmpMidware = append(tmpMidware, v)
-		}
-		for k, v := range r.route[matchurl].header {
-			tmpHeader[k] = v
-			w.Header().Add(k, v)
-		}
-		for _, v := range r.route[matchurl].delheader {
-			delete(tmpHeader, v)
-			w.Header().Del(v)
-		}
-		// 删除多余的中间件
-		for _, v := range r.route[matchurl].delmidware {
-			for i, tmd := range tmpMidware {
-				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-					tmp = append(tmp, tmpMidware[0:i]...)
-					tmp = append(tmp, tmpMidware[i+1:]...)
-					tmpMidware = tmp
-					break
-				}
-			}
-
 		}
 
 	case 1, 3:
 		if tp == 3 {
 
-			group := r.group[r.groupname[matchurl]].tpl[matchurl]
-			for _, v := range group.midware {
+			group, ok := r.group[r.groupname[matchurl]].route[matchurl]
+			if ok {
+				for _, v := range group.midware {
+					tmpMidware = append(tmpMidware, v)
+				}
+				for k, v := range group.header {
+					tmpHeader[k] = v
+					w.Header().Add(k, v)
+				}
+				// 删除多余的header
+				for _, v := range group.delheader {
+					delete(tmpHeader, v)
+					w.Header().Del(v)
+				}
+				// 删除多余的中间件
+				for _, v := range group.delmidware {
+					for i, tmd := range tmpMidware {
+
+						if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+							tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+							tmp = append(tmp, tmpMidware[0:i]...)
+							tmp = append(tmp, tmpMidware[i+1:]...)
+							tmpMidware = tmp
+							break
+						}
+					}
+
+				}
+			}
+
+		}
+		rt, ok := r.tpl[matchurl]
+		if ok {
+			for _, v := range rt.midware {
 				tmpMidware = append(tmpMidware, v)
 			}
-			for k, v := range group.header {
+			for k, v := range rt.header {
 				tmpHeader[k] = v
 				w.Header().Add(k, v)
 			}
-			// 删除多余的header
-			for _, v := range group.delheader {
+			for _, v := range rt.delheader {
 				delete(tmpHeader, v)
 				w.Header().Del(v)
 			}
-			// 删除多余的中间件
-			for _, v := range group.delmidware {
-				for i, tmd := range tmpMidware {
 
+			for _, v := range rt.delmidware {
+				for i, tmd := range tmpMidware {
 					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
 						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 						tmp = append(tmp, tmpMidware[0:i]...)
@@ -454,30 +492,6 @@ endloop:
 				}
 
 			}
-		}
-		for _, v := range r.tpl[matchurl].midware {
-			tmpMidware = append(tmpMidware, v)
-		}
-		for k, v := range r.tpl[matchurl].header {
-			tmpHeader[k] = v
-			w.Header().Add(k, v)
-		}
-		for _, v := range r.tpl[matchurl].delheader {
-			delete(tmpHeader, v)
-			w.Header().Del(v)
-		}
-
-		for _, v := range r.tpl[matchurl].delmidware {
-			for i, tmd := range tmpMidware {
-				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-					tmp = append(tmp, tmpMidware[0:i]...)
-					tmp = append(tmp, tmpMidware[i+1:]...)
-					tmpMidware = tmp
-					break
-				}
-			}
-
 		}
 
 	default:
