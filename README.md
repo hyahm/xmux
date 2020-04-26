@@ -11,6 +11,7 @@
 - [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
 - [x] 支持中间件  
 - [x] 增加全局上下文， 方便中间件传递值
+- [x] 内嵌接口文档
 - [x] 增加websocket， 可以学习，不建议使用
 
 
