@@ -421,7 +421,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func name(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("home")
 	fmt.Println(xmux.Var[r.URL.Path]["name"])
+	fmt.Println(xmux.GetData(r).Var["name"])
+
 	w.Write([]byte("hello world name"))
 	return
 }
