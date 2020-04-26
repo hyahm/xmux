@@ -100,6 +100,15 @@ func (r *Router) ShowApi(pattern string) *Route {
 			document.Supplement = v.supplement
 			for mt, _ := range v.method {
 				document.Method = mt
+				if mt == http.MethodGet {
+					if v.params_request != nil {
+						document.Url += GetOpt(v.params_request)
+					}
+				} else {
+					if v.st_request != nil {
+						document.Opt = PostOpt(v.st_request)
+					}
+				}
 				doc.Add(document)
 			}
 		}
@@ -112,6 +121,15 @@ func (r *Router) ShowApi(pattern string) *Route {
 				document.Supplement = v.supplement
 				for mt, _ := range v.method {
 					document.Method = mt
+					if mt == http.MethodGet {
+						if v.params_request != nil {
+							document.Url += GetOpt(v.params_request)
+						}
+					} else {
+						if v.st_request != nil {
+							document.Opt = PostOpt(v.st_request)
+						}
+					}
 					doc.Add(document)
 				}
 			}
@@ -122,6 +140,15 @@ func (r *Router) ShowApi(pattern string) *Route {
 				document.Supplement = v.supplement
 				for mt, _ := range v.method {
 					document.Method = mt
+					if mt == http.MethodGet {
+						if v.params_request != nil {
+							document.Url += GetOpt(v.params_request)
+						}
+					} else {
+						if v.st_request != nil {
+							document.Opt = PostOpt(v.st_request)
+						}
+					}
 					doc.Add(document)
 				}
 			}
