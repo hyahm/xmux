@@ -495,7 +495,7 @@ func main() {
 ```
 运行上面的代码， 打开localhost:9000/doc, 会看到下面的api
 
-!image[http://download.hyahm.com/api.png]
+![api.png](http://download.hyahm.com/api.png)
 
 
 
