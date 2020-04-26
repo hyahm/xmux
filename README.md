@@ -12,6 +12,7 @@
 - [x] 支持中间件  
 - [x] 增加全局上下文， 方便中间件传递值
 - [x] 内嵌接口文档
+- [x] 增加数据结构绑定， 适合中间件传递
 - [x] 增加websocket， 可以学习，不建议使用
 
 
@@ -228,7 +229,7 @@ func hf1(w http.ResponseWriter, r *http.Request)  bool {
 
 func TestHome(t *testing.T) {
 	router := xmux.NewRouter()
-	router.Pattern("/home/{test}").Get(home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
+	router.Pattern("/home/{test}").Get(home).AddMidware(hf).AddHeader("name", "cander").AddMidware(hf1)
 	var a string
 	// client := http.Client{}
 	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
@@ -244,7 +245,7 @@ func TestHome(t *testing.T) {
 
 ```
 
-### 全局 context.Context
+### 全局 context.Context 
 ```go
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
@@ -300,7 +301,8 @@ router.Slash = true
 例如： /aaa/adfaasf16sd  
 这个是匹配的， name: aa   age: 16  
 ```
-xmux.Var[r.URL.Path]["name"]  // 获取方法
+xmux.Var[r.URL.Path]["name"]  // 获取方法(将废弃)
+xmux.GetData(r)["name"]  // 请使用这种
 ```
 后面会增加自定义正则匹配
 
@@ -403,7 +405,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -412,12 +416,16 @@ import (
 
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["test"])
+	fmt.Println(xmux.GetData(r).Data)
 	w.Write([]byte("hello world home"))
 	return
 }
 
 func name(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("home")
 	fmt.Println(xmux.Var[r.URL.Path]["name"])
+	fmt.Println(xmux.GetData(r).Var["name"])
+
 	w.Write([]byte("hello world name"))
 	return
 }
@@ -437,13 +445,20 @@ func all(w http.ResponseWriter, r *http.Request) {
 
 func login(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.Write([]byte("not found data"))
+		return true
+	}
+	err = json.Unmarshal(b, xmux.GetData(r).Data)
 
-	fmt.Println(r.Header.Get("bbb"))
+	fmt.Println(xmux.GetData(r).Data)
 	return false
 }
 
 func filter(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("login mw")
+	fmt.Println("-----------------------")
+	fmt.Println("login filter")
 	r.Header.Set("bbb", "ccc")
 
 	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
@@ -471,17 +486,17 @@ type Call struct {
 func main() {
 
 	router := xmux.NewRouter()
-	router.IgnoreIco = false
+	router.IgnoreIco = true
 	// fmt.Println(router.Slash)
-
+	router.AddMidware(filter)
 	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填")
-	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home)
+	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name)
 	router.Pattern("/aaa/bbbb/{path:me}").Post(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
 
@@ -491,6 +506,7 @@ func main() {
 	}
 
 }
+
 
 ```
 运行上面的代码， 打开localhost:9000/doc, 会看到下面的api, (样式和js来自网络， 请保证有网络)
