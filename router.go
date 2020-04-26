@@ -357,7 +357,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 endloop:
 
 	Bridge[url] = data
-	tmpHeader := map[string]string{}
+	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
 		tmpHeader[k] = v
 	}
