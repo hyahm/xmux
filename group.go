@@ -13,7 +13,7 @@ type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
 	route      map[string]*Route
 	name       string
-	header     http.Header
+	header     map[string]string
 	tpl        map[string]*Route
 	midware    []func(http.ResponseWriter, *http.Request) bool
 	delmidware []func(http.ResponseWriter, *http.Request) bool
@@ -27,7 +27,7 @@ func NewGroupRoute(name string) *GroupRoute {
 	return &GroupRoute{
 		name:    name,
 		route:   make(map[string]*Route),
-		header:  http.Header{},
+		header:  map[string]string{},
 		tpl:     make(map[string]*Route),
 		midware: make([]func(http.ResponseWriter, *http.Request) bool, 0),
 		pattern: make(map[string]int),
@@ -37,9 +37,9 @@ func NewGroupRoute(name string) *GroupRoute {
 func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
 
 	if g.header == nil {
-		g.header = http.Header{}
+		g.header = map[string]string{}
 	}
-	g.header.Add(k, v)
+	g.header[k] = v
 	return g
 }
 
@@ -119,7 +119,7 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),
-		header: http.Header{},
+		header: map[string]string{},
 		args:   make([]string, 0),
 	}
 	if v, listvar := match(pattern); len(listvar) > 0 {
@@ -145,7 +145,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		group.name = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	if r.header == nil {
-		r.header = http.Header{}
+		r.header = map[string]string{}
 	}
 	if r.pattern == nil {
 		r.pattern = make(map[string]int)

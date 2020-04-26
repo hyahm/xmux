@@ -10,7 +10,7 @@ import (
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
 	method     map[string]http.Handler
-	header     http.Header
+	header     map[string]string
 	args       []string // 保存正则的变量名
 	midware    []func(http.ResponseWriter, *http.Request) bool
 	delmidware []func(http.ResponseWriter, *http.Request) bool
@@ -120,7 +120,7 @@ func (r *Router) Pattern(pattern string) *Route {
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),
-		header: http.Header{},
+		header: map[string]string{},
 		args:   make([]string, 0),
 	}
 	// 增加pattern 判断
@@ -221,9 +221,9 @@ func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
 
 func (rt *Route) AddHeader(k, v string) *Route {
 	if rt.header == nil {
-		rt.header = http.Header{}
+		rt.header = map[string]string{}
 	}
-	rt.header.Add(k, v)
+	rt.header[k] = v
 	return rt
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -28,7 +27,7 @@ type reroute struct {
 type rt struct {
 	ctx     context.Context
 	Handle  http.Handler
-	Header  http.Header
+	Header  map[string]string
 	Midware []func(http.ResponseWriter, *http.Request) bool
 }
 
@@ -54,7 +53,7 @@ type Router struct {
 
 	groupname map[string]string // 根据 pattern 寻找 组
 
-	header  http.Header                                     // 全局路由头
+	header  map[string]string                               // 全局路由头
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 
 	routeTable *sync.Map // 路由表
@@ -164,9 +163,9 @@ func (r *Router) ShowApi(pattern string) *Route {
 
 func (r *Router) AddHeader(k, v string) *Router {
 	if r.header == nil {
-		r.header = http.Header{}
+		r.header = map[string]string{}
 	}
-	r.header.Add(k, v)
+	r.header[k] = v
 	return r
 }
 
@@ -213,7 +212,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if route, ok := r.routeTable.Load(url + req.Method); ok {
 		// 设置请求头
 		for k, v := range route.(*rt).Header {
-			w.Header().Add(k, strings.Join(v, ","))
+			w.Header().Add(k, v)
 		}
 		defer delete(Ctx, url)
 		// 请求中间件
@@ -358,9 +357,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 endloop:
 
 	Bridge[url] = data
-	tmpHeader := http.Header{}
+	tmpHeader := map[string]string{}
 	for k, v := range r.header {
-		tmpHeader.Add(k, strings.Join(v, ","))
+		tmpHeader[k] = v
 	}
 
 	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
@@ -378,12 +377,12 @@ endloop:
 				tmpMidware = append(tmpMidware, v)
 			}
 			for k, v := range group.header {
-				tmpHeader.Add(k, strings.Join(v, ","))
-				w.Header().Add(k, strings.Join(v, ","))
+				tmpHeader[k] = v
+				w.Header().Add(k, v)
 			}
 			// 删除多余的header
 			for _, v := range group.delheader {
-				tmpHeader.Del(v)
+				delete(tmpHeader, v)
 				w.Header().Del(v)
 			}
 			// 删除多余的中间件
@@ -404,11 +403,11 @@ endloop:
 			tmpMidware = append(tmpMidware, v)
 		}
 		for k, v := range r.route[matchurl].header {
-			tmpHeader.Add(k, strings.Join(v, ","))
-			w.Header().Add(k, strings.Join(v, ","))
+			tmpHeader[k] = v
+			w.Header().Add(k, v)
 		}
 		for _, v := range r.route[matchurl].delheader {
-			tmpHeader.Del(v)
+			delete(tmpHeader, v)
 			w.Header().Del(v)
 		}
 		// 删除多余的中间件
@@ -433,12 +432,12 @@ endloop:
 				tmpMidware = append(tmpMidware, v)
 			}
 			for k, v := range group.header {
-				tmpHeader.Add(k, strings.Join(v, ","))
-				w.Header().Add(k, strings.Join(v, ","))
+				tmpHeader[k] = v
+				w.Header().Add(k, v)
 			}
 			// 删除多余的header
 			for _, v := range group.delheader {
-				tmpHeader.Del(v)
+				delete(tmpHeader, v)
 				w.Header().Del(v)
 			}
 			// 删除多余的中间件
@@ -460,11 +459,11 @@ endloop:
 			tmpMidware = append(tmpMidware, v)
 		}
 		for k, v := range r.tpl[matchurl].header {
-			tmpHeader.Add(k, strings.Join(v, ","))
-			w.Header().Add(k, strings.Join(v, ","))
+			tmpHeader[k] = v
+			w.Header().Add(k, v)
 		}
 		for _, v := range r.tpl[matchurl].delheader {
-			tmpHeader.Del(v)
+			delete(tmpHeader, v)
 			w.Header().Del(v)
 		}
 
@@ -540,7 +539,7 @@ func NewRouter() *Router {
 		// group:      make(map[string]map[string]string),
 		Slash:      true,
 		routeTable: &sync.Map{},
-		header:     http.Header{},
+		header:     map[string]string{},
 		route:      make(map[string]*Route),
 		tpl:        make(map[string]*Route),
 		once:       &sync.Once{},
