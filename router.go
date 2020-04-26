@@ -265,10 +265,11 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 			if handle, mok := group.method[req.Method]; mok {
 				tp = 2
 				thisHandle = handle
+				data.Data = group.dataSource
 			} else {
 				if group != nil {
 					thisHandle = r.MethodNotAllowed
-					data.Data = group.dataSource
+
 				} else {
 					if r.HandleNotFound == nil {
 						thisHandle = handleNotFound()
