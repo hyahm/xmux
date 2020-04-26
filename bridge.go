@@ -1,14 +1,22 @@
 package xmux
 
+import "net/http"
+
 // bridge  数据二次封装
 
 type Data struct {
-	Header   map[string]string
-	Request  interface{}
-	Response interface{}
+	Var    map[string]string // 参数
+	Header map[string]string
+	Data   interface{} // 处理后的数据
 }
 
-type Bridge struct {
-	Var   map[string]string // 参数
-	*Data                   // 请求头和body
+var Bridge map[string]*Data
+
+func init() {
+	Bridge = make(map[string]*Data)
+}
+
+func GetData(r *http.Request) *Data {
+	url := slash(r.URL.Path)
+	return Bridge[url]
 }

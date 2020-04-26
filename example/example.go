@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -11,6 +13,7 @@ import (
 
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["test"])
+	fmt.Println(xmux.GetData(r).Data)
 	w.Write([]byte("hello world home"))
 	return
 }
@@ -36,13 +39,20 @@ func all(w http.ResponseWriter, r *http.Request) {
 
 func login(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.Write([]byte("not found data"))
+		return true
+	}
+	err = json.Unmarshal(b, xmux.GetData(r).Data)
 
-	fmt.Println(r.Header.Get("bbb"))
+	fmt.Println(xmux.GetData(r).Data)
 	return false
 }
 
 func filter(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("login mw")
+	fmt.Println("-----------------------")
+	fmt.Println("login filter")
 	r.Header.Set("bbb", "ccc")
 
 	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
@@ -70,17 +80,17 @@ type Call struct {
 func main() {
 
 	router := xmux.NewRouter()
-	router.IgnoreIco = false
+	router.IgnoreIco = true
 	// fmt.Println(router.Slash)
-
+	router.AddMidware(filter)
 	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填")
-	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home)
+	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name)
 	router.Pattern("/aaa/bbbb/{path:me}").Post(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
 

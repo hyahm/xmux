@@ -11,13 +11,14 @@ import (
 // 临时的， 最后会合并到route
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
-	route     map[string]*Route
-	name      string
-	header    http.Header
-	tpl       map[string]*Route
-	midware   []func(http.ResponseWriter, *http.Request) bool
-	pattern   map[string]int
-	delheader []string
+	route      map[string]*Route
+	name       string
+	header     http.Header
+	tpl        map[string]*Route
+	midware    []func(http.ResponseWriter, *http.Request) bool
+	delmidware []func(http.ResponseWriter, *http.Request) bool
+	pattern    map[string]int
+	delheader  []string
 }
 
 var reUrl map[string]*reroute
@@ -68,6 +69,15 @@ func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) 
 		g.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
 	g.midware = append(g.midware, handle)
+	return g
+}
+
+func (g *GroupRoute) DelMidware(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
+
+	if g.delmidware == nil {
+		g.delmidware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	}
+	g.delmidware = append(g.delmidware, handle)
 	return g
 }
 

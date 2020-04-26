@@ -9,21 +9,28 @@ import (
 // 初始化临时使用， 最后会合并到 router
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	method   map[string]http.Handler
-	header   http.Header
-	args     []string // 保存正则的变量名
-	midware  []func(http.ResponseWriter, *http.Request) bool
-	describe string // 接口描述
+	method     map[string]http.Handler
+	header     http.Header
+	args       []string // 保存正则的变量名
+	midware    []func(http.ResponseWriter, *http.Request) bool
+	delmidware []func(http.ResponseWriter, *http.Request) bool
+	describe   string // 接口描述
 
-	request string // 请求的请求示例
-
-	response       string // 接口返回示例
+	request        string      // 请求的请求示例
+	dataSource     interface{} // 数据源
+	response       string      // 接口返回示例
 	st_request     interface{}
 	params_request map[string]string
 	st_response    interface{}
 	reqHeader      map[string]string
 	supplement     string
 	delheader      []string
+}
+
+func (rt *Route) Bind(s interface{}) *Route {
+	// 接口补充说明
+	rt.dataSource = s
+	return rt
 }
 
 func (rt *Route) ApiSupplement(s string) *Route {
@@ -233,5 +240,13 @@ func (rt *Route) AddMidware(handle func(http.ResponseWriter, *http.Request) bool
 		rt.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
 	rt.midware = append(rt.midware, handle)
+	return rt
+}
+
+func (rt *Route) DelMidware(handle func(http.ResponseWriter, *http.Request) bool) *Route {
+	if rt.midware == nil {
+		rt.delmidware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	}
+	rt.delmidware = append(rt.delmidware, handle)
 	return rt
 }

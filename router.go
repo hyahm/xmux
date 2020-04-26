@@ -62,11 +62,12 @@ type Router struct {
 }
 
 func (r *Router) ShowApi(pattern string) *Route {
+
 	return r.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
 		doc := &Doc{
 			Api:   make([]Document, 0),
-			Title: "my docs",
+			Title: "xmux docs",
 		}
 
 		t := NewTemplate()
@@ -213,6 +214,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 	var thisHandle http.Handler
 	var tp int = -1
 	var matchurl string
+	data := &Data{}
 	///  寻找路由   ///
 	// 先寻找完全匹配的
 	if _, ok := r.pattern[url]; ok {
@@ -223,6 +225,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 			if handle, mok := r.route[url].method[req.Method]; mok {
 				tp = 0
 				thisHandle = handle
+				data.Data = r.route[url].dataSource
 			} else {
 				if r.route[url] != nil {
 					thisHandle = r.MethodNotAllowed
@@ -243,6 +246,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 			} else {
 				if group != nil {
 					thisHandle = r.MethodNotAllowed
+					data.Data = group.dataSource
 				} else {
 					if r.HandleNotFound == nil {
 						thisHandle = handleNotFound()
@@ -268,6 +272,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						for i, v := range r.tpl[matchurl].args {
 							vm[v] = vl[i+1]
 						}
+						data.Var = vm
 						// 获取var
 						if r.Slash {
 							Var[req.URL.Path] = vm
@@ -276,6 +281,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						}
 						tp = 1
 						thisHandle = handle
+						data.Data = r.tpl[matchurl].dataSource
 						goto endloop
 					} else {
 						if r.route[url] != nil {
@@ -295,6 +301,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						for i, v := range group.args {
 							vm[v] = vl[i+1]
 						}
+						data.Var = vm
 						// 获取var
 						if r.Slash {
 							Var[req.URL.Path] = vm
@@ -303,6 +310,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						}
 						tp = 3
 						thisHandle = handle
+						data.Data = group.dataSource
 						goto endloop
 					} else {
 						if group != nil {
@@ -325,6 +333,8 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		thisHandle = r.HandleNotFound
 	}
 endloop:
+
+	Bridge[url] = data
 	tmpHeader := http.Header{}
 	for k, v := range r.header {
 		tmpHeader.Add(k, strings.Join(v, ","))
@@ -337,6 +347,8 @@ endloop:
 	}
 	///  结束寻找路由     ///
 	// 合并请求头和中间件
+	fmt.Println("url: ", url)
+	fmt.Println("type: ", tp)
 	switch tp {
 	case 0, 2:
 		if tp == 2 {
@@ -353,6 +365,19 @@ endloop:
 				tmpHeader.Del(v)
 				w.Header().Del(v)
 			}
+			// 删除多余的中间件
+			for _, v := range group.delmidware {
+				for i, tmd := range tmpMidware {
+					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+						tmp = append(tmp, tmpMidware[0:i]...)
+						tmp = append(tmp, tmpMidware[i+1:]...)
+						tmpMidware = tmp
+						break
+					}
+				}
+
+			}
 		}
 		for _, v := range r.route[matchurl].midware {
 			tmpMidware = append(tmpMidware, v)
@@ -365,8 +390,23 @@ endloop:
 			tmpHeader.Del(v)
 			w.Header().Del(v)
 		}
+		// 删除多余的中间件
+		for _, v := range r.route[matchurl].delmidware {
+			for i, tmd := range tmpMidware {
+				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+					tmp = append(tmp, tmpMidware[0:i]...)
+					tmp = append(tmp, tmpMidware[i+1:]...)
+					tmpMidware = tmp
+					break
+				}
+			}
+
+		}
+
 	case 1, 3:
 		if tp == 3 {
+
 			group := r.group[r.groupname[matchurl]].tpl[matchurl]
 			for _, v := range group.midware {
 				tmpMidware = append(tmpMidware, v)
@@ -380,6 +420,21 @@ endloop:
 				tmpHeader.Del(v)
 				w.Header().Del(v)
 			}
+			// 删除多余的中间件
+			for _, v := range group.delmidware {
+				for i, tmd := range tmpMidware {
+
+					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+						fmt.Println("del midware")
+						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+						tmp = append(tmp, tmpMidware[0:i]...)
+						tmp = append(tmp, tmpMidware[i+1:]...)
+						tmpMidware = tmp
+						break
+					}
+				}
+
+			}
 		}
 		for _, v := range r.tpl[matchurl].midware {
 			tmpMidware = append(tmpMidware, v)
@@ -391,6 +446,21 @@ endloop:
 		for _, v := range r.tpl[matchurl].delheader {
 			tmpHeader.Del(v)
 			w.Header().Del(v)
+		}
+
+		fmt.Println("del midware compare")
+		for _, v := range r.tpl[matchurl].delmidware {
+			for i, tmd := range tmpMidware {
+				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+					fmt.Println("del midware")
+					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+					tmp = append(tmp, tmpMidware[0:i]...)
+					tmp = append(tmp, tmpMidware[i+1:]...)
+					tmpMidware = tmp
+					break
+				}
+			}
+
 		}
 
 	default:
