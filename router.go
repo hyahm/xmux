@@ -87,9 +87,7 @@ func (r *Router) ShowApi(pattern string) *Route {
 					}
 				} else {
 					if v.st_request != nil {
-						fmt.Println(v.st_request)
 						document.Opt = PostOpt(v.st_request)
-						fmt.Println(document.Opt)
 					}
 				}
 				doc.Add(document)
@@ -128,7 +126,6 @@ func (r *Router) ShowApi(pattern string) *Route {
 				}
 			}
 		}
-		fmt.Println(*doc)
 		err := t.Execute(w, *doc)
 		if err != nil {
 			w.Write([]byte(err.Error()))
@@ -204,7 +201,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	} else {
 		// 获取handler
-		// fmt.Println("no cached")
 		r.serveHTTP(url, w, req)
 	}
 }
@@ -347,8 +343,6 @@ endloop:
 	}
 	///  结束寻找路由     ///
 	// 合并请求头和中间件
-	fmt.Println("url: ", url)
-	fmt.Println("type: ", tp)
 	switch tp {
 	case 0, 2:
 		if tp == 2 {
@@ -425,7 +419,6 @@ endloop:
 				for i, tmd := range tmpMidware {
 
 					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-						fmt.Println("del midware")
 						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 						tmp = append(tmp, tmpMidware[0:i]...)
 						tmp = append(tmp, tmpMidware[i+1:]...)
@@ -448,11 +441,9 @@ endloop:
 			w.Header().Del(v)
 		}
 
-		fmt.Println("del midware compare")
 		for _, v := range r.tpl[matchurl].delmidware {
 			for i, tmd := range tmpMidware {
 				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-					fmt.Println("del midware")
 					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 					tmp = append(tmp, tmpMidware[0:i]...)
 					tmp = append(tmp, tmpMidware[i+1:]...)

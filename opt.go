@@ -27,7 +27,6 @@ func PostOpt(s interface{}) []Opt {
 
 	for i := 0; i < tpy.NumField(); i++ {
 		opt := Opt{}
-		fmt.Println(tpy.Field(i).Tag.Get("default"))
 		opt.Default = tpy.Field(i).Tag.Get("default")
 		opt.Name = strings.Split(tpy.Field(i).Tag.Get("json"), ",")[0]
 		opt.Need = tpy.Field(i).Tag.Get("need")
