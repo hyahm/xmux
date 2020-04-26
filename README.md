@@ -245,7 +245,7 @@ func TestHome(t *testing.T) {
 
 ```
 
-### 全局 context.Context
+### 全局 context.Context 
 ```go
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
@@ -301,7 +301,8 @@ router.Slash = true
 例如： /aaa/adfaasf16sd  
 这个是匹配的， name: aa   age: 16  
 ```
-xmux.Var[r.URL.Path]["name"]  // 获取方法
+xmux.Var[r.URL.Path]["name"]  // 获取方法(将废弃)
+xmux.GetData(r)["name"]  // 请使用这种
 ```
 后面会增加自定义正则匹配
 
