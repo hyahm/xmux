@@ -202,12 +202,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// option 请求处理
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		r.Options.ServeHTTP(w, req)
-		return
-	}
-
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable.Load(url + req.Method); ok {
 		// 设置请求头
@@ -361,8 +355,14 @@ endloop:
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
 		tmpHeader[k] = v
+		w.Header().Set(k, v)
 	}
 
+	// option 请求处理
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		r.Options.ServeHTTP(w, req)
+		return
+	}
 	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
 	for _, v := range r.midware {
