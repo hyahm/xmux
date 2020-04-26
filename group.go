@@ -138,6 +138,9 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 
 // 组路由起的名字
 func (r *Router) AddGroup(group *GroupRoute) *Router {
+	if r.group == nil {
+		r.group = make(map[string]*GroupRoute)
+	}
 	if group.name == "" {
 		group.name = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
