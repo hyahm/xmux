@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -71,6 +72,9 @@ func (r *Router) ShowApi(pattern string) *Route {
 		t := NewTemplate()
 		// 单路由
 		for url, v := range r.route {
+			if url == pattern {
+				continue
+			}
 			document := v.makeDoc()
 			document.Url = url
 			document.Supplement = v.supplement
@@ -81,8 +85,10 @@ func (r *Router) ShowApi(pattern string) *Route {
 						document.Url += GetOpt(v.params_request)
 					}
 				} else {
-					if v.params_request != nil {
+					if v.st_request != nil {
+						fmt.Println(v.st_request)
 						document.Opt = PostOpt(v.st_request)
+						fmt.Println(document.Opt)
 					}
 				}
 				doc.Add(document)
@@ -121,7 +127,7 @@ func (r *Router) ShowApi(pattern string) *Route {
 				}
 			}
 		}
-
+		fmt.Println(*doc)
 		err := t.Execute(w, *doc)
 		if err != nil {
 			w.Write([]byte(err.Error()))

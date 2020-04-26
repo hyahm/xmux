@@ -9,13 +9,15 @@ import (
 // 初始化临时使用， 最后会合并到 router
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	method         map[string]http.Handler
-	header         http.Header
-	args           []string // 保存正则的变量名
-	midware        []func(http.ResponseWriter, *http.Request) bool
-	describe       string // 接口描述
-	request        []byte // 接口名
-	response       []byte // 接口描述
+	method   map[string]http.Handler
+	header   http.Header
+	args     []string // 保存正则的变量名
+	midware  []func(http.ResponseWriter, *http.Request) bool
+	describe string // 接口描述
+
+	request string // 请求的请求示例
+
+	response       string // 接口返回示例
 	st_request     interface{}
 	params_request map[string]string
 	st_response    interface{}
@@ -24,31 +26,35 @@ type Route struct {
 	delheader      []string
 }
 
-func (rt *Route) Supplement(s string) *Route {
+func (rt *Route) ApiSupplement(s string) *Route {
 	// 接口补充说明
 	rt.supplement = s
 	return rt
 }
 
-func (rt *Route) ReqStruct(s interface{}) *Route {
+func (rt *Route) ApiReqStruct(s interface{}) *Route {
 	// 接口返回数据的结构
 	rt.st_request = s
 	return rt
 }
 
-func (rt *Route) ReqParams(s map[string]string) *Route {
+func (rt *Route) ApiReqParams(s map[string]string) *Route {
 	// 接口返回数据的结构
 	rt.params_request = s
 	return rt
 }
 
-func (rt *Route) ResStruct(s interface{}) *Route {
+func (rt *Route) ApiResStruct(s interface{}) *Route {
 	// 接口接收数据的结构
 	rt.st_response = s
 	return rt
 }
 
-func (rt *Route) makeDoc() (doc Document) {
+func (rt *Route) makeDoc() Document {
+	doc := Document{
+		Opt:     make([]Opt, 0),
+		Callbak: make([]Opt, 0),
+	}
 	doc.Describe = rt.describe
 	doc.Header = rt.reqHeader
 
@@ -57,29 +63,29 @@ func (rt *Route) makeDoc() (doc Document) {
 	}
 	doc.Request = rt.request
 	doc.Response = rt.response
-	return
+	return doc
 }
 
-func (rt *Route) Describe(s string) *Route {
+func (rt *Route) ApiDescribe(s string) *Route {
 	// 接口的简单描述
 	rt.describe = s
 	return rt
 }
 
-func (rt *Route) ReqHeader(head map[string]string) *Route {
+func (rt *Route) ApiReqHeader(head map[string]string) *Route {
 	// 接口的请求头
 
 	rt.reqHeader = head
 	return rt
 }
 
-func (rt *Route) RequestTemplate(s []byte) *Route {
+func (rt *Route) ApiRequestTemplate(s string) *Route {
 	// 接口的请求实例， 一般是json的字符串
 	rt.request = s
 	return rt
 }
 
-func (rt *Route) ResponseTemplate(s []byte) *Route {
+func (rt *Route) ApiResponseTemplate(s string) *Route {
 	// 接口的返回实例， 一般是json的字符串
 	rt.response = s
 	return rt

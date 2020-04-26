@@ -15,23 +15,27 @@ type Opt struct {
 	Information string
 }
 
-func PostOpt(s interface{}) (o Opt) {
+func PostOpt(s interface{}) []Opt {
+	opts := make([]Opt, 0)
 	tpy := reflect.TypeOf(s)
 	if tpy.Kind() == reflect.Ptr {
 		tpy = tpy.Elem()
 	}
 	if tpy.Kind() != reflect.Struct {
-		return
+		return nil
 	}
 
 	for i := 0; i < tpy.NumField(); i++ {
-		o.Default = tpy.Field(i).Tag.Get("default")
-		o.Name = strings.Split(tpy.Field(i).Tag.Get("json"), ",")[0]
-		o.Need = tpy.Field(i).Tag.Get("need")
-		o.Typ = tpy.Field(i).Tag.Get("type")
-		o.Information = tpy.Field(i).Tag.Get("information")
+		opt := Opt{}
+		fmt.Println(tpy.Field(i).Tag.Get("default"))
+		opt.Default = tpy.Field(i).Tag.Get("default")
+		opt.Name = strings.Split(tpy.Field(i).Tag.Get("json"), ",")[0]
+		opt.Need = tpy.Field(i).Tag.Get("need")
+		opt.Typ = tpy.Field(i).Tag.Get("type")
+		opt.Information = tpy.Field(i).Tag.Get("information")
+		opts = append(opts, opt)
 	}
-	return
+	return opts
 }
 
 func GetOpt(s map[string]string) string {

@@ -62,17 +62,28 @@ type Home struct {
 	People int    `json:"people" type:"int" need:"是" default:"1" information:"有多少个人"`
 }
 
+type Call struct {
+	Code int    `json:"code" type:"int" information:"错误返回码"`
+	Msg  string `json:"msg" type:"string" information:"错误信息"`
+}
+
 func main() {
 
 	router := xmux.NewRouter()
 	router.IgnoreIco = false
-
 	// fmt.Println(router.Slash)
 
-	router.Pattern("/home").Get(home).Describe("这是home接口的测试").ReqHeader(map[string]string{"content-type": "application/json"}).ReqStruct(&Home{})
+	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").
+		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqStruct(&Home{}).
+		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
+		ApiResStruct(Call{}).
+		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
+		ApiSupplement("这个是接口的说明补充， 没补充就不填")
 	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
-	router.Pattern("/aaa/bbbb/{path:me}").Get(me)
+	router.Pattern("/aaa/bbbb/{path:me}").Post(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
+
 	router.ShowApi("/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)

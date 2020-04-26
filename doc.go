@@ -10,10 +10,10 @@ type Document struct {
 	Url        string
 	Method     string
 	Header     map[string]string // 请求头
-	Opt        Opt
-	Callbak    Opt
-	Request    []byte // json 请求实例
-	Response   []byte // json 返回实例
+	Opt        []Opt
+	Callbak    []Opt
+	Request    string // json 请求实例
+	Response   string // json 返回实例
 	Supplement string // 最后的补充说明
 }
 
