@@ -44,6 +44,7 @@ func login(w http.ResponseWriter, r *http.Request) bool {
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	r.Header.Set("bbb", "ccc")
+
 	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
 	return false
 }
@@ -66,13 +67,13 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = false
 
-	fmt.Println(router.Slash)
+	// fmt.Println(router.Slash)
 
-	router.Pattern("/home").Get(home).Title("作者是一个测试").Describe("这是home接口的测试").ReqHeader(map[string]string{"content-type": "application/json"}).ReqStruct(&Home{})
+	router.Pattern("/home").Get(home).Describe("这是home接口的测试").ReqHeader(map[string]string{"content-type": "application/json"}).ReqStruct(&Home{})
 	router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
 	router.Pattern("/aaa/bbbb/{path:me}").Get(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
-	router.ShowApi("/doc")
+	router.ShowApi("/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)
 	}

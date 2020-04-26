@@ -1,9 +1,9 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -27,7 +27,7 @@ type reroute struct {
 type rt struct {
 	ctx     context.Context
 	Handle  http.Handler
-	Header  map[string]string
+	Header  http.Header
 	Midware []func(http.ResponseWriter, *http.Request) bool
 }
 
@@ -39,6 +39,7 @@ type Router struct {
 	UrlNotFound      http.Handler
 	HandleNotFound   http.Handler
 	MethodNotAllowed http.Handler
+	Doc              http.Handler
 	Slash            bool
 	route            map[string]*Route // 单实例路由
 	tpl              map[string]*Route // 正则路由
@@ -51,20 +52,90 @@ type Router struct {
 	tplpattern map[string]int // 正则匹配
 
 	groupname map[string]string // 根据 pattern 寻找 组
-	// cacheMidware     map[string][]http.Handler    // 组路由, 存的组路由的请求头
-	header  map[string]string                               // 全局路由头
+
+	header  http.Header                                     // 全局路由头
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 
 	routeTable *sync.Map // 路由表
-
-	once *sync.Once
+	once       *sync.Once
 }
 
-func (r *Router) SetHeader(k, v string) *Router {
+func (r *Router) ShowApi(pattern string) *Route {
+	return r.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+		doc := &Doc{
+			Api:   make([]Document, 0),
+			Title: "my docs",
+		}
+
+		t := NewTemplate()
+		// 单路由
+		for url, v := range r.route {
+			document := v.makeDoc()
+			document.Url = url
+			document.Supplement = v.supplement
+			for mt, _ := range v.method {
+				document.Method = mt
+				if mt == http.MethodGet {
+					if v.params_request != nil {
+						document.Url += GetOpt(v.params_request)
+					}
+				} else {
+					if v.params_request != nil {
+						document.Opt = PostOpt(v.st_request)
+					}
+				}
+				doc.Add(document)
+			}
+		}
+
+		for url, v := range r.tpl {
+			document := v.makeDoc()
+			document.Url = url
+			document.Supplement = v.supplement
+			for mt, _ := range v.method {
+				document.Method = mt
+				doc.Add(document)
+			}
+		}
+		// 组路由
+
+		for _, g := range r.group {
+			for url, v := range g.route {
+				document := v.makeDoc()
+				document.Url = url
+				document.Supplement = v.supplement
+				for mt, _ := range v.method {
+					document.Method = mt
+					doc.Add(document)
+				}
+			}
+
+			for url, v := range g.tpl {
+				document := v.makeDoc()
+				document.Url = url
+				document.Supplement = v.supplement
+				for mt, _ := range v.method {
+					document.Method = mt
+					doc.Add(document)
+				}
+			}
+		}
+
+		err := t.Execute(w, *doc)
+		if err != nil {
+			w.Write([]byte(err.Error()))
+		}
+		return
+	}))
+
+}
+
+func (r *Router) AddHeader(k, v string) *Router {
 	if r.header == nil {
-		r.header = make(map[string]string)
+		r.header = http.Header{}
 	}
-	r.header[k] = v
+	r.header.Add(k, v)
 	return r
 }
 
@@ -111,7 +182,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if route, ok := r.routeTable.Load(url + req.Method); ok {
 		// 设置请求头
 		for k, v := range route.(*rt).Header {
-			w.Header().Set(k, v)
+			w.Header().Add(k, strings.Join(v, ","))
 		}
 		defer delete(Ctx, url)
 		// 请求中间件
@@ -248,9 +319,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		thisHandle = r.HandleNotFound
 	}
 endloop:
-	tmpHeader := make(map[string]string)
+	tmpHeader := http.Header{}
 	for k, v := range r.header {
-		tmpHeader[k] = v
+		tmpHeader.Add(k, strings.Join(v, ","))
 	}
 
 	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
@@ -263,39 +334,57 @@ endloop:
 	switch tp {
 	case 0, 2:
 		if tp == 2 {
-			group := r.group[r.groupname[url]].route[url]
+			group := r.group[r.groupname[matchurl]].route[matchurl]
 			for _, v := range group.midware {
 				tmpMidware = append(tmpMidware, v)
 			}
 			for k, v := range group.header {
-				tmpHeader[k] = v
-				w.Header().Set(k, v)
+				tmpHeader.Add(k, strings.Join(v, ","))
+				w.Header().Add(k, strings.Join(v, ","))
+			}
+			// 删除多余的header
+			for _, v := range group.delheader {
+				tmpHeader.Del(v)
+				w.Header().Del(v)
 			}
 		}
-		for _, v := range r.route[url].midware {
+		for _, v := range r.route[matchurl].midware {
 			tmpMidware = append(tmpMidware, v)
 		}
-		for k, v := range r.route[url].header {
-			tmpHeader[k] = v
-			w.Header().Set(k, v)
+		for k, v := range r.route[matchurl].header {
+			tmpHeader.Add(k, strings.Join(v, ","))
+			w.Header().Add(k, strings.Join(v, ","))
+		}
+		for _, v := range r.route[matchurl].delheader {
+			tmpHeader.Del(v)
+			w.Header().Del(v)
 		}
 	case 1, 3:
 		if tp == 3 {
-			group := r.group[r.groupname[url]].tpl[matchurl]
+			group := r.group[r.groupname[matchurl]].tpl[matchurl]
 			for _, v := range group.midware {
 				tmpMidware = append(tmpMidware, v)
 			}
 			for k, v := range group.header {
-				tmpHeader[k] = v
-				w.Header().Set(k, v)
+				tmpHeader.Add(k, strings.Join(v, ","))
+				w.Header().Add(k, strings.Join(v, ","))
+			}
+			// 删除多余的header
+			for _, v := range group.delheader {
+				tmpHeader.Del(v)
+				w.Header().Del(v)
 			}
 		}
 		for _, v := range r.tpl[matchurl].midware {
 			tmpMidware = append(tmpMidware, v)
 		}
 		for k, v := range r.tpl[matchurl].header {
-			tmpHeader[k] = v
-			w.Header().Set(k, v)
+			tmpHeader.Add(k, strings.Join(v, ","))
+			w.Header().Add(k, strings.Join(v, ","))
+		}
+		for _, v := range r.tpl[matchurl].delheader {
+			tmpHeader.Del(v)
+			w.Header().Del(v)
 		}
 
 	default:
@@ -314,7 +403,6 @@ endloop:
 		cacheurl = req.URL.Path
 
 	}
-	fmt.Println("cacheurl: ", cacheurl)
 	r.routeTable.Store(cacheurl+req.Method, thisRouter)
 
 	// 执行 中间件
@@ -358,7 +446,7 @@ func NewRouter() *Router {
 		// group:      make(map[string]map[string]string),
 		Slash:      true,
 		routeTable: &sync.Map{},
-		header:     make(map[string]string),
+		header:     http.Header{},
 		route:      make(map[string]*Route),
 		tpl:        make(map[string]*Route),
 		once:       &sync.Once{},
@@ -394,6 +482,13 @@ func methodNotAllowed() http.Handler {
 }
 
 func favicon() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		return
+	})
+}
+
+func apiDoc() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return

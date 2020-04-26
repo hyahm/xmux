@@ -11,12 +11,13 @@ import (
 // 临时的， 最后会合并到route
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
-	route   map[string]*Route
-	name    string
-	header  map[string]string
-	tpl     map[string]*Route
-	midware []func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)
-	pattern map[string]int
+	route     map[string]*Route
+	name      string
+	header    http.Header
+	tpl       map[string]*Route
+	midware   []func(http.ResponseWriter, *http.Request) bool
+	pattern   map[string]int
+	delheader []string
 }
 
 var reUrl map[string]*reroute
@@ -25,19 +26,28 @@ func NewGroupRoute(name string) *GroupRoute {
 	return &GroupRoute{
 		name:    name,
 		route:   make(map[string]*Route),
-		header:  make(map[string]string),
+		header:  http.Header{},
 		tpl:     make(map[string]*Route),
-		midware: make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0),
+		midware: make([]func(http.ResponseWriter, *http.Request) bool, 0),
 		pattern: make(map[string]int),
 	}
 }
 
-func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
+func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
 
 	if g.header == nil {
-		g.header = make(map[string]string)
+		g.header = http.Header{}
 	}
-	g.header[k] = v
+	g.header.Add(k, v)
+	return g
+}
+
+func (g *GroupRoute) DelHeader(k string) *GroupRoute {
+
+	if g.delheader == nil {
+		g.delheader = make([]string, 0)
+	}
+	g.delheader = append(g.delheader, k)
 	return g
 }
 
@@ -52,10 +62,19 @@ func (g *GroupRoute) SetName(name string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool)) *GroupRoute {
+func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
 
 	if g.midware == nil {
-		g.midware = make([]func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request, bool), 0)
+		g.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	}
+	g.midware = append(g.midware, handle)
+	return g
+}
+
+func (g *GroupRoute) FirstMidware(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
+
+	if g.midware == nil {
+		g.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
 	g.midware = append(g.midware, handle)
 	return g
@@ -90,7 +109,7 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 	}
 	route := &Route{
 		method: make(map[string]http.Handler),
-		header: make(map[string]string),
+		header: http.Header{},
 		args:   make([]string, 0),
 	}
 	if v, listvar := match(pattern); len(listvar) > 0 {
@@ -113,7 +132,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		group.name = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	if r.header == nil {
-		r.header = make(map[string]string)
+		r.header = http.Header{}
 	}
 	if r.pattern == nil {
 		r.pattern = make(map[string]int)
