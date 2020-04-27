@@ -29,6 +29,7 @@ type rt struct {
 	Handle  http.Handler
 	Header  map[string]string
 	Midware []func(http.ResponseWriter, *http.Request) bool
+	end     func(interface{})
 }
 
 type Router struct {
@@ -226,6 +227,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 		route.(*rt).Handle.ServeHTTP(w, req)
+		if route.(*rt).end != nil {
+			go route.(*rt).end(GetData(req).End)
+		}
 
 	} else {
 		// 获取handler
@@ -237,6 +241,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 	// 应该弄成中间件形式
 	var thisHandle http.Handler
 	var tp int = -1
+	var end func(interface{})
 	var matchurl string
 	data := &Data{}
 	///  寻找路由   ///
@@ -250,6 +255,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 				tp = 0
 				thisHandle = handle
 				data.Data = r.route[url].dataSource
+				end = r.route[url].end
 			} else {
 				if r.route[url] != nil {
 					thisHandle = r.MethodNotAllowed
@@ -268,6 +274,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 				tp = 2
 				thisHandle = handle
 				data.Data = group.dataSource
+				end = group.end
 			} else {
 				if group != nil {
 					thisHandle = r.MethodNotAllowed
@@ -307,6 +314,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						tp = 1
 						thisHandle = handle
 						data.Data = r.tpl[matchurl].dataSource
+						end = r.tpl[matchurl].end
 						goto endloop
 					} else {
 						if r.route[url] != nil {
@@ -336,6 +344,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 						tp = 3
 						thisHandle = handle
 						data.Data = group.dataSource
+						end = group.end
 						goto endloop
 					} else {
 						if group != nil {
@@ -507,6 +516,7 @@ endloop:
 		Handle:  thisHandle,
 		Header:  tmpHeader,
 		Midware: tmpMidware,
+		end:     end,
 	}
 
 	cacheurl := url
@@ -529,6 +539,9 @@ endloop:
 	}
 
 	thisHandle.ServeHTTP(w, req)
+	if end != nil {
+		go end(GetData(req).End)
+	}
 }
 
 func (r *Router) initHandler() {

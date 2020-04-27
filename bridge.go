@@ -8,6 +8,7 @@ type Data struct {
 	Var    map[string]string // 参数
 	Header map[string]string
 	Data   interface{} // 处理后的数据
+	End    interface{}
 }
 
 var Bridge map[string]*Data

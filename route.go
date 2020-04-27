@@ -25,6 +25,13 @@ type Route struct {
 	reqHeader      map[string]string
 	supplement     string
 	delheader      []string
+	end            func(interface{})
+}
+
+func (rt *Route) End(handle func(interface{})) *Route {
+	// 执行完主程序后， 执行最后的首位中间件
+	rt.end = handle
+	return rt
 }
 
 func (rt *Route) Bind(s interface{}) *Route {
