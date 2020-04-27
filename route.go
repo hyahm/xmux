@@ -30,13 +30,13 @@ type Route struct {
 	codeField      string
 }
 
-func (rt *Route) CodeField(s string) *Route {
+func (rt *Route) ApiCodeField(s string) *Route {
 	// 执行完主程序后， 执行最后的首位中间件
 	rt.codeField = s
 	return rt
 }
 
-func (rt *Route) CodeMsg(code int, msg string) *Route {
+func (rt *Route) ApiCodeMsg(code int, msg string) *Route {
 	// 执行完主程序后， 执行最后的首位中间件
 	if rt.codeMsg == nil {
 		rt.codeMsg = make(map[int]string)
