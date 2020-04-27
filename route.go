@@ -96,6 +96,9 @@ func (rt *Route) makeDoc() Document {
 	doc.Response = rt.response
 	doc.CodeField = rt.codeField
 	doc.CodeMsg = rt.codeMsg
+	if doc.CodeField == "" {
+		doc.CodeField = "code"
+	}
 	return doc
 }
 
