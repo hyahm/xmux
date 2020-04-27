@@ -9,6 +9,7 @@ type Data struct {
 	Header map[string]string
 	Data   interface{} // 处理后的数据
 	End    interface{}
+	Ctx    map[string]interface{} // 用来传递自定义值
 }
 
 var Bridge map[string]*Data

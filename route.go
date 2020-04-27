@@ -26,6 +26,23 @@ type Route struct {
 	supplement     string
 	delheader      []string
 	end            func(interface{})
+	codeMsg        map[int]string
+	codeField      string
+}
+
+func (rt *Route) CodeField(s string) *Route {
+	// 执行完主程序后， 执行最后的首位中间件
+	rt.codeField = s
+	return rt
+}
+
+func (rt *Route) CodeMsg(code int, msg string) *Route {
+	// 执行完主程序后， 执行最后的首位中间件
+	if rt.codeMsg == nil {
+		rt.codeMsg = make(map[int]string)
+	}
+	rt.codeMsg[code] = msg
+	return rt
 }
 
 func (rt *Route) End(handle func(interface{})) *Route {
@@ -77,6 +94,8 @@ func (rt *Route) makeDoc() Document {
 	}
 	doc.Request = rt.request
 	doc.Response = rt.response
+	doc.CodeField = rt.codeField
+	doc.CodeMsg = rt.codeMsg
 	return doc
 }
 

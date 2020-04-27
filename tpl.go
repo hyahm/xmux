@@ -88,6 +88,22 @@ var tpl = `<!DOCTYPE html>
                         </pre>
                     </div>
                 {{ end }}
+                {{ $field := .CodeField }}
+                {{ if .CodeMsg }}
+                    <h3>错误码</h3>
+                    <div class="dl-table dl-table1">
+                        <span>字段名</span>
+                        <span>错误码</span>
+                        <span>说明</span>
+                    </div>
+                    {{ range $k, $v := .CodeMsg }}
+                        <div class="dl-table dl-table1 dl-table-msg  dl-table-msg1">
+                            <span>{{ $field }}</span>
+                            <span>{{ $k }}</span>
+                            <span>{{ $v }}</span>
+                        </div>
+                    {{ end }}
+                {{ end }}
 
                 {{ if .Supplement }}
                     <h3>备注</h3>

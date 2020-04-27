@@ -213,7 +213,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		for k, v := range route.(*rt).Header {
 			w.Header().Set(k, v)
 		}
-		defer delete(Ctx, url)
 		// 请求中间件
 		var ok bool
 		for _, v := range route.(*rt).Midware {
