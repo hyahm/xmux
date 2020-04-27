@@ -31,13 +31,14 @@ type Route struct {
 }
 
 func (rt *Route) ApiCodeField(s string) *Route {
-	// 执行完主程序后， 执行最后的首位中间件
+	// 文档的 错误码字段的 key
 	rt.codeField = s
 	return rt
 }
 
 func (rt *Route) ApiCodeMsg(code int, msg string) *Route {
-	// 执行完主程序后， 执行最后的首位中间件
+	// 文档的 错误码值及其含义
+	//
 	if rt.codeMsg == nil {
 		rt.codeMsg = make(map[int]string)
 	}
