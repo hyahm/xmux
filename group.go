@@ -34,7 +34,7 @@ func NewGroupRoute(name string) *GroupRoute {
 	}
 }
 
-func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
+func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
 
 	if g.header == nil {
 		g.header = map[string]string{}

@@ -219,7 +219,7 @@ func (rt *Route) Put(handler func(http.ResponseWriter, *http.Request)) *Route {
 	return rt
 }
 
-func (rt *Route) AddHeader(k, v string) *Route {
+func (rt *Route) SetHeader(k, v string) *Route {
 	if rt.header == nil {
 		rt.header = map[string]string{}
 	}

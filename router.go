@@ -63,7 +63,7 @@ type Router struct {
 func (r *Router) ShowApi(pattern string) *Route {
 
 	return r.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		doc := &Doc{
 			Api:   make([]Document, 0),
 			Title: "xmux docs",
@@ -161,7 +161,7 @@ func (r *Router) ShowApi(pattern string) *Route {
 
 }
 
-func (r *Router) AddHeader(k, v string) *Router {
+func (r *Router) SetHeader(k, v string) *Router {
 	if r.header == nil {
 		r.header = map[string]string{}
 	}
@@ -214,7 +214,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if route, ok := r.routeTable.Load(url + req.Method); ok {
 		// 设置请求头
 		for k, v := range route.(*rt).Header {
-			w.Header().Add(k, v)
+			w.Header().Set(k, v)
 		}
 		defer delete(Ctx, url)
 		// 请求中间件
@@ -384,7 +384,7 @@ endloop:
 				}
 				for k, v := range group.header {
 					tmpHeader[k] = v
-					w.Header().Add(k, v)
+					w.Header().Set(k, v)
 				}
 				// 删除多余的header
 				for _, v := range group.delheader {
@@ -415,7 +415,7 @@ endloop:
 			}
 			for k, v := range rt.header {
 				tmpHeader[k] = v
-				w.Header().Add(k, v)
+				w.Header().Set(k, v)
 			}
 			for _, v := range rt.delheader {
 				delete(tmpHeader, v)
@@ -446,7 +446,7 @@ endloop:
 				}
 				for k, v := range group.header {
 					tmpHeader[k] = v
-					w.Header().Add(k, v)
+					w.Header().Set(k, v)
 				}
 				// 删除多余的header
 				for _, v := range group.delheader {
@@ -477,7 +477,7 @@ endloop:
 			}
 			for k, v := range rt.header {
 				tmpHeader[k] = v
-				w.Header().Add(k, v)
+				w.Header().Set(k, v)
 			}
 			for _, v := range rt.delheader {
 				delete(tmpHeader, v)

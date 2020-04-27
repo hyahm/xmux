@@ -13,7 +13,7 @@ var tpl = `<!DOCTYPE html>
 </head>
 <body>
 <div class="body-content">
-      
+        <h4>一共 {{ .Api | len }} 个路由</h4>
         {{ range .Api }}
         <div class="right-light">
             <div class="right-dl">
