@@ -9,13 +9,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-var Var map[string]map[string]string
-
-func init() {
-	// 存储变量
-	Var = make(map[string]map[string]string)
-}
-
 // type Midware
 
 type reroute struct {
@@ -42,8 +35,8 @@ type Router struct {
 	MethodNotAllowed http.Handler
 	Doc              http.Handler
 	Slash            bool
-	route            map[string]*Route // 单实例路由
-	tpl              map[string]*Route // 正则路由
+	route            mr // 单实例路由
+	tpl              mr // 正则路由
 
 	group map[string]*GroupRoute // 组路由
 
@@ -52,7 +45,7 @@ type Router struct {
 	pattern    map[string]int // 完全匹配
 	tplpattern map[string]int // 正则匹配
 
-	groupname map[string]string // 根据 pattern 寻找 组
+	groupname map[string]string // 根据 pattern 寻找 组名
 
 	header  map[string]string                               // 全局路由头
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
@@ -199,6 +192,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和中间件
 	if r.IgnoreIco && url == "/favicon.ico" {
+		for k, v := range r.header {
+			w.Header().Set(k, v)
+		}
 		r.HanleFavicon.ServeHTTP(w, req)
 		return
 	}
@@ -237,277 +233,168 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request) {
 	// 应该弄成中间件形式
 	var thisHandle http.Handler
 	var tp int = -1
-	var end func(interface{})
+	var vl []string
 	var matchurl string
+	var this_route *Route
 	data := &Data{}
 	///  寻找路由   ///
-	// 先寻找完全匹配的
-	if _, ok := r.pattern[url]; ok {
+	// 先寻找完全匹配的,  优化地方， 先找到路由， 然后找处理接口
+	if this_tp, ok := r.pattern[url]; ok {
 		matchurl = url
+		tp = this_tp
 		if r.pattern[url] == 0 {
 			// 匹配的单路由
 			// 是否能找到方法
-			if handle, mok := r.route[url].method[req.Method]; mok {
-				tp = 0
-				thisHandle = handle
-				data.Data = r.route[url].dataSource
-				end = r.route[url].end
-			} else {
-				if r.route[url] != nil {
-					thisHandle = r.MethodNotAllowed
-				} else {
-					if r.HandleNotFound == nil {
-						thisHandle = handleNotFound()
-					} else {
-						thisHandle = r.HandleNotFound
-					}
-				}
-			}
+			this_route = r.route[url]
 		} else {
 			// r.pattern[url] 肯定等于 2
-			group := r.group[r.groupname[matchurl]].route[url]
-			if handle, mok := group.method[req.Method]; mok {
-				tp = 2
-				thisHandle = handle
-				data.Data = group.dataSource
-				end = group.end
-			} else {
-				if group != nil {
-					thisHandle = r.MethodNotAllowed
-
-				} else {
-					if r.HandleNotFound == nil {
-						thisHandle = handleNotFound()
-					} else {
-						thisHandle = r.HandleNotFound
-					}
-				}
-			}
+			this_route = r.group[r.groupname[matchurl]].route[matchurl]
 		}
 
 	} else {
 		// 最后正则里面寻找路由
-
+		// reUrl 是一个正则的表达式路径， 是匹配路由的key
 		for reUrl, n := range r.tplpattern {
+			tp = n
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
 				matchurl = reUrl
-				vl := re.FindStringSubmatch(url)
-				vm := make(map[string]string)
+				vl = re.FindStringSubmatch(url)
 				if n == 1 {
 					// 单路由
-					if handle, mok := r.tpl[matchurl].method[req.Method]; mok {
-						for i, v := range r.tpl[matchurl].args {
-							vm[v] = vl[i+1]
-						}
-						data.Var = vm
-						// 获取var
-						if r.Slash {
-							Var[req.URL.Path] = vm
-						} else {
-							Var[url] = vm
-						}
-						tp = 1
-						thisHandle = handle
-						data.Data = r.tpl[matchurl].dataSource
-						end = r.tpl[matchurl].end
-						goto endloop
-					} else {
-						if r.route[url] != nil {
-							thisHandle = r.MethodNotAllowed
-						} else {
-							if r.HandleNotFound == nil {
-								thisHandle = handleNotFound()
-							} else {
-								thisHandle = r.HandleNotFound
-							}
-						}
-						goto endloop
-					}
+					this_route = r.tpl[matchurl]
+					goto endloop
 				} else {
-					group := r.group[r.groupname[matchurl]].tpl[matchurl]
-					if handle, mok := group.method[req.Method]; mok {
-						for i, v := range group.args {
-							vm[v] = vl[i+1]
-						}
-						data.Var = vm
-						// 获取var
-						if r.Slash {
-							Var[req.URL.Path] = vm
-						} else {
-							Var[url] = vm
-						}
-						tp = 3
-						thisHandle = handle
-						data.Data = group.dataSource
-						end = group.end
-						goto endloop
-					} else {
-						if group != nil {
-							thisHandle = r.MethodNotAllowed
-						} else {
-							if r.HandleNotFound == nil {
-								thisHandle = handleNotFound()
-							} else {
-								thisHandle = r.HandleNotFound
-							}
-						}
-						goto endloop
-					}
+					// n == 3
+					this_route = r.group[r.groupname[matchurl]].tpl[matchurl]
+					goto endloop
 				}
 
 			}
 
 		}
-		// 没有匹配到
-		thisHandle = r.HandleNotFound
+		this_route = nil
+
 	}
 endloop:
 
-	Bridge[url] = data
+	// 根据路由找处理接口
+	if this_route == nil {
+		if r.HandleNotFound == nil {
+			thisHandle = handleNotFound()
+		} else {
+			thisHandle = r.HandleNotFound
+		}
+	}
+
+	if handle, ok := this_route.method[req.Method]; ok {
+		// 判断是否有这个方法
+		thisHandle = handle
+		data.Data = this_route.dataSource
+	} else {
+		// 如果不存在, 返回MethodNotAllowed
+		if r.MethodNotAllowed == nil {
+			thisHandle = methodNotAllowed()
+		} else {
+			thisHandle = r.MethodNotAllowed
+		}
+
+	}
+
+	// 如果是正则路由， 添加路由参数到全局里面
+	if tp == 1 || tp == 3 {
+		vm := make(map[string]string)
+		for i, v := range this_route.args {
+			vm[v] = vl[i+1]
+		}
+		data.Var = vm
+	}
+	slashurl := slash(url)
+	Bridge[slashurl] = data
+
+	// 全局的请求头
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
 		tmpHeader[k] = v
 		w.Header().Set(k, v)
 	}
 
+	// 全局的中间件
 	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
 	for _, v := range r.midware {
 		tmpMidware = append(tmpMidware, v)
 	}
 	///  结束寻找路由     ///
-	// 合并请求头和中间件
-	switch tp {
-	case 0, 2:
-		if tp == 2 {
 
-			group, ok := r.group[r.groupname[matchurl]].route[matchurl]
-			if ok {
-				for _, v := range group.midware {
-					tmpMidware = append(tmpMidware, v)
-				}
-				for k, v := range group.header {
-					tmpHeader[k] = v
-					w.Header().Set(k, v)
-				}
-				// 删除多余的header
-				for _, v := range group.delheader {
-					delete(tmpHeader, v)
-					w.Header().Del(v)
-				}
-				// 删除多余的中间件
-				for _, v := range group.delmidware {
-					for i, tmd := range tmpMidware {
-						if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-							tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-							tmp = append(tmp, tmpMidware[0:i]...)
-							tmp = append(tmp, tmpMidware[i+1:]...)
-							tmpMidware = tmp
-							break
-						}
-					}
+	// 这里是要是添加组路由的， 也就是tp 是 2或3的
+	if tp == 2 || tp == 3 {
+		vm := make(map[string]string)
+		for i, v := range this_route.args {
+			vm[v] = vl[i+1]
+		}
+		data.Var = vm
+		group := r.group[r.groupname[matchurl]]
 
+		// 添加中间件
+		for _, v := range group.midware {
+			tmpMidware = append(tmpMidware, v)
+		}
+		// 添加多余的请求头
+		for k, v := range group.header {
+			tmpHeader[k] = v
+			w.Header().Set(k, v)
+		}
+		// 删除多余的header
+		for _, v := range group.delheader {
+			delete(tmpHeader, v)
+			w.Header().Del(v)
+		}
+		// 删除多余的中间件
+		for _, v := range group.delmidware {
+			for i, tmd := range tmpMidware {
+
+				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+					tmp = append(tmp, tmpMidware[0:i]...)
+					tmp = append(tmp, tmpMidware[i+1:]...)
+					tmpMidware = tmp
+					break
 				}
 			}
 
 		}
+	}
 
-		rt, ok := r.route[matchurl]
-		if ok {
-			for _, v := range rt.midware {
-				tmpMidware = append(tmpMidware, v)
-			}
-			for k, v := range rt.header {
-				tmpHeader[k] = v
-				w.Header().Set(k, v)
-			}
-			for _, v := range rt.delheader {
-				delete(tmpHeader, v)
-				w.Header().Del(v)
-			}
-			// 删除多余的中间件
-			for _, v := range rt.delmidware {
-				for i, tmd := range tmpMidware {
-					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-						tmp = append(tmp, tmpMidware[0:i]...)
-						tmp = append(tmp, tmpMidware[i+1:]...)
-						tmpMidware = tmp
-						break
-					}
-				}
-
+	// 增加单路由的请求头和中间件
+	for _, v := range this_route.midware {
+		tmpMidware = append(tmpMidware, v)
+	}
+	for k, v := range this_route.header {
+		tmpHeader[k] = v
+		w.Header().Set(k, v)
+	}
+	for _, v := range this_route.delheader {
+		delete(tmpHeader, v)
+		w.Header().Del(v)
+	}
+	// 删除多余的中间件
+	for _, v := range this_route.delmidware {
+		for i, tmd := range tmpMidware {
+			if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+				tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+				tmp = append(tmp, tmpMidware[0:i]...)
+				tmp = append(tmp, tmpMidware[i+1:]...)
+				tmpMidware = tmp
+				break
 			}
 		}
 
-	case 1, 3:
-		if tp == 3 {
-
-			group, ok := r.group[r.groupname[matchurl]].route[matchurl]
-			if ok {
-				for _, v := range group.midware {
-					tmpMidware = append(tmpMidware, v)
-				}
-				for k, v := range group.header {
-					tmpHeader[k] = v
-					w.Header().Set(k, v)
-				}
-				// 删除多余的header
-				for _, v := range group.delheader {
-					delete(tmpHeader, v)
-					w.Header().Del(v)
-				}
-				// 删除多余的中间件
-				for _, v := range group.delmidware {
-					for i, tmd := range tmpMidware {
-
-						if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-							tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-							tmp = append(tmp, tmpMidware[0:i]...)
-							tmp = append(tmp, tmpMidware[i+1:]...)
-							tmpMidware = tmp
-							break
-						}
-					}
-
-				}
-			}
-
-		}
-		rt, ok := r.tpl[matchurl]
-		if ok {
-			for _, v := range rt.midware {
-				tmpMidware = append(tmpMidware, v)
-			}
-			for k, v := range rt.header {
-				tmpHeader[k] = v
-				w.Header().Set(k, v)
-			}
-			for _, v := range rt.delheader {
-				delete(tmpHeader, v)
-				w.Header().Del(v)
-			}
-
-			for _, v := range rt.delmidware {
-				for i, tmd := range tmpMidware {
-					if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
-						tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-						tmp = append(tmp, tmpMidware[0:i]...)
-						tmp = append(tmp, tmpMidware[i+1:]...)
-						tmpMidware = tmp
-						break
-					}
-				}
-
-			}
-		}
-
-	default:
 	}
 
 	// 缓存handler
@@ -516,7 +403,7 @@ endloop:
 		Handle:  thisHandle,
 		Header:  tmpHeader,
 		Midware: tmpMidware,
-		end:     end,
+		end:     this_route.end,
 	}
 
 	cacheurl := url
@@ -526,21 +413,16 @@ endloop:
 	}
 	r.routeTable.Store(cacheurl+req.Method, thisRouter)
 
-	// 执行 中间件
-	defer delete(Ctx, cacheurl)
-	var ok bool
-
 	for _, v := range tmpMidware {
-
-		ok = v(w, req)
+		ok := v(w, req)
 		if ok {
 			return
 		}
 	}
 
 	thisHandle.ServeHTTP(w, req)
-	if end != nil {
-		go end(GetData(req).End)
+	if this_route.end != nil {
+		go this_route.end(GetData(req).End)
 	}
 }
 

@@ -12,7 +12,6 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["test"])
 	fmt.Println(xmux.GetData(r).Data)
 	w.Write([]byte("hello world home"))
 	return
@@ -20,7 +19,6 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func name(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("home")
-	fmt.Println(xmux.Var[r.URL.Path]["name"])
 	fmt.Println(xmux.GetData(r).Var["name"])
 
 	w.Write([]byte("hello world name"))
@@ -28,14 +26,11 @@ func name(w http.ResponseWriter, r *http.Request) {
 }
 
 func me(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["me"])
 	w.Write([]byte("hello world me"))
 	return
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["all"])
-	fmt.Println(xmux.Var[r.URL.Path]["oid"])
 	xmux.GetData(r).End = "13333"
 	w.Write([]byte("hello world all"))
 	return
