@@ -246,19 +246,18 @@ func TestHome(t *testing.T) {
 
 ```
 
-### 全局 context.Context 
+### 全局 数据  GetData(r) , 对基础路由的数据补充， 用法后面详细补充
+
 ```go
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	r.Header.Set("bbb", "ccc")
 
-	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")   # 这里的Ctx的key 类似 Var, key 统一为r.URL.Path 
+	data := GetData(r) 
 	return false
 }
 
 func name(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["name"])
-	fmt.Println(xmux.Ctx[r.URL.Path].Value("conf"))
 	w.Write([]byte("hello world name"))
 	return
 }
