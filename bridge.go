@@ -50,3 +50,15 @@ func (data *Data) Get(k string) interface{} {
 	defer data.mu.Unlock()
 	return data.ctx[k]
 }
+
+func (data *Data) Del(k string) {
+	if data.mu == nil {
+		data.mu = &sync.RWMutex{}
+	}
+	if data.ctx == nil {
+		data.ctx = make(map[string]interface{})
+	}
+	data.mu.Lock()
+	delete(data.ctx, k)
+	data.mu.Unlock()
+}
