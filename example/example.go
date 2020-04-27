@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -54,7 +53,6 @@ func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login filter")
 	r.Header.Set("bbb", "ccc")
 
-	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
 	return false
 }
 
@@ -95,7 +93,7 @@ func main() {
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home)
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home).CodeField("133").CodeMsg(1, "56").CodeMsg(3, "akhsdklfhl")
 	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name)
 	router.Pattern("/aaa/bbbb/{path:me}").Post(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
