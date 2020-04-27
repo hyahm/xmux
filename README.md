@@ -12,6 +12,7 @@
 - [x] 支持中间件  
 - [x] 增加全局上下文， 方便中间件传递值
 - [x] 内嵌接口文档
+- [x] 支持收尾操作
 - [x] 增加数据结构绑定， 适合中间件传递
 - [x] 增加websocket， 可以学习，不建议使用
 
@@ -306,6 +307,31 @@ xmux.GetData(r)["name"]  // 请使用这种
 ```
 后面会增加自定义正则匹配
 
+### 收尾操作
+用来处理一些无关紧要的收尾处理， 处理的时候， 与客户端的连接已经断开了， 只有单路由才支持
+```go
+这是一个单路由实例（end 是xmux.GetData(r).End  的值）
+func end(end interface{}) {
+	fmt.Println("-----------------------")
+	fmt.Println(end)
+	fmt.Println("end function ")
+
+}
+
+func all(w http.ResponseWriter, r *http.Request) {
+	xmux.GetData(r).End = "13333"
+	w.Write([]byte("hello world all"))
+	return
+}
+router.Pattern("/bbb/ccc").Get(all).End(end)
+
+```
+上面的路由请求后 最后会打印  , 客户端收到 hello world all
+```
+-----------------------
+13333
+end function 
+```
 ### 压力测试
 ```
 canderdeAir:xmux cander$ go test -bench=. -benchmem
