@@ -1,13 +1,11 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 )
 
 func css(w http.ResponseWriter, r *http.Request) {
 	filename := GetData(r).Var["name"]
-	fmt.Println(filename)
 	switch filename {
 	case "style":
 		w.Write([]byte(style))
@@ -23,7 +21,6 @@ func css(w http.ResponseWriter, r *http.Request) {
 
 func js(w http.ResponseWriter, r *http.Request) {
 	filename := GetData(r).Var["name"]
-	fmt.Println(filename)
 	switch filename {
 	case "jquery":
 		w.Write([]byte(jqueryMin))
