@@ -8,7 +8,7 @@
 - [x] 支持正则匹配和参数获取
 - [x] 完全匹配优先于正则匹配
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
-- [x] 支持四大全局的handle（notFound, methodNotFound, handleNotFound, Options请求）  
+- [x] 支持四大全局handle ,MethodnotFound(忘记写方法), MethodNotAllowed(method没定义), HandleNotFound(没有找到页面), Options请求）  
 - [x] 支持中间件  
 - [x] 增加全局上下文， 方便中间件传递值
 - [x] 内嵌接口文档
@@ -148,12 +148,12 @@ func main() {
 ### 四大全局handle
 ```go
 Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
-NotFound:       notFound(),   // 404 返回
-HandleNotFound: handleNotFound(),   // 这个就是上面提示的忘了写handle 的提示页面
-MethodNotAllowed http.Handler
+HandleNotFound: handleNotFound(),   // 404 返回
+MethodNotFound: methodNotFound(),   // 这个就是上面提示的忘了写handle 的提示页面
+MethodNotAllowed methodNotAllowed(),
 
 // 默认调用的方法如下
-func notFound() http.Handler {
+func handleNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -181,15 +181,6 @@ func methodNotAllowed() http.Handler {
 	})
 }
 
-
-可以选择自定义的， 只要new路由赋值即可
-router := xmux.NewRouter()
-router.Options = Options()  
-methodNotAllowed 和  handleNotFound的区别
-当存在handle 但找不到 method 就返回 methodNotAllowed
-不存在handle 就返回 handleNotFound的
-
-
 ```
 
 ###  header 和 中间件 func(w http.ResponseWriter, r *http.Request)  bool  
@@ -198,15 +189,30 @@ methodNotAllowed 和  handleNotFound的区别
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
 私有路由： 单一路由的请求头， 属于某组的话， 带上组路由头， 全局的话带上全局的  
 优先级  
-私有路由 > 组路由 > 全局路由  
+私有路由 > 组路由 > 全局路由  (如果存在优先级大的就覆盖优先级小的)
 
-中间类似上面header, 最后一个返回值是表示是否直接返回， 如果直接返回， 后面的方法将不会执行, 例如下面的方法， 执行的话， 将不会打印66666  
+中间类似上面header   
+最后一个返回值是表示是否直接返回， 如果直接返回，后面的中间件和方法将不会执行   
+例如下面的方法， 执行的话， 将不会打印66666    
+但是如果 hf 返回false   
+那么将打印  
+44444444444444444444444444  
+66666  
+cander  
+页面将看到  
+hello world home  
 ```
 go test -v -run TestHome github.com/hyahm/xmux/example
 ```       
 不过优先级相反    
-私有路由 < 组路由 < 全局路由    
+私有路由 < 组路由 < 全局路由    (如果存在优先级大的就覆盖优先级小的)
 ```go
+
+func home(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello world home"))
+	return
+}
+
 func mid() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -225,7 +231,7 @@ func hf(w http.ResponseWriter, r *http.Request)  bool {
 func hf1(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("66666")
 	fmt.Println(r.Header.Get("name"))
-	return true
+	return false
 }
 
 func TestHome(t *testing.T) {
@@ -301,18 +307,17 @@ router.Slash = true
 例如： /aaa/adfaasf16sd  
 这个是匹配的， name: aa   age: 16  
 ```
-xmux.Var[r.URL.Path]["name"]  // 获取方法(将废弃)
-xmux.GetData(r)["name"]  // 请使用这种
+xmux.GetData(r)["name"] 
 ```
 后面会增加自定义正则匹配
 
 ### 收尾操作
-用来处理一些无关紧要的收尾处理， 处理的时候， 与客户端的连接已经断开了， 只有单路由才支持
+用来处理一些无关紧要的收尾处理，比如日志和消息通知，  处理的时候， 与客户端的连接已经断开了， 只有单路由(Route)才支持
 ```go
 这是一个单路由实例（end 是xmux.GetData(r).End  的值）
 func end(end interface{}) {
 	fmt.Println("-----------------------")
-	fmt.Println(end)
+	fmt.Println(end)  // fmt.Println(xmux.GetDate(r).End) 和这个是一个东西
 	fmt.Println("end function ")
 
 }
@@ -325,11 +330,26 @@ func all(w http.ResponseWriter, r *http.Request) {
 router.Pattern("/bbb/ccc").Get(all).End(end)
 
 ```
-上面的路由请求后 最后会打印  , 客户端收到 hello world all
+上面的路由请求后 , 客户端收到 hello world all, 最后会打印 
 ```
 -----------------------
 13333
 end function 
+```
+### 同一个路由各组件中通讯
+```vim
+xmux.GetData(r).Set(k string, v interface{})
+xmux.GetData(r).Get(k string) (v interface{})
+xmux.GetData(r).Del(k string)
+```
+### 不同一个路由各组件中通讯
+```go
+// 只要没有删除， 其他路由可以通过同样的方法获取到其他路由的数据
+data := xmux.Bridge[r.URL.Path]    // 请去掉 r.URL.Path 多余的斜杠
+
+data.Set(k string, v interface{})
+data.Get(k string) (v interface{})
+data.Del(k string)
 ```
 ### 压力测试
 ```

@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -18,16 +17,16 @@ func midware2(http.ResponseWriter, *http.Request) bool {
 
 func TestCompareMidware(t *testing.T) {
 	m1 := midware1
-	m2 := midware2
+	m2 := midware1
 	tm1 := reflect.ValueOf(m1).Pointer()
 
 	tm2 := reflect.ValueOf(m2).Pointer()
 
 	name1 := runtime.FuncForPC(tm1).Name()
 	name2 := runtime.FuncForPC(tm2).Name()
-	fmt.Println("name1: ", name1)
-	fmt.Println("name2: ", name2)
 
-	fmt.Println(name1 == name2)
+	if name1 != name2 {
+		t.Error("func not compare")
+	}
 
 }

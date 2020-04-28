@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
@@ -49,8 +50,9 @@ type Router struct {
 	header  map[string]string                               // 全局路由头
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 
-	routeTable *sync.Map // 路由表
+	routeTable map[string]*rt // 路由表
 	once       *sync.Once
+	mu         *sync.RWMutex
 }
 
 func (r *Router) ShowApi(pattern string) *Route {
@@ -104,7 +106,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.once = &sync.Once{}
 	}
 	if r.routeTable == nil {
-		r.routeTable = &sync.Map{}
+		r.routeTable = make(map[string]*rt)
+	}
+	if r.routeTable == nil {
+		r.routeTable = make(map[string]*rt)
 	}
 	r.once.Do(func() {
 		// 初始化默认路由
@@ -136,22 +141,22 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// 先进行路由表缓存寻找
-	if route, ok := r.routeTable.Load(url + req.Method); ok {
+	if route, ok := r.routeTable[url+req.Method]; ok {
 		// 设置请求头
-		for k, v := range route.(*rt).Header {
+		for k, v := range route.Header {
 			w.Header().Set(k, v)
 		}
 		// 请求中间件
 		var ok bool
-		for _, v := range route.(*rt).Midware {
+		for _, v := range route.Midware {
 			ok = v(w, req)
 			if ok {
 				return
 			}
 		}
-		route.(*rt).Handle.ServeHTTP(w, req)
-		if route.(*rt).end != nil {
-			go route.(*rt).end(GetData(req).End)
+		route.Handle.ServeHTTP(w, req)
+		if route.end != nil {
+			go route.end(GetData(req).End)
 		}
 
 	} else {
@@ -238,8 +243,7 @@ endloop:
 		}
 		data.Var = vm
 	}
-	slashurl := slash(url)
-	Bridge[slashurl] = data
+	Bridge[slash(url)] = data
 
 	// 全局的请求头
 	tmpHeader := make(map[string]string)
@@ -329,8 +333,8 @@ endloop:
 		Midware: tmpMidware,
 		end:     this_route.end,
 	}
-
-	r.routeTable.Store(url+req.Method, thisRouter)
+	fmt.Println("cache url:", url)
+	r.routeTable[url+req.Method] = thisRouter
 
 	for _, v := range tmpMidware {
 		ok := v(w, req)
@@ -375,7 +379,7 @@ func NewRouter() *Router {
 		IgnoreIco: true,
 		// group:      make(map[string]map[string]string),
 		Slash:      true,
-		routeTable: &sync.Map{},
+		routeTable: make(map[string]*rt),
 		header:     map[string]string{},
 		route:      make(map[string]*Route),
 		tpl:        make(map[string]*Route),
@@ -400,7 +404,6 @@ func options() http.Handler {
 func methodNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
-		w.WriteHeader(http.StatusGone)
 		return
 	})
 }
