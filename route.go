@@ -26,7 +26,7 @@ type Route struct {
 	supplement     string
 	delheader      []string
 	end            func(interface{})
-	codeMsg        map[int]string
+	codeMsg        map[string]string
 	codeField      string
 }
 
@@ -36,11 +36,11 @@ func (rt *Route) ApiCodeField(s string) *Route {
 	return rt
 }
 
-func (rt *Route) ApiCodeMsg(code int, msg string) *Route {
+func (rt *Route) ApiCodeMsg(code string, msg string) *Route {
 	// 文档的 错误码值及其含义
 	//
 	if rt.codeMsg == nil {
-		rt.codeMsg = make(map[int]string)
+		rt.codeMsg = make(map[string]string)
 	}
 	rt.codeMsg[code] = msg
 	return rt

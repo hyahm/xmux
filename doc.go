@@ -16,7 +16,7 @@ type Document struct {
 	Response   string // json 返回实例
 	Supplement string // 最后的补充说明
 	CodeField  string
-	CodeMsg    map[int]string
+	CodeMsg    map[string]string
 }
 
 // 所有的接口数据
