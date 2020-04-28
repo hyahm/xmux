@@ -9,7 +9,7 @@ var tpl = `<!DOCTYPE html>
     <title>{{ .Title }}</title>
     <link rel="stylesheet" href="/-/css/style.css"/>
     <link rel="stylesheet" href="/-/css/left.css">
-    <link rel="stylesheet" href="http://download.hyahm.com/font/iconfont.css">
+    <link rel="stylesheet" href="/-/css/font.css">
 </head>
 <body>
 <div class="body-content">
@@ -120,7 +120,6 @@ var tpl = `<!DOCTYPE html>
 <script type="text/javascript" src="/-/js/jquery.js"></script>
 <script type="text/javascript" src="/-/js/slimscroll.js"></script>
 <script type="text/javascript" src="/-/js/left.js"></script>
-
 <script type="text/javascript" src="/-/js/click.js"></script>
 
 </html>

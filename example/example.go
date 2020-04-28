@@ -99,7 +99,7 @@ func main() {
 	router.Pattern("/aaa/bbbb/{path:me}").Post(me).Get(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
 
-	router.ShowApi("doc", "/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
+	router.AddGroup(xmux.ShowApi("doc", "/doc", router)) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)
 	}

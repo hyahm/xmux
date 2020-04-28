@@ -54,37 +54,6 @@ type Router struct {
 	mu         *sync.RWMutex
 }
 
-func (r *Router) ShowApi(name string, pattern string) *Route {
-	r.AddGroup(NewApiDoc(name))
-	return r.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-		doc := &Doc{
-			Api:   make([]Document, 0),
-			Title: "xmux docs",
-		}
-
-		t := NewTemplate()
-		// 单路由
-		r.route.AppendTo(pattern, doc)
-		r.tpl.AppendTo(pattern, doc)
-
-		// 组路由
-
-		for _, g := range r.group {
-			g.route.AppendTo(pattern, doc)
-			g.tpl.AppendTo(pattern, doc)
-
-		}
-		err := t.Execute(w, *doc)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		}
-		return
-	}))
-
-}
-
 func (r *Router) SetHeader(k, v string) *Router {
 	if r.header == nil {
 		r.header = map[string]string{}
