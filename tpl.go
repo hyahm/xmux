@@ -59,7 +59,7 @@ var tpl = `<!DOCTYPE html>
                     <h3>请求示例</h3>
                     <div class="dl-ex-box">
                         <p hidden id="req">{{ .Request }} </p>
-                        <pre class="dl-expl" id="json_req">
+                        <pre class="dl-expl" id="json_req">{{ .Request }}
                         </pre>
                     </div>
                 {{ end }}
@@ -85,8 +85,8 @@ var tpl = `<!DOCTYPE html>
                 {{ if .Response }}
                     <h3>返回示例</h3>
                     <div class="dl-ex-box">
-                        <p hidden id="res">{{ .Response }} </p>
-                        <pre class="dl-expl" id="json_res">
+                        <p hidden id="res">{{ .Response }}</p>
+                        <pre class="dl-expl" id="json_res">{{ .Response }}
                         </pre>
                     </div>
                 {{ end }}
@@ -117,6 +117,7 @@ var tpl = `<!DOCTYPE html>
 
 </div>
 </body>
+
 <script type="text/javascript" src="/-/js/jquery.js"></script>
 <script type="text/javascript" src="/-/js/slimscroll.js"></script>
 <script type="text/javascript" src="/-/js/left.js"></script>
