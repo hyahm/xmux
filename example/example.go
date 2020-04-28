@@ -77,8 +77,8 @@ type Home struct {
 }
 
 type Call struct {
-	Code int    `json:"code" type:"int" information:"错误返回码"`
-	Msg  string `json:"msg" type:"string" information:"错误信息"`
+	Code int    `json:"code" type:"int" need:"是" information:"错误返回码"`
+	Msg  string `json:"msg" type:"string" need:"是" information:"错误信息"`
 }
 
 func main() {
@@ -86,7 +86,8 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = true
 	router.AddMidware(filter)
-	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").
+	router.Pattern("/home").Post(home).
+		ApiDescribe("这是home接口的测试").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).

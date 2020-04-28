@@ -69,12 +69,14 @@ var tpl = `<!DOCTYPE html>
                     <div class="dl-table dl-table1">
                         <span>参数名</span>
                         <span>类型</span>
+                        <span>必定返回</span>
                         <span>说明</span>
                     </div>
                     {{ range .Callbak }}
                         <div class="dl-table dl-table1 dl-table-msg  dl-table-msg1">
                             <span>{{ .Name }}</span>
                             <span>{{ .Typ }}</span>
+                            <span>{{ .Need }}</span>
                             <span>{{ .Information }}</span>
                         </div>
                     {{ end }}
