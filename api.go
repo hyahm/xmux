@@ -15,9 +15,9 @@ func css(w http.ResponseWriter, r *http.Request) {
 	case "left":
 		w.Write([]byte(left))
 		return
-	case "font":
-		w.Write([]byte(font))
-		return
+		// case "font":
+		// 	w.Write([]byte(font))
+		// 	return
 	}
 }
 

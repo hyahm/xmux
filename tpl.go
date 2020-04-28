@@ -9,7 +9,7 @@ var tpl = `<!DOCTYPE html>
     <title>{{ .Title }}</title>
     <link rel="stylesheet" href="/-/css/style.css"/>
     <link rel="stylesheet" href="/-/css/left.css">
-    <link rel="stylesheet" href="/-/css/font.css">
+    <link rel="stylesheet" href="http://download.hyahm.com/font/iconfont.css">
 </head>
 <body>
 <div class="body-content">
