@@ -29,8 +29,8 @@ type Router struct {
 	HanleFavicon     http.Handler
 	DisableOption    bool         // 禁止全局option
 	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	UrlNotFound      http.Handler
 	HandleNotFound   http.Handler
+	MethodNotFound   http.Handler
 	MethodNotAllowed http.Handler
 	Doc              http.Handler
 	Slash            bool
@@ -210,13 +210,11 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 	}
 endloop:
 
-	// 根据路由找处理接口
+	// 第一次启动的时候 已经初始化了 默认的全部接口
 	if this_route == nil {
-		if r.HandleNotFound == nil {
-			thisHandle = handleNotFound()
-		} else {
-			thisHandle = r.HandleNotFound
-		}
+		// 如果没找到路由 ,返回没有找到
+		r.HandleNotFound.ServeHTTP(w, req)
+		return
 	}
 
 	if handle, ok := this_route.method[req.Method]; ok {
@@ -224,13 +222,12 @@ endloop:
 		thisHandle = handle
 		data.Data = this_route.dataSource
 	} else {
-		// 如果不存在, 返回MethodNotAllowed
-		if r.MethodNotAllowed == nil {
-			thisHandle = methodNotAllowed()
+		if len(this_route.method) == 0 {
+			r.MethodNotFound.ServeHTTP(w, req)
 		} else {
-			thisHandle = r.MethodNotAllowed
+			r.MethodNotAllowed.ServeHTTP(w, req)
 		}
-
+		return
 	}
 
 	// 如果是正则路由， 添加路由参数到全局里面
@@ -333,12 +330,7 @@ endloop:
 		end:     this_route.end,
 	}
 
-	cacheurl := url
-	if r.Slash && req.URL.Path != url {
-		cacheurl = req.URL.Path
-
-	}
-	r.routeTable.Store(cacheurl+req.Method, thisRouter)
+	r.routeTable.Store(url+req.Method, thisRouter)
 
 	for _, v := range tmpMidware {
 		ok := v(w, req)
@@ -356,11 +348,13 @@ endloop:
 func (r *Router) initHandler() {
 	// 匹配完成后，最先执行这个， 初始化当前方法
 	if r.MethodNotAllowed == nil {
+		// 405
 		r.MethodNotAllowed = methodNotAllowed()
 	}
 
-	if r.HandleNotFound == nil {
-		r.HandleNotFound = handleNotFound()
+	if r.MethodNotFound == nil {
+		//
+		r.MethodNotFound = methodNotFound()
 	}
 
 	if r.HanleFavicon == nil {
@@ -369,6 +363,9 @@ func (r *Router) initHandler() {
 
 	if r.Options == nil {
 		r.Options = options()
+	}
+	if r.HandleNotFound == nil {
+		r.HandleNotFound = handleNotFound()
 	}
 
 }
@@ -386,7 +383,7 @@ func NewRouter() *Router {
 	}
 }
 
-func urlNotFound() http.Handler {
+func handleNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -400,9 +397,10 @@ func options() http.Handler {
 	})
 }
 
-func handleNotFound() http.Handler {
+func methodNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
+		w.WriteHeader(http.StatusGone)
 		return
 	})
 }
@@ -415,13 +413,6 @@ func methodNotAllowed() http.Handler {
 }
 
 func favicon() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		return
-	})
-}
-
-func apiDoc() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
