@@ -92,12 +92,13 @@ func main() {
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home).ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
+		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name)
 	router.Pattern("/aaa/bbbb/{path:me}").Post(me).Get(me)
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
 
-	router.ShowApi("/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
+	router.ShowApi("doc", "/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)
 	}
