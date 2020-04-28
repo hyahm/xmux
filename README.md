@@ -351,6 +351,39 @@ data.Set(k string, v interface{})
 data.Get(k string) (v interface{})
 data.Del(k string)
 ```
+
+### 编写接口文档， 
+> 使用接口文档, 只需调用 ShowApi(string, strincssg)  第一个参数是组路由名， 第二个参数是挂载的路由uri
+== 组路由里面的静态文件 默认挂在 /-/css/xxx.css 和  /-/js/xxx.js 下 ==
+
+```go
+// 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱
+router := xmux.NewRouter()
+router.ShowApi("doc", "/doc")
+ApiDescribe("这是home接口的测试").  // 接口的简述
+ApiReqHeader(map[string]string{"content-type": "application/json"}). // 接口请求头
+ApiReqStruct(&Home{}).    // 接口请求参数， 由struct tag 提供（可以是结构体，也可以是结构体指针）
+ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).   // 接口请求示例
+ApiResStruct(Call{}).     // 接口返回参数， 由struct tag 提供 （可以是结构体，也可以是结构体指针）
+ApiResponseTemplate(`{"code": 0, "msg": ""}`).  // 接口返回示例
+ApiSupplement("这个是接口的说明补充， 没补充就不填"). // 接口补充
+ApiCodeField("133").    // 错误码字段
+ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")   // 错误码说明， 多次调用添加多次
+```
+>  接口请求参数tag 示例
+```
+type Home struct {
+	Addr   string `json:"addr" type:"string" need:"是" default:"深圳" information:"家庭住址"`
+	People int    `json:"people" type:"int" need:"是" default:"1" information:"有多少个人"`
+}
+```
+>  接口接收参数tag 示例, 比请求示例少了 default
+```
+type Call struct {
+	Code int    `json:"code" type:"int" need:"是" information:"错误返回码"`
+	Msg  string `json:"msg" type:"string" need:"否" information:"错误信息"`
+}
+```
 ### 压力测试
 ```
 canderdeAir:xmux cander$ go test -bench=. -benchmem
