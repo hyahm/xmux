@@ -1,6 +1,7 @@
 package xmux
 
 var style = `
+*{box-sizing: border-box}
 .body-content{
     width: 1300px;
     margin: 0 auto;
@@ -113,7 +114,7 @@ var style = `
      padding: 10px 20px;
 }
 .dl-table span{
-    width:calc(100% / 4);
+    width:calc(100% / 5);
     text-align: center;
     background:#c55b03;
     padding: 10px 0;
@@ -124,7 +125,7 @@ var style = `
     border-left: 1px solid #eee;
 }
 .dl-table-msg span{
-    width:calc(100% / 4);
+    width:calc(100% / 5);
     text-align: center;
     background:#fff;
     padding: 10px 0;
