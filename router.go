@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
@@ -65,86 +64,15 @@ func (r *Router) ShowApi(pattern string) *Route {
 
 		t := NewTemplate()
 		// 单路由
-		for url, v := range r.route {
-			if url == pattern {
-				continue
-			}
-			document := v.makeDoc()
-			document.Url = url
-			document.Supplement = v.supplement
-			for mt, _ := range v.method {
-				document.Method = mt
-				if mt == http.MethodGet {
-					if v.params_request != nil {
-						document.Url += GetOpt(v.params_request)
-					}
-				} else {
-					if v.st_request != nil {
-						document.Opt = PostOpt(v.st_request)
-					}
-				}
-				doc.Add(document)
-			}
-		}
+		r.route.AppendTo(pattern, doc)
+		r.tpl.AppendTo(pattern, doc)
 
-		for url, v := range r.tpl {
-			document := v.makeDoc()
-			document.Url = url
-			document.Supplement = v.supplement
-			for mt, _ := range v.method {
-				document.Method = mt
-				if mt == http.MethodGet {
-					if v.params_request != nil {
-						document.Url += GetOpt(v.params_request)
-					}
-				} else {
-					if v.st_request != nil {
-						document.Opt = PostOpt(v.st_request)
-					}
-				}
-				doc.Add(document)
-			}
-		}
 		// 组路由
 
 		for _, g := range r.group {
-			for url, v := range g.route {
-				document := v.makeDoc()
-				document.Url = url
-				document.Supplement = v.supplement
-				for mt, _ := range v.method {
-					document.Method = mt
-					if mt == http.MethodGet {
-						if v.params_request != nil {
-							document.Url += GetOpt(v.params_request)
-						}
-					} else {
-						if v.st_request != nil {
-							document.Opt = PostOpt(v.st_request)
-						}
-					}
-					doc.Add(document)
-				}
-			}
+			g.route.AppendTo(pattern, doc)
+			g.tpl.AppendTo(pattern, doc)
 
-			for url, v := range g.tpl {
-				document := v.makeDoc()
-				document.Url = url
-				document.Supplement = v.supplement
-				for mt, _ := range v.method {
-					document.Method = mt
-					if mt == http.MethodGet {
-						if v.params_request != nil {
-							document.Url += GetOpt(v.params_request)
-						}
-					} else {
-						if v.st_request != nil {
-							document.Opt = PostOpt(v.st_request)
-						}
-					}
-					doc.Add(document)
-				}
-			}
 		}
 		err := t.Execute(w, *doc)
 		if err != nil {
@@ -358,7 +286,7 @@ endloop:
 		for _, v := range group.delmidware {
 			for i, tmd := range tmpMidware {
 
-				if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+				if CompareFunc(v, tmd) {
 					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 					tmp = append(tmp, tmpMidware[0:i]...)
 					tmp = append(tmp, tmpMidware[i+1:]...)
@@ -385,7 +313,7 @@ endloop:
 	// 删除多余的中间件
 	for _, v := range this_route.delmidware {
 		for i, tmd := range tmpMidware {
-			if fmt.Sprintf("%v", v) == fmt.Sprintf("%v", tmd) {
+			if CompareFunc(v, tmd) {
 				tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 				tmp = append(tmp, tmpMidware[0:i]...)
 				tmp = append(tmp, tmpMidware[i+1:]...)
