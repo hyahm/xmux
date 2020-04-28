@@ -359,7 +359,8 @@ data.Del(k string)
 ```go
 // 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱
 router := xmux.NewRouter()
-router.ShowApi("doc", "/doc")
+api := xmux.ShowApi("doc", "/doc", router)
+router.ShowApi(api)
 ApiDescribe("这是home接口的测试").  // 接口的简述
 ApiReqHeader(map[string]string{"content-type": "application/json"}). // 接口请求头
 ApiReqStruct(&Home{}).    // 接口请求参数， 由struct tag 提供（可以是结构体，也可以是结构体指针）
