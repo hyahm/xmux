@@ -7,9 +7,9 @@ var tpl = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <title>{{ .Title }}</title>
-    <link rel="stylesheet" href="http://download.hyahm.com/css/style.css"/>
-    <link rel="stylesheet" href="http://download.hyahm.com/css/left.css">
-    <link rel="stylesheet" type="text/css" href="http://download.hyahm.com/font/iconfont.css">
+    <link rel="stylesheet" href="/-/css/style.css"/>
+    <link rel="stylesheet" href="/-/css/left.css">
+    <link rel="stylesheet" href="/-/css/font.css">
 </head>
 <body>
 <div class="body-content">
@@ -115,9 +115,19 @@ var tpl = `<!DOCTYPE html>
 
 </div>
 </body>
-<script type="text/javascript" src="http://download.hyahm.com/js/jquery.min.js"></script>
-<script type="text/javascript" src="http://download.hyahm.com/js/jquery.slimscroll.min.js"></script>
-<script type="text/javascript" src="http://download.hyahm.com/js/left-side-menu.js"></script>
-<script type="text/javascript" src="http://download.hyahm.com/js/click.js"></script>
+<script type="text/javascript" src="/-/js/jquery.js"></script>
+<script type="text/javascript" src="/-/js/slimscroll.js"></script>
+<script type="text/javascript" src="/-/js/left.js"></script>
+
+<script type="text/javascript" src="/-/js/click.js"></script>
+
 </html>
 `
+
+// <script type="text/javascript" src="/-/js/left.js"></script>
+// <script type="text/javascript" src="/-/js/slimscroll.js"></script>
+// <script type="text/javascript" src="/-/js/click.js"></script>
+// <script type="text/javascript" src="http://download.hyahm.com/js/jquery.min.js"></script>
+// <script type="text/javascript" src="http://download.hyahm.com/js/jquery.slimscroll.min.js"></script>
+// <script type="text/javascript" src="http://download.hyahm.com/js/left-side-menu.js"></script>
+// <script type="text/javascript" src="http://download.hyahm.com/js/click.js"></script>

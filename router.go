@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
@@ -55,10 +54,11 @@ type Router struct {
 	mu         *sync.RWMutex
 }
 
-func (r *Router) ShowApi(pattern string) *Route {
-
+func (r *Router) ShowApi(name string, pattern string) *Route {
+	r.AddGroup(NewApiDoc(name))
 	return r.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+
 		doc := &Doc{
 			Api:   make([]Document, 0),
 			Title: "xmux docs",
@@ -333,7 +333,6 @@ endloop:
 		Midware: tmpMidware,
 		end:     this_route.end,
 	}
-	fmt.Println("cache url:", url)
 	r.routeTable[url+req.Method] = thisRouter
 
 	for _, v := range tmpMidware {

@@ -1,6 +1,9 @@
 package xmux
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 type mr map[string]*Route
 
@@ -13,6 +16,13 @@ func (mr mr) AppendTo(pattern string, doc *Doc) {
 		if url == pattern {
 			continue
 		}
+		if strings.Contains(url, "/-/css/") {
+			continue
+		}
+		if strings.Contains(url, "/-/js/") {
+			continue
+		}
+
 		document := v.makeDoc()
 		document.Url = url
 		document.Supplement = v.supplement
