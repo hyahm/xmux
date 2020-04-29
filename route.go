@@ -117,10 +117,8 @@ func (rt *Route) makeDoc(url string, count *int, doc *Document) {
 	if rt.groupKey != "" {
 		// 组路由
 		// 判断key 是否存在
-		fmt.Println(rt.groupKey)
 		if id, ok := keys[rt.groupKey]; ok {
 			// 存在的话
-			fmt.Println(keys)
 			// 添加文档就好了
 			d := ApiDocument[id]
 			d.Api = append(d.Api, *doc)

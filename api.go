@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -46,7 +45,6 @@ func showThisDoc(w http.ResponseWriter, r *http.Request) {
 	if api, ok := ApiDocument[intid]; ok {
 		api.Sidebar = sidebar
 
-		fmt.Println(api)
 		err := t.Execute(w, api)
 		if err != nil {
 			w.Write([]byte(err.Error()))
