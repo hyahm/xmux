@@ -353,11 +353,12 @@ data.Del(k string)
 ```
 
 ### 编写接口文档， 
-> 使用接口文档, 只需调用 ShowApi(string, strincssg)  第一个参数是组路由名， 第二个参数是挂载的路由uri
+> 使用接口文档,  第一个参数是组路由名， 第二个参数是挂载的路由uri
 == 组路由里面的静态文件 默认挂在 /-/css/xxx.css 和  /-/js/xxx.js 下 ==
+== 动态路由   /-/api/{int}.html  ==
 
 ```go
-// 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱
+// 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱, 调用的时候只会显示到当前位置以上的路由
 router := xmux.NewRouter()
 api := xmux.ShowApi("doc", "/doc", router)
 router.ShowApi(api).
