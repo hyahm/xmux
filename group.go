@@ -185,5 +185,12 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		r.groupname[k] = group.name
 	}
 	r.group[group.name] = group
+	// group 的 组文档继承到 route
+	for _, rt := range group.route {
+		rt.groupKey = group.groupKey
+	}
+	for _, rt := range group.tpl {
+		rt.groupKey = group.groupKey
+	}
 	return r
 }

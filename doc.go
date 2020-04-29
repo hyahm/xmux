@@ -44,6 +44,7 @@ func NewDocs(name string, r *Router) {
 	// 组路由
 
 	for _, g := range r.group {
+
 		g.route.AppendTo(&count)
 		g.tpl.AppendTo(&count)
 
