@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -16,22 +17,44 @@ type Route struct {
 	delmidware []func(http.ResponseWriter, *http.Request) bool
 	describe   string // 接口描述
 
-	request        string      // 请求的请求示例
-	dataSource     interface{} // 数据源
-	response       string      // 接口返回示例
-	st_request     interface{}
-	params_request map[string]string
-	st_response    interface{}
-	reqHeader      map[string]string
-	supplement     string
-	delheader      []string
-	end            func(interface{})
-	codeMsg        map[string]string
-	codeField      string
+	request                          string      // 请求的请求示例
+	dataSource                       interface{} // 数据源
+	response                         string      // 接口返回示例
+	st_request                       interface{}
+	params_request                   map[string]string
+	st_response                      interface{}
+	reqHeader                        map[string]string
+	supplement                       string
+	delheader                        []string
+	end                              func(interface{})
+	codeMsg                          map[string]string
+	codeField                        string
+	groupKey, groupLable, groupTitle string
+}
+
+func (rt *Route) ApiExitGroup() *Route {
+	// 退出文档的组
+	rt.codeField = ""
+	return rt
+}
+
+func (rt *Route) ApiAddGroup(key string) *Route {
+	// 退出文档的组
+	rt.groupKey = key
+	return rt
+}
+
+func (rt *Route) ApiCreateGroup(key, title, lable string) *Route {
+	// 创建文档的组
+	rt.groupKey = key
+	rt.groupLable = lable
+	rt.groupTitle = title
+	return rt
 }
 
 func (rt *Route) ApiCodeField(s string) *Route {
 	// 文档的 错误码字段的 key
+
 	rt.codeField = s
 	return rt
 }
@@ -39,6 +62,7 @@ func (rt *Route) ApiCodeField(s string) *Route {
 func (rt *Route) ApiCodeMsg(code string, msg string) *Route {
 	// 文档的 错误码值及其含义
 	//
+
 	if rt.codeMsg == nil {
 		rt.codeMsg = make(map[string]string)
 	}
@@ -48,63 +72,83 @@ func (rt *Route) ApiCodeMsg(code string, msg string) *Route {
 
 func (rt *Route) End(handle func(interface{})) *Route {
 	// 执行完主程序后， 执行最后的首位中间件
+
 	rt.end = handle
 	return rt
 }
 
 func (rt *Route) Bind(s interface{}) *Route {
 	// 接口补充说明
+
 	rt.dataSource = s
 	return rt
 }
 
 func (rt *Route) ApiSupplement(s string) *Route {
 	// 接口补充说明
+
 	rt.supplement = s
 	return rt
 }
 
 func (rt *Route) ApiReqStruct(s interface{}) *Route {
 	// 接口返回数据的结构
+
 	rt.st_request = s
 	return rt
 }
 
 func (rt *Route) ApiReqParams(s map[string]string) *Route {
 	// 接口返回数据的结构
+
 	rt.params_request = s
 	return rt
 }
 
 func (rt *Route) ApiResStruct(s interface{}) *Route {
 	// 接口接收数据的结构
+
 	rt.st_response = s
 	return rt
 }
 
-func (rt *Route) makeDoc() Document {
-	doc := Document{
-		Opt:     make([]Opt, 0),
-		Callbak: make([]Opt, 0),
-	}
-	doc.Describe = rt.describe
-	doc.Header = rt.reqHeader
+func (rt *Route) makeDoc(url string, count *int, doc *Document) {
+	// 生成侧边栏
+	if rt.groupKey != "" {
+		// 组路由
+		// 判断key 是否存在
+		fmt.Println(rt.groupKey)
+		if id, ok := keys[rt.groupKey]; ok {
+			// 存在的话
+			fmt.Println(keys)
+			// 添加文档就好了
+			d := ApiDocument[id]
+			d.Api = append(d.Api, *doc)
+			// ApiDocument[id].Api = append(ApiDocument[id].Api, *doc)
+			ApiDocument[id] = d
 
-	if rt.st_response != nil {
-		doc.Callbak = PostOpt(rt.st_response)
+		} else {
+
+			keys[rt.groupKey] = *count
+			d := Doc{
+				Title: rt.groupTitle,
+				Api:   make([]Document, 0),
+			}
+			d.Api = append(d.Api, *doc)
+			ApiDocument[*count] = d
+
+			sideUrl := fmt.Sprintf("/-/api/%d.html", *count)
+			sidebar[sideUrl] = rt.groupLable
+			*count++
+		}
+
 	}
-	doc.Request = rt.request
-	doc.Response = rt.response
-	doc.CodeField = rt.codeField
-	doc.CodeMsg = rt.codeMsg
-	if doc.CodeField == "" {
-		doc.CodeField = "code"
-	}
-	return doc
+
 }
 
 func (rt *Route) ApiDescribe(s string) *Route {
 	// 接口的简单描述
+
 	rt.describe = s
 	return rt
 }
@@ -118,12 +162,14 @@ func (rt *Route) ApiReqHeader(head map[string]string) *Route {
 
 func (rt *Route) ApiRequestTemplate(s string) *Route {
 	// 接口的请求实例， 一般是json的字符串
+
 	rt.request = s
 	return rt
 }
 
 func (rt *Route) ApiResponseTemplate(s string) *Route {
 	// 接口的返回实例， 一般是json的字符串
+
 	rt.response = s
 	return rt
 }

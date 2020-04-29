@@ -86,7 +86,7 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = true
 	router.AddMidware(filter)
-	router.Pattern("/home").Post(home).
+	router.Pattern("/home").Post(home).ApiCreateGroup("home", "showthis home", "hometest").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).
@@ -95,11 +95,25 @@ func main() {
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
-	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name)
-	router.Pattern("/aaa/bbbb/{path:me}").Post(me).Get(me)
+	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
+		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqStruct(&Home{}).
+		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
+		ApiResStruct(Call{}).
+		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
+		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
+	router.Pattern("/aaa/bbbb/{path:me}").Post(me).Get(me).ApiAddGroup("test").
+		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqStruct(&Home{}).
+		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
+		ApiResStruct(Call{}).
+		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
+		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
 
-	router.AddGroup(xmux.ShowApi("doc", "/doc", router)) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
+	router.AddGroup(xmux.ShowApi("doc", "/docs", router).DelMidware(filter)) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)
 	}

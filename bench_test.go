@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +30,6 @@ func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 }
 
 func BenchmarkManyPathVariables(b *testing.B) {
-	fmt.Println(style)
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
 	router.Pattern("/v1/{v1}/{v2}/{v3}/{v4}/{v5}").Get(handler)

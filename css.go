@@ -1,7 +1,7 @@
 package xmux
 
 var style = `
-*{box-sizing: border-box}
+
 .body-content{
     width: 1300px;
     margin: 0 auto;
@@ -141,7 +141,7 @@ var style = `
     background: #e1e1e8;
     border: 1px solid #eee;
     text-align: left;
-    padding: 10px 0;
+    padding: 10px;
     color: #080;
 }
 .dl-table1 span{
@@ -173,6 +173,147 @@ var style = `
 .dl-post span{
     background:#008cff;
 }`
+
+var cssleft = `
+@charset "utf-8";
+/* 以下实际使用若已初始化可删除 .lsm-sidebar height父级需逐级设置为100%*/
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body,html{height: 100%;}
+body,ul{margin:0;padding:0}
+body,pre{font:14px "微软雅黑","宋体","Arial Narrow",HELVETICA;-webkit-text-size-adjust:100%;}
+li{list-style:none}
+a{text-decoration:none;}
+input {
+
+    border: 0;
+outline: none;
+background-color: rgba(0, 0, 0, 0);
+
+}
+
+.left-side-menu,.lsm-popup.lsm-sidebar   ul li, .lsm-container.lsm-mini .lsm-sidebar>ul>li.lsm-sidebar-item>ul>li.lsm-sidebar-item>ul{
+    background: #3b3e47;
+}
+
+
+.left-side-menu {-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none; user-select: none; }
+.left-side-menu{height: calc(100% - 60px);width: 240px; top: 60px;position: absolute; padding-top: 20px}
+.lsm-expand-btn{height: 65px;}
+.lsm-container {height: calc(100% - 65px); transition: all .3s;z-index: 100}
+
+.lsm-container li>a.active{ background: #c55b03; color: #fff; }
+
+
+.lsm-sidebar a{display: block;overflow: hidden;padding-left: 20px;line-height: 40px;max-height: 40px;color: #b2b8be;transition: all .3s;}
+.lsm-container ul:first-child > li> a, .lsm-container ul:first-child > li> a span{ line-height: 55px;max-height: 55px; }
+.lsm-sidebar a span{margin-left: 30px;}
+.lsm-sidebar .lsm-sidebar-item .lsm-sidebar-item >ul>li a span{margin-left: 60px;}
+.lsm-sidebar-item{position: relative;}
+.lsm-sidebar-item.lsm-sidebar-show{border-bottom: none;}
+.lsm-sidebar-item ul{display: none;background: rgba(0,0,0,.1);}
+.lsm-sidebar-item.lsm-sidebar-show ul{display: block;}
+.lsm-sidebar-item>a:before{content: "";position: absolute;left: 0px;width: 2px;height: 40px;background: #34A0CE;opacity:0;transition: all .3s;}
+.lsm-container ul:first-child>li.lsm-sidebar-item>a:before{height: 55px;}
+.lsm-sidebar .lsm-sidebar-icon{font-size: 20px;position: absolute;margin-left:-1px;}
+/* 此处修改导航图标 可自定义iconfont 替换*/
+.icon_1::after{content: "\e506";}
+
+.lsm-sidebar-more{float:right;margin-right: 20px;font-size: 12px;transition: transform .3s;}
+
+/* 导航右侧箭头 换用其他字体需要替换*/
+.lsm-sidebar-more::after{content: "\e93d";}
+
+
+.lsm-sidebar-show > a > i.my-icon.lsm-sidebar-more{transform:rotate(90deg);}
+.lsm-sidebar-show,.lsm-sidebar-item>a:hover{color: #FFF;background: rgba(0, 0, 0, 0.2);}
+.lsm-sidebar-show>a:before,.lsm-sidebar-item>a:hover:before{opacity:1;}
+.lsm-sidebar-item li>a:hover,.lsm-popup>div>ul>li>a:hover{color: #FFF; background: #6e809c;}
+.lsm-mini-btn{height: 70px;width: 70px;}
+.lsm-mini-btn svg{margin: -10px 0 0 -10px;}
+.lsm-mini-btn input[type="checkbox"]{display: none;}
+
+.lsm-mini-btn path {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    --length: 24;
+    --offset: -38;
+    stroke-dasharray: var(--length) var(--total-length);
+    stroke-dashoffset: var(--offset);
+    transition: all .8s cubic-bezier(.645, .045, .355, 1);
+}
+
+.lsm-mini-btn circle {fill: #fff3;opacity: 0;}
+.lsm-mini-btn label {top: 0; right: 0;}
+.lsm-mini-btn label:hover circle {opacity: 1;}
+.lsm-mini-btn input:checked+svg .line--1, .lsm-mini-btn input:checked+svg .line--3 {--length: 8.602325267;}
+.lsm-mini-btn .line--1, .lsm-mini-btn .line--3 {--total-length: 126.38166809082031;}
+.lsm-mini-btn .line--2 {--total-length: 80;}
+.lsm-mini-btn input:checked+svg .line--1, .lsm-mini-btn input:checked+svg .line--3 {--offset: -109.1770175568;}
+
+.lsm-mini .lsm-container, .lsm-mini .lsm-container{width: 60px;}
+.lsm-container.lsm-mini .lsm-sidebar .lsm-sidebar-icon{/* margin-left:-2px; */}
+.left-side-menu.lsm-mini ul:first-child>li.lsm-sidebar-item>a span{display: none;}
+.left-side-menu.lsm-mini ul:first-child>li.lsm-sidebar-item>a> i.lsm-sidebar-more{margin-right: -20px;}
+.lsm-container.lsm-mini .lsm-sidebar>ul>li.lsm-sidebar-item>ul>li.lsm-sidebar-item>ul{
+    display:none;
+    position: absolute;top:0px;left:180px;width: 180px;z-index: 99;
+    bottom: 0px;
+    top: 0px;
+    overflow: hidden;
+}
+.left-side-menu.lsm-mini ul:first-child > li > ul{
+    display: none;
+}
+.transform { -webkit-transform: scale(1); -ms-transform: scale(1); transform: scale(1); }
+.lsm-popup div{background: #05161f;}
+.lsm-popup{
+    display: block;
+    position: absolute;
+    border: 3px solid rgba(60, 71, 76, 0);
+}
+
+.lsm-popup > div > a > i.my-icon.lsm-sidebar-more{
+    transform:rotate(90deg);
+}
+
+.lsm-popup.second{
+    left: 60px;
+}
+.lsm-popup.third{
+    left: 243px;
+}
+.lsm-popup.third.lsm-sidebar > div > ul {
+    display: block;
+}
+.lsm-popup div {
+    border-radius: 5px;
+}
+.lsm-popup .lsm-sidebar-icon{
+    display: none;
+}
+.lsm-popup.lsm-sidebar a span{
+    margin-left: 0px;
+}
+.lsm-popup.lsm-sidebar > div > ul > li.lsm-sidebar-item>ul{position: absolute;top:0px;left:180px;width: 180px;z-index: 99;}
+
+.lsm-popup.lsm-sidebar   ul {
+    width: 180px;
+}
+.lsm-popup.lsm-sidebar   ul li{
+    width: 180px;
+}
+.lsm-popup.lsm-sidebar ul li:last-child, .lsm-popup>div>ul>li:last-child>a{
+    border-radius: 0 0 5px 5px ;
+}
+
+`
 
 var font = `
 @font-face {font-family: "iconfont";

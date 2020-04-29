@@ -17,13 +17,17 @@ type Data struct {
 }
 
 var Bridge map[string]*Data
+var bm *sync.RWMutex
 
 func init() {
 	Bridge = make(map[string]*Data)
+	bm = &sync.RWMutex{}
 }
 
 func GetData(r *http.Request) *Data {
 	url := slash(r.URL.Path)
+	bm.Lock()
+	defer bm.Unlock()
 	return Bridge[url]
 }
 

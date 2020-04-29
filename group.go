@@ -19,6 +19,9 @@ type GroupRoute struct {
 	delmidware []func(http.ResponseWriter, *http.Request) bool
 	pattern    map[string]int
 	delheader  []string
+	groupKey   string
+	groupTitle string
+	groupLable string
 }
 
 var reUrl map[string]*reroute
@@ -49,6 +52,15 @@ func (g *GroupRoute) DelHeader(k string) *GroupRoute {
 		g.delheader = make([]string, 0)
 	}
 	g.delheader = append(g.delheader, k)
+	return g
+}
+
+func (g *GroupRoute) ApiCreateGroup(key string, title string, lable string) *GroupRoute {
+	// 组api文档的key，组路由下面的全部会绑定到这个key下面, 如果key 为空， 则无效
+
+	g.groupKey = key
+	g.groupLable = lable
+	g.groupTitle = title
 	return g
 }
 
@@ -118,9 +130,12 @@ func (g *GroupRoute) Pattern(pattern string) *Route {
 		log.Fatalf("Pattern Error for %s", pattern)
 	}
 	route := &Route{
-		method: make(map[string]http.Handler),
-		header: make(map[string]string),
-		args:   make([]string, 0),
+		method:     make(map[string]http.Handler),
+		header:     make(map[string]string),
+		args:       make([]string, 0),
+		groupKey:   g.groupKey,
+		groupLable: g.groupLable,
+		groupTitle: g.groupTitle,
 	}
 	if v, listvar := match(pattern); len(listvar) > 0 {
 		if _, ok := g.pattern[v]; ok {

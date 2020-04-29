@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"net/http"
-	"strings"
 )
 
 type mr map[string]*Route
@@ -11,33 +10,39 @@ func (mr mr) Add(url string, rt *Route) {
 	mr[url] = rt
 }
 
-func (mr mr) AppendTo(pattern string, doc *Doc) {
+func (mr mr) AppendTo(count *int) {
 	for url, v := range mr {
-		if url == pattern {
-			continue
+		// 初始化document
+		doc := Document{
+			Opt:     make([]Opt, 0),
+			Callbak: make([]Opt, 0),
 		}
-		if strings.Contains(url, "/-/css/") {
-			continue
+		doc.Describe = v.describe
+		doc.Header = v.reqHeader
+		if v.st_response != nil {
+			doc.Callbak = PostOpt(v.st_response)
 		}
-		if strings.Contains(url, "/-/js/") {
-			continue
+		doc.Url = url
+		doc.Request = v.request
+		doc.Response = v.response
+		doc.CodeField = v.codeField
+		doc.CodeMsg = v.codeMsg
+		if doc.CodeField == "" {
+			doc.CodeField = "code"
 		}
-
-		document := v.makeDoc()
-		document.Url = url
-		document.Supplement = v.supplement
+		doc.Supplement = v.supplement
 		for mt, _ := range v.method {
-			document.Method = mt
+			doc.Method = mt
 			if mt == http.MethodGet {
 				if v.params_request != nil {
-					document.Url += GetOpt(v.params_request)
+					doc.Url += GetOpt(v.params_request)
 				}
 			} else {
 				if v.st_request != nil {
-					document.Opt = PostOpt(v.st_request)
+					doc.Opt = PostOpt(v.st_request)
 				}
 			}
-			doc.Add(document)
 		}
+		v.makeDoc(url, count, &doc)
 	}
 }

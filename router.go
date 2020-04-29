@@ -74,6 +74,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.once == nil {
 		r.once = &sync.Once{}
 	}
+	if r.mu == nil {
+		r.mu = &sync.RWMutex{}
+	}
 	if r.routeTable == nil {
 		r.routeTable = make(map[string]*rt)
 	}
@@ -212,8 +215,9 @@ endloop:
 		}
 		data.Var = vm
 	}
+	bm.Lock()
 	Bridge[slash(url)] = data
-
+	bm.Unlock()
 	// 全局的请求头
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
@@ -302,8 +306,9 @@ endloop:
 		Midware: tmpMidware,
 		end:     this_route.end,
 	}
+	r.mu.Lock()
 	r.routeTable[url+req.Method] = thisRouter
-
+	r.mu.Unlock()
 	for _, v := range tmpMidware {
 		ok := v(w, req)
 		if ok {

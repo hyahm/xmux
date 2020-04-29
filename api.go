@@ -1,7 +1,9 @@
 package xmux
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 )
 
 func css(w http.ResponseWriter, r *http.Request) {
@@ -11,7 +13,7 @@ func css(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(style))
 		return
 	case "left":
-		w.Write([]byte(left))
+		w.Write([]byte(cssleft))
 		return
 	case "font":
 		w.Write([]byte(font))
@@ -37,31 +39,45 @@ func js(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func showThisDoc(w http.ResponseWriter, r *http.Request) {
+	id := GetData(r).Var["id"]
+	t := NewTemplate()
+	intid, _ := strconv.Atoi(id)
+	if api, ok := ApiDocument[intid]; ok {
+		api.Sidebar = sidebar
+
+		fmt.Println(api)
+		err := t.Execute(w, api)
+		if err != nil {
+			w.Write([]byte(err.Error()))
+		}
+		return
+	} else {
+		ApiDocument[0] = Doc{
+			Title:   "this is document home page",
+			Sidebar: sidebar,
+		}
+
+		http.Redirect(w, r, "/-/api/0.html", 302)
+	}
+
+}
+
 func ShowApi(name string, pattern string, r *Router) *GroupRoute {
 	api := NewGroupRoute(name)
+	NewDocs(name, r)
+
 	api.Pattern("/-/js/{name}.js").Get(js).SetHeader("Content-Type", "application/javascript; charset=utf8")
 	api.Pattern("/-/css/{name}.css").Get(css).SetHeader("Content-Type", "text/css; charset=utf8")
+	api.Pattern("/-/api/{int:id}.html").Get(showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
 	api.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-
-		doc := &Doc{
-			Api:   make([]Document, 0),
-			Title: "xmux docs",
-		}
-
 		t := NewTemplate()
-		// 单路由
-		r.route.AppendTo(pattern, doc)
-		r.tpl.AppendTo(pattern, doc)
-
-		// 组路由
-
-		for _, g := range r.group {
-			g.route.AppendTo(pattern, doc)
-			g.tpl.AppendTo(pattern, doc)
-
+		ApiDocument[0] = Doc{
+			Title:   "this is document home page",
+			Sidebar: sidebar,
 		}
-		err := t.Execute(w, *doc)
+		err := t.Execute(w, ApiDocument[0])
 		if err != nil {
 			w.Write([]byte(err.Error()))
 		}

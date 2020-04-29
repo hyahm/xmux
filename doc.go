@@ -19,17 +19,38 @@ type Document struct {
 	CodeMsg    map[string]string
 }
 
-// 所有的接口数据
 type Doc struct {
-	Api   []Document
-	Title string // 这个是所有的错误码统计
+	Api     []Document        // 单路由或组路由
+	Title   string            // 内容主标题， 与lebel 一致
+	Search  map[string]int    // 所有路由都是用的这个, 暂时不管
+	Sidebar map[string]string // 所有路由的这个都是相同的, url 和 lebel
 }
 
-func (doc *Doc) Add(line Document) *Doc {
-	doc.Api = append(doc.Api, line)
-	return doc
+var sidebar map[string]string // 所有路由的这个都是相同的, url 和 lable
+
+var ApiDocument map[int]Doc // 应该是这个, 打开某地址， 返回对应的信息
+
+var keys map[string]int // 侧边栏与id 对应
+
+func NewDocs(name string, r *Router) {
+	ApiDocument = make(map[int]Doc)
+	sidebar = make(map[string]string) // url to lable
+	keys = make(map[string]int)
+	count := 1
+	// 单路由
+	r.route.AppendTo(&count)
+	r.tpl.AppendTo(&count)
+
+	// 组路由
+
+	for _, g := range r.group {
+		g.route.AppendTo(&count)
+		g.tpl.AppendTo(&count)
+
+	}
 }
 
+// 获取html 基础页面
 func NewTemplate() *template.Template {
 	var t *template.Template
 	name := "doc"
