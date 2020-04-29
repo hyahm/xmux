@@ -342,7 +342,7 @@ xmux.GetData(r).Set(k string, v interface{})
 xmux.GetData(r).Get(k string) (v interface{})
 xmux.GetData(r).Del(k string)
 ```
-### 不同一个路由各组件中通讯
+### 不同一个路由各组件中通讯 （后期会删除）
 ```go
 // 只要没有删除， 其他路由可以通过同样的方法获取到其他路由的数据
 data := xmux.Bridge[r.URL.Path]    // 请去掉 r.URL.Path 多余的斜杠
@@ -360,7 +360,8 @@ data.Del(k string)
 // 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱
 router := xmux.NewRouter()
 api := xmux.ShowApi("doc", "/doc", router)
-router.ShowApi(api)
+router.ShowApi(api).
+ApiCreateGroup("test", "api test", "apitest").  //增加了侧边栏 所有组路由或单路由必须加上这个才会显示, 第一个参数是组key, 第二个是组的标题， 第三个是侧边栏url显示的文字 ， 或者添加到某个组上 ApiAddGroup(key), 组路由添加的key 会被子路由继承， 如果不想显示可以ApiAddGroup 挂载到其他路由或者 ApiExitGroup， 移除此组
 ApiDescribe("这是home接口的测试").  // 接口的简述
 ApiReqHeader(map[string]string{"content-type": "application/json"}). // 接口请求头
 ApiReqStruct(&Home{}).    // 接口请求参数， 由struct tag 提供（可以是结构体，也可以是结构体指针）
