@@ -364,7 +364,7 @@ api := xmux.ShowApi("doc", "/doc", router)
 router.ShowApi(api).
 ApiCreateGroup("test", "api test", "apitest").  //增加了侧边栏 所有组路由或单路由必须加上这个才会显示, 第一个参数是组key, 第二个是组的标题， 第三个是侧边栏url显示的文字 ， 或者添加到某个组上 ApiAddGroup(key), 组路由添加的key 会被子路由继承， 如果不想显示可以ApiAddGroup 挂载到其他路由或者 ApiExitGroup， 移除此组
 ApiDescribe("这是home接口的测试").  // 接口的简述
-ApiReqHeader(map[string]string{"content-type": "application/json"}). // 接口请求头
+ApiReqHeader("content-type", "application/json"). // 接口请求头
 ApiReqStruct(&Home{}).    // 接口请求参数， 由struct tag 提供（可以是结构体，也可以是结构体指针）
 ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).   // 接口请求示例
 ApiResStruct(Call{}).     // 接口返回参数， 由struct tag 提供 （可以是结构体，也可以是结构体指针）
