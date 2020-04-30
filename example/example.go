@@ -89,7 +89,7 @@ func main() {
 	router.AddMidware(filter)
 	router.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").
 		ApiDescribe("这是home接口的测试").
-		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
@@ -97,7 +97,7 @@ func main() {
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").End(end)
 	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
-		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
@@ -105,7 +105,7 @@ func main() {
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 	router.Pattern("/aaa/bbbb/{path:me}").Post(me).Get(me).ApiAddGroup("test").
-		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
