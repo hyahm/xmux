@@ -151,10 +151,21 @@ func (rt *Route) ApiDescribe(s string) *Route {
 	return rt
 }
 
-func (rt *Route) ApiReqHeader(head map[string]string) *Route {
+func (rt *Route) ApiReqHeader(k, v string) *Route {
 	// 接口的请求头
+	if rt.reqHeader == nil {
+		rt.reqHeader = make(map[string]string)
+	}
+	rt.reqHeader[k] = v
+	return rt
+}
 
-	rt.reqHeader = head
+func (rt *Route) ApiDelReqHeader(k string) *Route {
+	// 接口的请求头
+	if rt.reqHeader == nil {
+		return rt
+	}
+	delete(rt.reqHeader, k)
 	return rt
 }
 

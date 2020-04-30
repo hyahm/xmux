@@ -22,6 +22,7 @@ type GroupRoute struct {
 	groupKey   string
 	groupTitle string
 	groupLable string
+	reqHeader  map[string]string
 }
 
 var reUrl map[string]*reroute
@@ -35,6 +36,15 @@ func NewGroupRoute(name string) *GroupRoute {
 		midware: make([]func(http.ResponseWriter, *http.Request) bool, 0),
 		pattern: make(map[string]int),
 	}
+}
+
+func (g *GroupRoute) ApiReqHeader(k, v string) *GroupRoute {
+	// 接口的请求头
+	if g.reqHeader == nil {
+		g.reqHeader = make(map[string]string)
+	}
+	g.reqHeader[k] = v
+	return g
 }
 
 func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
@@ -188,9 +198,17 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	// group 的 组文档继承到 route
 	for _, rt := range group.route {
 		rt.groupKey = group.groupKey
+		for k, v := range group.reqHeader {
+			rt.reqHeader[k] = v
+		}
 	}
+
 	for _, rt := range group.tpl {
 		rt.groupKey = group.groupKey
+		for k, v := range group.reqHeader {
+			rt.reqHeader[k] = v
+		}
+
 	}
 	return r
 }
