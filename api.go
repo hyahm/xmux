@@ -6,7 +6,7 @@ import (
 )
 
 func css(w http.ResponseWriter, r *http.Request) {
-	filename := GetData(r).Var["name"]
+	filename := Var(r)["name"]
 	switch filename {
 	case "style":
 		w.Write([]byte(style))
@@ -21,7 +21,7 @@ func css(w http.ResponseWriter, r *http.Request) {
 }
 
 func js(w http.ResponseWriter, r *http.Request) {
-	filename := GetData(r).Var["name"]
+	filename := Var(r)["name"]
 	switch filename {
 	case "jquery":
 		w.Write([]byte(jqueryMin))
@@ -39,7 +39,7 @@ func js(w http.ResponseWriter, r *http.Request) {
 }
 
 func showThisDoc(w http.ResponseWriter, r *http.Request) {
-	id := GetData(r).Var["id"]
+	id := Var(r)["id"]
 	t := NewTemplate()
 	intid, _ := strconv.Atoi(id)
 	if api, ok := ApiDocument[intid]; ok {

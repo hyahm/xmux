@@ -88,8 +88,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.initHandler()
 	})
 
+	allconn[req] = &Data{
+		ctx: make(map[string]interface{}),
+		mu:  &sync.RWMutex{},
+	}
 	// 去掉路径多余的斜杠
-
+	defer delete(allconn, req)
 	url := req.URL.Path
 	if r.Slash {
 		url = slash(req.URL.Path)
@@ -145,7 +149,6 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 	var vl []string
 	var matchurl string
 	var this_route *Route
-	data := &Data{}
 	///  寻找路由   ///
 	// 先寻找完全匹配的,  优化地方， 先找到路由， 然后找处理接口
 	if this_tp, ok := r.pattern[url]; ok {
@@ -197,7 +200,7 @@ endloop:
 	if handle, ok := this_route.method[req.Method]; ok {
 		// 判断是否有这个方法
 		thisHandle = handle
-		data.Data = this_route.dataSource
+		allconn[req].Data = this_route.dataSource
 	} else {
 		if len(this_route.method) == 0 {
 			r.MethodNotFound.ServeHTTP(w, req)
@@ -213,11 +216,9 @@ endloop:
 		for i, v := range this_route.args {
 			vm[v] = vl[i+1]
 		}
-		data.Var = vm
+		allparams[slash(url)] = vm
 	}
-	bm.Lock()
-	Bridge[slash(url)] = data
-	bm.Unlock()
+
 	// 全局的请求头
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
@@ -235,11 +236,7 @@ endloop:
 
 	// 这里是要是添加组路由的， 也就是tp 是 2或3的
 	if tp == 2 || tp == 3 {
-		vm := make(map[string]string)
-		for i, v := range this_route.args {
-			vm[v] = vl[i+1]
-		}
-		data.Var = vm
+
 		group := r.group[r.groupname[matchurl]]
 
 		// 添加中间件

@@ -345,7 +345,7 @@ xmux.GetData(r).Del(k string)
 ### 不同一个路由各组件中通讯 （后期会删除）
 ```go
 // 只要没有删除， 其他路由可以通过同样的方法获取到其他路由的数据
-data := xmux.Bridge[r.URL.Path]    // 请去掉 r.URL.Path 多余的斜杠
+data := xmux.bridge[r.URL.Path]    // 请去掉 r.URL.Path 多余的斜杠
 
 data.Set(k string, v interface{})
 data.Get(k string) (v interface{})

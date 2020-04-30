@@ -12,13 +12,14 @@ import (
 
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.GetData(r).Data)
+	xmux.GetData(r).End = "13333"
 	w.Write([]byte("hello world home"))
 	return
 }
 
 func name(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("home")
-	fmt.Println(xmux.GetData(r).Var["name"])
+	fmt.Println(xmux.Var(r)["name"])
 
 	w.Write([]byte("hello world name"))
 	return
@@ -86,7 +87,7 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = true
 	router.AddMidware(filter)
-	router.Pattern("/home").Post(home).ApiCreateGroup("home", "showthis home", "hometest").
+	router.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).
@@ -94,7 +95,7 @@ func main() {
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
-		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
+		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").End(end)
 	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).

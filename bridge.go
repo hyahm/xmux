@@ -8,60 +8,53 @@ import (
 // bridge  数据二次封装
 
 type Data struct {
-	Var    map[string]string // 参数
-	Header map[string]string
-	Data   interface{} // 处理后的数据
-	End    interface{}
-	ctx    map[string]interface{} // 用来传递自定义值
-	mu     *sync.RWMutex
+	Data interface{}            // 处理后的数据
+	ctx  map[string]interface{} // 用来传递自定义值
+	// Header map[string]string
+	mu  *sync.RWMutex
+	End interface{}
 }
 
-var Bridge map[string]*Data
-var bm *sync.RWMutex
+type params map[string]string // url 参数对应的值
+
+var allparams map[string]params // 保存的url 参数
+
+var allconn map[*http.Request]*Data
+
+func Var(r *http.Request) params {
+	url := slash(r.URL.Path)
+	return allparams[url]
+}
 
 func init() {
-	Bridge = make(map[string]*Data)
-	bm = &sync.RWMutex{}
+	allparams = make(map[string]params)
+	allconn = make(map[*http.Request]*Data)
 }
 
 func GetData(r *http.Request) *Data {
-	url := slash(r.URL.Path)
-	bm.Lock()
-	defer bm.Unlock()
-	return Bridge[url]
+	if r == nil {
+		return nil
+	}
+
+	return allconn[r]
 }
 
 func (data *Data) Set(k string, v interface{}) {
-	if data.mu == nil {
-		data.mu = &sync.RWMutex{}
-	}
-	if data.ctx == nil {
-		data.ctx = make(map[string]interface{})
-	}
+
 	data.mu.Lock()
 	data.ctx[k] = v
 	data.mu.Unlock()
 }
 
-func (data *Data) Get(k string) interface{} {
-	if data.mu == nil {
-		data.mu = &sync.RWMutex{}
-	}
-	if data.ctx == nil {
-		data.ctx = make(map[string]interface{})
-	}
+func (data *Data) Get(r *http.Request, k string) interface{} {
+
 	data.mu.Lock()
 	defer data.mu.Unlock()
 	return data.ctx[k]
 }
 
 func (data *Data) Del(k string) {
-	if data.mu == nil {
-		data.mu = &sync.RWMutex{}
-	}
-	if data.ctx == nil {
-		data.ctx = make(map[string]interface{})
-	}
+
 	data.mu.Lock()
 	delete(data.ctx, k)
 	data.mu.Unlock()
