@@ -61,6 +61,21 @@ func showThisDoc(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func homeDoc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	t := NewHomeTemplate()
+	ApiDocument[0] = Doc{
+		Title:   "this is document home page",
+		Sidebar: sidebar,
+	}
+	err := t.Execute(w, ApiDocument[0])
+	if err != nil {
+		w.Write([]byte(err.Error()))
+	}
+	return
+
+}
+
 func ShowApi(name string, pattern string, r *Router) *GroupRoute {
 	api := NewGroupRoute(name)
 	NewDocs(name, r)
@@ -68,18 +83,7 @@ func ShowApi(name string, pattern string, r *Router) *GroupRoute {
 	api.Pattern("/-/js/{name}.js").Get(js).SetHeader("Content-Type", "application/javascript; charset=utf8")
 	api.Pattern("/-/css/{name}.css").Get(css).SetHeader("Content-Type", "text/css; charset=utf8")
 	api.Pattern("/-/api/{int:id}.html").Get(showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
-	api.Pattern(pattern).Get(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		t := NewTemplate()
-		ApiDocument[0] = Doc{
-			Title:   "this is document home page",
-			Sidebar: sidebar,
-		}
-		err := t.Execute(w, ApiDocument[0])
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		}
-		return
-	}))
+	api.Pattern("/-/api/0.html").Get(homeDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+	api.Pattern(pattern).Get(homeDoc)
 	return api
 }

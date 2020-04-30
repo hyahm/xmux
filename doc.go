@@ -68,3 +68,20 @@ func NewTemplate() *template.Template {
 
 	return t
 }
+
+func NewHomeTemplate() *template.Template {
+	var t *template.Template
+	name := "doc"
+	var html *template.Template
+	if t == nil {
+		t = template.New(name)
+	}
+	if name == t.Name() {
+		html = t
+	} else {
+		html = t.New(name)
+	}
+	t, _ = html.Parse(tpl0)
+
+	return t
+}

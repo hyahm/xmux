@@ -2,6 +2,64 @@ package xmux
 
 // html 接口文档的 模板
 
+var tpl0 = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/-/css/style.css"/>
+    <link rel="stylesheet" href="/-/css/left.css">
+    <link rel="stylesheet" href="/-/css/font.css">
+</head>
+<body>
+<div class="body-content">
+    <div class="body-head">api接口文档</div>
+        <div class="left-side-menu" >
+            <div class="left-search"><i class=" iconfont icon-cc-search"></i><input type="search" value="" class="input" placeholder="关键字"/></div>
+            <div class="lsm-expand-btn">
+                <div class="lsm-mini-btn">
+                    <label>
+                        <input type="checkbox" checked="checked">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="30" />
+                            <path class="line--1" d="M0 40h62c18 0 18-20-17 5L31 55" />
+                            <path class="line--2" d="M0 50h80" />
+                            <path class="line--3" d="M0 60h62c18 0 18 20-17-5L31 45" />
+                        </svg>
+                    </label>
+
+                </div>
+            </div>
+            <div class="lsm-container">
+                <div class="lsm-scroll" >
+                    <div class="lsm-sidebar">
+                        <ul>
+                            <li class="lsm-sidebar-item">
+                                {{ range $k,$v := .Sidebar }}
+                                <a href="{{ $k }}"><i class="iconfont lsm-sidebar-icon icon_1"></i><span>{{ $v }}</span><i class="iconfont lsm-sidebar-more"></i></a>
+                                {{ end }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+    </div>
+    <div class="body-right">
+        <h2 class="text-center">{{ .Title }}</h2>
+       
+    </div>
+</div>
+</body>
+
+<script type="text/javascript" src="/-/js/jquery.js"></script>
+<script type="text/javascript" src="/-/js/slimscroll.js"></script>
+<script type="text/javascript" src="/-/js/left.js"></script>
+<script type="text/javascript" src="/-/js/click.js"></script>
+
+</html>
+`
+
 var tpl = `<!DOCTYPE html>
 <html lang="en">
 <head>
