@@ -197,7 +197,11 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	r.group[group.name] = group
 	// group 的 组文档继承到 route
 	for _, rt := range group.route {
-		rt.groupKey = group.groupKey
+
+		if group.groupKey != "" && rt.groupKey == "" {
+			rt.groupKey = group.groupKey
+		}
+
 		if group.reqHeader != nil {
 			if rt.reqHeader == nil {
 				rt.reqHeader = make(map[string]string)
@@ -209,7 +213,10 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	}
 
 	for _, rt := range group.tpl {
-		rt.groupKey = group.groupKey
+		if group.groupKey != "" && rt.groupKey == "" {
+			rt.groupKey = group.groupKey
+		}
+
 		if group.reqHeader != nil {
 			for k, v := range group.reqHeader {
 				if rt.reqHeader == nil {

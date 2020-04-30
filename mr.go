@@ -11,8 +11,10 @@ func (mr mr) Add(url string, rt *Route) {
 }
 
 func (mr mr) AppendTo(count *int) {
+
 	for url, v := range mr {
 		// 初始化document
+
 		doc := Document{
 			Opt:     make([]Opt, 0),
 			Callbak: make([]Opt, 0),

@@ -39,17 +39,18 @@ func (rt *Route) ApiExitGroup() *Route {
 	return rt
 }
 
-func (rt *Route) ApiAddGroup(key string) *Route {
-	// 退出文档的组
-	rt.groupKey = key
-	return rt
-}
+// func (rt *Route) ApiAddGroup(key string) *Route {
+// 	// 退出文档的组
+// 	rt.groupKey = key
+// 	return rt
+// }
 
 func (rt *Route) ApiCreateGroup(key, title, lable string) *Route {
 	// 创建文档的组
 	rt.groupKey = key
 	rt.groupLable = lable
 	rt.groupTitle = title
+
 	return rt
 }
 
@@ -118,6 +119,7 @@ func (rt *Route) makeDoc(url string, count *int, doc *Document) {
 	if rt.groupKey != "" {
 		// 组路由
 		// 判断key 是否存在
+
 		if id, ok := keys[rt.groupKey]; ok {
 			// 存在的话
 			// 添加文档就好了
