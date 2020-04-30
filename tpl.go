@@ -105,8 +105,6 @@ var tpl = `<!DOCTYPE html>
     </div>
     <div class="body-right">
         <h2 class="text-center">{{ .Title }}</h2>
-      
-        <h4>一共 {{ .Api | len }} 个路由</h4>
      
         {{ range .Api }}
         <div class="right-light">
