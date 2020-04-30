@@ -19,6 +19,11 @@ func (mr mr) AppendTo(count *int) {
 		}
 		doc.Describe = v.describe
 		doc.Header = v.reqHeader
+		if v.delReqHeader != nil {
+			for _, v := range v.delReqHeader {
+				delete(doc.Header, v)
+			}
+		}
 		if v.st_response != nil {
 			doc.Callbak = PostOpt(v.st_response)
 		}

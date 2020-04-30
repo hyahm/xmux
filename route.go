@@ -30,6 +30,7 @@ type Route struct {
 	codeMsg                          map[string]string
 	codeField                        string
 	groupKey, groupLable, groupTitle string
+	delReqHeader                     []string
 }
 
 func (rt *Route) ApiExitGroup() *Route {
@@ -165,7 +166,10 @@ func (rt *Route) ApiDelReqHeader(k string) *Route {
 	if rt.reqHeader == nil {
 		return rt
 	}
-	delete(rt.reqHeader, k)
+	if rt.delReqHeader == nil {
+		rt.delReqHeader = make([]string, 0)
+	}
+	rt.delReqHeader = append(rt.delReqHeader, k)
 	return rt
 }
 
