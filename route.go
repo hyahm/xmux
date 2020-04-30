@@ -165,9 +165,7 @@ func (rt *Route) ApiReqHeader(k, v string) *Route {
 
 func (rt *Route) ApiDelReqHeader(k string) *Route {
 	// 接口的请求头
-	if rt.reqHeader == nil {
-		return rt
-	}
+
 	if rt.delReqHeader == nil {
 		rt.delReqHeader = make([]string, 0)
 	}
