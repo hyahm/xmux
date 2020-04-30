@@ -307,7 +307,7 @@ router.Slash = true
 例如： /aaa/adfaasf16sd  
 这个是匹配的， name: aa   age: 16  
 ```
-xmux.GetData(r)["name"] 
+xmux.Var(r)["name"] 
 ```
 后面会增加自定义正则匹配
 
@@ -426,8 +426,8 @@ func postme(w http.ResponseWriter, r *http.Request) {
 }
 
 func Who(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["name"])
-	fmt.Println(xmux.Var[r.URL.Path]["age"])
+	fmt.Println(xmux.Var(r)["name"])
+	fmt.Println(xmux.Var(r)["age"])
 	w.Write([]byte("yes is mine"))
 	return
 }
@@ -464,7 +464,7 @@ import (
 )
 
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["id"])
+	fmt.Println(xmux.Var(r)["id"])
 	w.Write([]byte("hello world!!!!"))
 	return
 }
@@ -496,7 +496,7 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["test"])
+	fmt.Println(xmux.Var(r)["test"])
 	fmt.Println(xmux.GetData(r).Data)
 	w.Write([]byte("hello world home"))
 	return
@@ -504,8 +504,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func name(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("home")
-	fmt.Println(xmux.Var[r.URL.Path]["name"])
-	fmt.Println(xmux.GetData(r).Var["name"])
+	fmt.Println(xmux.Var(r)["name"])
 
 	w.Write([]byte("hello world name"))
 	return
@@ -518,8 +517,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["all"])
-	fmt.Println(xmux.Var[r.URL.Path]["oid"])
+
 	w.Write([]byte("hello world all"))
 	return
 }
@@ -542,7 +540,6 @@ func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login filter")
 	r.Header.Set("bbb", "ccc")
 
-	xmux.Ctx[r.URL.Path] = context.WithValue(context.Background(), "conf", "body")
 	return false
 }
 
@@ -570,7 +567,7 @@ func main() {
 	router.IgnoreIco = true
 	// fmt.Println(router.Slash)
 	router.AddMidware(filter)
-	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").
+	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").ApiCreateGroup("home","home page", "home").
 		ApiReqHeader(map[string]string{"content-type": "application/json"}).
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
