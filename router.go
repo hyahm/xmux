@@ -17,11 +17,12 @@ type reroute struct {
 }
 
 type rt struct {
-	ctx     context.Context
-	Handle  http.Handler
-	Header  map[string]string
-	Midware []func(http.ResponseWriter, *http.Request) bool
-	end     func(interface{})
+	ctx        context.Context
+	Handle     http.Handler
+	Header     map[string]string
+	Midware    []func(http.ResponseWriter, *http.Request) bool
+	end        func(interface{})
+	dataSource interface{}
 }
 
 type Router struct {
@@ -119,6 +120,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable[url+req.Method]; ok {
 		// 设置请求头
+		allconn[req].Data = route.dataSource
 		for k, v := range route.Header {
 			w.Header().Set(k, v)
 		}
@@ -297,11 +299,12 @@ endloop:
 
 	// 缓存handler
 	thisRouter := &rt{
-		ctx:     context.Background(),
-		Handle:  thisHandle,
-		Header:  tmpHeader,
-		Midware: tmpMidware,
-		end:     this_route.end,
+		ctx:        context.Background(),
+		Handle:     thisHandle,
+		Header:     tmpHeader,
+		Midware:    tmpMidware,
+		end:        this_route.end,
+		dataSource: this_route.dataSource,
 	}
 	r.mu.Lock()
 	r.routeTable[url+req.Method] = thisRouter
