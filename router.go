@@ -318,7 +318,7 @@ endloop:
 
 	thisHandle.ServeHTTP(w, req)
 	if this_route.end != nil {
-		this_route.end(GetData(req).End)
+		go this_route.end(GetData(req).End)
 	}
 }
 
