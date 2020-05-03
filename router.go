@@ -39,14 +39,7 @@ type Router struct {
 	route            PatternMR // 单实例路由， 组路由最后也会合并过来
 	tpl              PatternMR // 正则路由， 组路由最后也会合并过来
 
-	// group map[string]*GroupRoute // 组路由名字对应的组路由
-
-	//  标记所有的pattern， 防止有重复的pattern， 0: route 1, tpl, 2, groupRouter 3, groupTpl
-
 	pattern map[string][]string // 记录所有路由， value 是正则匹配的参数
-	// tplpattern PatternMR // 正则匹配
-
-	// groupname map[string]string // 根据 pattern 寻找 组名
 
 	header  map[string]string                               // 全局路由头
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
@@ -445,45 +438,52 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		// 合并 reqHeader
 		if group.reqHeader != nil {
 			//
-			if route.reqHeader == nil {
-				route.reqHeader = group.reqHeader
+			var tmpReqHeader map[string]string
+			if route.reqHeader != nil {
+				tmpReqHeader = route.reqHeader
 			} else {
-				for k, v := range group.reqHeader {
-					if _, ok := route.reqHeader[k]; !ok {
-						route.reqHeader[k] = v
-					}
+				tmpReqHeader = make(map[string]string)
+			}
+			for k, v := range group.reqHeader {
+				if _, ok := route.reqHeader[k]; !ok {
+					tmpReqHeader[k] = v
 				}
 			}
-
+			route.reqHeader = tmpReqHeader
 		}
 		// 合并 header
 		if group.header != nil {
 			//
-			if route.header == nil {
-				route.header = group.header
+
+			var tmpHeader map[string]string
+			if route.header != nil {
+				tmpHeader = route.header
 			} else {
-				for k, v := range group.header {
-					if _, ok := route.header[k]; !ok {
-						route.header[k] = v
-					}
+				tmpHeader = make(map[string]string)
+			}
+
+			for k, v := range group.header {
+				if _, ok := route.header[k]; !ok {
+					tmpHeader[k] = v
 				}
 			}
+			route.header = tmpHeader
 
 		}
 		// 合并 codeMsg
 		if group.codeMsg != nil {
 			//
-			if route.codeMsg == nil {
-				route.codeMsg = group.reqHeader
+			var tmpReqHeader map[string]string
+			if route.header != nil {
+				tmpReqHeader = route.header
 			} else {
-				for k, v := range group.reqHeader {
-					if _, ok := route.reqHeader[k]; !ok {
-						route.reqHeader[k] = v
-					}
-
-				}
+				tmpReqHeader = make(map[string]string)
 			}
+			for k, v := range group.reqHeader {
+				tmpReqHeader[k] = v
 
+			}
+			route.reqHeader = tmpReqHeader
 		}
 		// 合并 codeField
 		if route.codeField == "" {
