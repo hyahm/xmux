@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -119,7 +118,6 @@ func main() {
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 
 	user.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
-	golog.Infof("%+v", user)
 
 	router.AddGroup(user)
 	doc := xmux.ShowApi("/docs", router).DelMidware(filter)

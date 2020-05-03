@@ -3,8 +3,6 @@ package xmux
 import (
 	"log"
 	"net/http"
-
-	"github.com/hyahm/golog"
 )
 
 //
@@ -123,8 +121,6 @@ func (g *GroupRoute) Pattern(pattern string) MethodsRoute {
 		}
 		g.tpl[v] = mr
 		// 判断是否重复
-		golog.Info(listvar)
-		golog.Info(v)
 		g.pattern[v] = listvar
 		return mr
 	}
