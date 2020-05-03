@@ -336,8 +336,9 @@ router.Pattern("/bbb/ccc").Get(all).End(end)
 13333
 end function 
 ```
-### 同一个路由各组件中通讯
+### 同一个路由各组件中通讯 （当前连接断开后，下面的数据会被清空）
 ```vim
+xmux.GetData(r).Data  // 这里对应的是Bind 方法绑定的数据
 xmux.GetData(r).Set(k string, v interface{})
 xmux.GetData(r).Get(k string) (v interface{})
 xmux.GetData(r).Del(k string)
