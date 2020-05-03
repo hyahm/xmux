@@ -120,8 +120,9 @@ func main() {
 
 	user.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
 	golog.Infof("%+v", user)
+
 	router.AddGroup(user)
-	doc := xmux.ShowApi("doc", "/docs", router).DelMidware(filter)
+	doc := xmux.ShowApi("/docs", router).DelMidware(filter)
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)

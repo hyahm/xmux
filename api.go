@@ -76,9 +76,9 @@ func homeDoc(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func ShowApi(name string, pattern string, r *Router) *GroupRoute {
+func ShowApi(pattern string, r *Router) *GroupRoute {
 	api := NewGroupRoute()
-	NewDocs(name, r)
+	NewDocs(r)
 	api.Pattern("/-/js/{name}.js").Get(js).SetHeader("Content-Type", "application/javascript; charset=utf8")
 	api.Pattern("/-/css/{name}.css").Get(css).SetHeader("Content-Type", "text/css; charset=utf8")
 	api.Pattern("/-/api/{int:id}.html").Get(showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
