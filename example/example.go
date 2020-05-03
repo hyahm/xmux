@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -26,6 +27,8 @@ func name(w http.ResponseWriter, r *http.Request) {
 }
 
 func me(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println(xmux.Var(r)["me"])
 	w.Write([]byte("hello world me"))
 	return
 }
@@ -87,7 +90,7 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = true
 	router.AddMidware(filter)
-	user := xmux.NewGroupRoute("user").ApiReqHeader("aaaa", "bbbb")
+	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
 	user.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
@@ -98,7 +101,7 @@ func main() {
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").End(end).ApiDelReqHeader("aaaa")
 
-	user.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
+	user.Pattern("/aaa/{name}").Get(name).DelMidware(filter).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
@@ -116,7 +119,7 @@ func main() {
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 
 	user.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
-
+	golog.Infof("%+v", user)
 	router.AddGroup(user)
 	doc := xmux.ShowApi("doc", "/docs", router).DelMidware(filter)
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示

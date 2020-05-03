@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"log"
 	"net/http"
 	"regexp"
 	"sync"
@@ -35,17 +36,17 @@ type Router struct {
 	MethodNotAllowed http.Handler
 	Doc              http.Handler
 	Slash            bool
-	route            mr // 单实例路由
-	tpl              mr // 正则路由
+	route            PatternMR // 单实例路由， 组路由最后也会合并过来
+	tpl              PatternMR // 正则路由， 组路由最后也会合并过来
 
-	group map[string]*GroupRoute // 组路由
+	// group map[string]*GroupRoute // 组路由名字对应的组路由
 
 	//  标记所有的pattern， 防止有重复的pattern， 0: route 1, tpl, 2, groupRouter 3, groupTpl
 
-	pattern    map[string]int // 完全匹配
-	tplpattern map[string]int // 正则匹配
+	pattern map[string][]string // 记录所有路由， value 是正则匹配的参数
+	// tplpattern PatternMR // 正则匹配
 
-	groupname map[string]string // 根据 pattern 寻找 组名
+	// groupname map[string]string // 根据 pattern 寻找 组名
 
 	header  map[string]string                               // 全局路由头
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
@@ -53,6 +54,34 @@ type Router struct {
 	routeTable map[string]*rt // 路由表
 	once       *sync.Once
 	mu         *sync.RWMutex
+}
+
+func (r *Router) Pattern(pattern string) MethodsRoute {
+	// 格式化路径
+	// 创建 methodsRoute
+	if r.route == nil {
+		r.route = make(map[string]MethodsRoute)
+	}
+	if r.pattern == nil {
+		r.pattern = make(map[string][]string)
+	}
+	pattern = slash(pattern)
+	if _, ok := r.pattern[pattern]; ok {
+		log.Fatalf("Pattern Duplicate for %s", pattern)
+	}
+	mr := make(map[string]*Route)
+
+	if v, listvar := match(pattern); len(listvar) > 0 {
+		if _, ok := r.pattern[v]; ok {
+			log.Fatalf("Pattern Duplicate for %s", v)
+		}
+		r.tpl[v] = mr
+		r.pattern[v] = listvar
+		return mr
+	}
+	r.pattern[pattern] = make([]string, 0)
+	r.route[pattern] = mr
+	return mr
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
@@ -145,80 +174,44 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request) {
-	// 应该弄成中间件形式
-	var thisHandle http.Handler
-	var tp int = -1
-	var vl []string
-	var matchurl string
+	var istpl bool
 	var this_route *Route
-	///  寻找路由   ///
-	// 先寻找完全匹配的,  优化地方， 先找到路由， 然后找处理接口
-	if this_tp, ok := r.pattern[url]; ok {
-		matchurl = url
-		tp = this_tp
-		if r.pattern[url] == 0 {
-			// 匹配的单路由
-			// 是否能找到方法
-			this_route = r.route[url]
-		} else {
-			// r.pattern[url] 肯定等于 2
-			this_route = r.group[r.groupname[matchurl]].route[matchurl]
+
+	if _, ok := r.route[url]; ok {
+
+		// 完全匹配的
+		if len(r.route[url]) == 0 {
+			r.MethodNotFound.ServeHTTP(w, req)
+			return
 		}
+		this_route = r.route[url][req.Method]
 
 	} else {
-		// 最后正则里面寻找路由
-		// reUrl 是一个正则的表达式路径， 是匹配路由的key
-		for reUrl, n := range r.tplpattern {
-			tp = n
+		for reUrl, mr := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
-				matchurl = reUrl
-				vl = re.FindStringSubmatch(url)
-				if n == 1 {
-					// 单路由
-					this_route = r.tpl[matchurl]
-					goto endloop
-				} else {
-					// n == 3
-					this_route = r.group[r.groupname[matchurl]].tpl[matchurl]
-					goto endloop
+				this_route = mr[req.Method]
+				vm := make(map[string]string)
+				slashUrl := slash(url)
+				vl := re.FindStringSubmatch(url)
+				for i, v := range r.pattern[reUrl] {
+					vm[v] = vl[i+1]
 				}
+				allparams[slashUrl] = vm
+				goto endloop
 
 			}
 
 		}
-		this_route = nil
-
-	}
-endloop:
-
-	// 第一次启动的时候 已经初始化了 默认的全部接口
-	if this_route == nil {
-		// 如果没找到路由 ,返回没有找到
 		r.HandleNotFound.ServeHTTP(w, req)
 		return
 	}
-
-	if handle, ok := this_route.method[req.Method]; ok {
-		// 判断是否有这个方法
-		thisHandle = handle
-		allconn[req].Data = this_route.dataSource
-	} else {
-		if len(this_route.method) == 0 {
-			r.MethodNotFound.ServeHTTP(w, req)
-		} else {
-			r.MethodNotAllowed.ServeHTTP(w, req)
-		}
-		return
-	}
+endloop:
+	allconn[req].Data = this_route.dataSource
 
 	// 如果是正则路由， 添加路由参数到全局里面
-	if tp == 1 || tp == 3 {
-		vm := make(map[string]string)
-		for i, v := range this_route.args {
-			vm[v] = vl[i+1]
-		}
-		allparams[slash(url)] = vm
+	if istpl {
+
 	}
 
 	// 全局的请求头
@@ -237,39 +230,39 @@ endloop:
 	///  结束寻找路由     ///
 
 	// 这里是要是添加组路由的， 也就是tp 是 2或3的
-	if tp == 2 || tp == 3 {
+	// if tp == 2 || tp == 3 {
 
-		group := r.group[r.groupname[matchurl]]
+	// 	group := r.group[r.groupname[matchurl]]
 
-		// 添加中间件
-		for _, v := range group.midware {
-			tmpMidware = append(tmpMidware, v)
-		}
-		// 添加多余的请求头
-		for k, v := range group.header {
-			tmpHeader[k] = v
-			w.Header().Set(k, v)
-		}
-		// 删除多余的header
-		for _, v := range group.delheader {
-			delete(tmpHeader, v)
-			w.Header().Del(v)
-		}
-		// 删除多余的中间件
-		for _, v := range group.delmidware {
-			for i, tmd := range tmpMidware {
+	// 	// 添加中间件
+	// 	for _, v := range group.midware {
+	// 		tmpMidware = append(tmpMidware, v)
+	// 	}
+	// 	// 添加多余的请求头
+	// 	for k, v := range group.header {
+	// 		tmpHeader[k] = v
+	// 		w.Header().Set(k, v)
+	// 	}
+	// 	// 删除多余的header
+	// 	for _, v := range group.delheader {
+	// 		delete(tmpHeader, v)
+	// 		w.Header().Del(v)
+	// 	}
+	// 	// 删除多余的中间件
+	// 	for _, v := range group.delmidware {
+	// 		for i, tmd := range tmpMidware {
 
-				if CompareFunc(v, tmd) {
-					tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-					tmp = append(tmp, tmpMidware[0:i]...)
-					tmp = append(tmp, tmpMidware[i+1:]...)
-					tmpMidware = tmp
-					break
-				}
-			}
+	// 			if CompareFunc(v, tmd) {
+	// 				tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	// 				tmp = append(tmp, tmpMidware[0:i]...)
+	// 				tmp = append(tmp, tmpMidware[i+1:]...)
+	// 				tmpMidware = tmp
+	// 				break
+	// 			}
+	// 		}
 
-		}
-	}
+	// 	}
+	// }
 
 	// 增加单路由的请求头和中间件
 	for _, v := range this_route.midware {
@@ -299,10 +292,11 @@ endloop:
 
 	// 缓存handler
 	thisRouter := &rt{
-		ctx:        context.Background(),
-		Handle:     thisHandle,
-		Header:     tmpHeader,
-		Midware:    tmpMidware,
+		ctx:     context.Background(),
+		Handle:  this_route.handle,
+		Header:  tmpHeader,
+		Midware: tmpMidware,
+
 		end:        this_route.end,
 		dataSource: this_route.dataSource,
 	}
@@ -316,7 +310,7 @@ endloop:
 		}
 	}
 
-	thisHandle.ServeHTTP(w, req)
+	this_route.handle.ServeHTTP(w, req)
 	if this_route.end != nil {
 		go this_route.end(GetData(req).End)
 	}
@@ -354,8 +348,9 @@ func NewRouter() *Router {
 		Slash:      true,
 		routeTable: make(map[string]*rt),
 		header:     map[string]string{},
-		route:      make(map[string]*Route),
-		tpl:        make(map[string]*Route),
+		route:      make(map[string]MethodsRoute),
+		tpl:        make(map[string]MethodsRoute),
+		pattern:    make(map[string][]string),
 		once:       &sync.Once{},
 	}
 }
@@ -393,4 +388,112 @@ func favicon() http.Handler {
 		w.WriteHeader(http.StatusOK)
 		return
 	})
+}
+
+// 组路由添加到router
+func (r *Router) AddGroup(group *GroupRoute) *Router {
+	// if r.group == nil {
+	// 	r.group = make(map[string]*GroupRoute)
+	// }
+	// if group.name == "" {
+	// 	group.name = fmt.Sprintf("%d", time.Now().UnixNano())
+	// }
+	if r.header == nil {
+		r.header = make(map[string]string)
+	}
+
+	// 将路由的所有变量全部移交到route
+
+	if r.pattern == nil {
+		r.pattern = make(map[string][]string)
+	}
+	if group.pattern == nil {
+		return nil
+	}
+	if group.route == nil {
+		return nil
+	}
+	if r.route == nil {
+		r.route = make(map[string]MethodsRoute)
+	}
+	if r.tpl == nil {
+		r.tpl = make(map[string]MethodsRoute)
+	}
+	for url, args := range group.pattern {
+		r.pattern[url] = args
+		var route *Route
+		var m string
+		if len(args) == 0 {
+			for m, route = range group.route[url] {
+				if _, ok := r.route[url][m]; ok {
+					log.Fatalf("%s %s is Duplication", url, m)
+				}
+			}
+			r.route[url] = group.route[url]
+		} else {
+			for m, route = range group.tpl[url] {
+				if _, ok := r.tpl[url][m]; ok {
+					log.Fatalf("%s %s is Duplication", url, m)
+				}
+			}
+			r.tpl[url] = group.tpl[url]
+		}
+		if group.delheader != nil {
+			//
+			if route.delheader == nil {
+				route.delheader = group.delheader
+			} else {
+				route.delheader = append(route.delheader, group.delheader...)
+			}
+
+		}
+
+		if group.delmidware != nil {
+			//
+			if route.delmidware == nil {
+				route.delmidware = group.delmidware
+			} else {
+				route.delmidware = append(route.delmidware, group.delmidware...)
+			}
+		}
+		if route.groupKey == "" {
+			route.groupKey = group.groupKey
+			route.groupLable = group.groupLable
+			route.groupTitle = group.groupTitle
+		}
+		if group.midware != nil {
+			//
+			if route.delmidware == nil {
+				route.midware = group.midware
+			} else {
+				route.midware = append(route.midware, group.midware...)
+			}
+
+		}
+		if group.reqHeader != nil {
+			//
+			if route.reqHeader == nil {
+				route.reqHeader = group.reqHeader
+			} else {
+				for k, v := range group.reqHeader {
+					route.reqHeader[k] = v
+				}
+			}
+
+		}
+
+		if group.header != nil {
+			//
+			if route.header == nil {
+				route.header = group.header
+			} else {
+				for k, v := range group.header {
+					route.header[k] = v
+				}
+			}
+
+		}
+
+	}
+	return r
 }
