@@ -46,7 +46,7 @@ func (data *Data) Set(k string, v interface{}) {
 	data.mu.Unlock()
 }
 
-func (data *Data) Get(r *http.Request, k string) interface{} {
+func (data *Data) Get( k string) interface{} {
 
 	data.mu.Lock()
 	defer data.mu.Unlock()
