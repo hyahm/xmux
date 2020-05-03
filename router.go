@@ -174,7 +174,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request) {
-	var istpl bool
 	var this_route *Route
 
 	if _, ok := r.route[url]; ok {
@@ -209,11 +208,6 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 endloop:
 	allconn[req].Data = this_route.dataSource
 
-	// 如果是正则路由， 添加路由参数到全局里面
-	if istpl {
-
-	}
-
 	// 全局的请求头
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
@@ -227,42 +221,6 @@ endloop:
 	for _, v := range r.midware {
 		tmpMidware = append(tmpMidware, v)
 	}
-	///  结束寻找路由     ///
-
-	// 这里是要是添加组路由的， 也就是tp 是 2或3的
-	// if tp == 2 || tp == 3 {
-
-	// 	group := r.group[r.groupname[matchurl]]
-
-	// 	// 添加中间件
-	// 	for _, v := range group.midware {
-	// 		tmpMidware = append(tmpMidware, v)
-	// 	}
-	// 	// 添加多余的请求头
-	// 	for k, v := range group.header {
-	// 		tmpHeader[k] = v
-	// 		w.Header().Set(k, v)
-	// 	}
-	// 	// 删除多余的header
-	// 	for _, v := range group.delheader {
-	// 		delete(tmpHeader, v)
-	// 		w.Header().Del(v)
-	// 	}
-	// 	// 删除多余的中间件
-	// 	for _, v := range group.delmidware {
-	// 		for i, tmd := range tmpMidware {
-
-	// 			if CompareFunc(v, tmd) {
-	// 				tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-	// 				tmp = append(tmp, tmpMidware[0:i]...)
-	// 				tmp = append(tmp, tmpMidware[i+1:]...)
-	// 				tmpMidware = tmp
-	// 				break
-	// 			}
-	// 		}
-
-	// 	}
-	// }
 
 	// 增加单路由的请求头和中间件
 	for _, v := range this_route.midware {
@@ -438,60 +396,98 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 			}
 			r.tpl[url] = group.tpl[url]
 		}
+
+		// 合并 delheader
 		if group.delheader != nil {
 			//
 			if route.delheader == nil {
 				route.delheader = group.delheader
 			} else {
-				route.delheader = append(route.delheader, group.delheader...)
+				tmpdelheader := make([]string, 0)
+				tmpdelheader = append(tmpdelheader, group.delheader...)
+				tmpdelheader = append(tmpdelheader, route.delheader...)
+				route.delheader = tmpdelheader
 			}
 
 		}
 
+		// 合并 delmidware
 		if group.delmidware != nil {
 			//
 			if route.delmidware == nil {
 				route.delmidware = group.delmidware
 			} else {
-				route.delmidware = append(route.delmidware, group.delmidware...)
+				tmpdelmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+				tmpdelmidware = append(tmpdelmidware, group.delmidware...)
+				tmpdelmidware = append(tmpdelmidware, route.delmidware...)
+				route.midware = tmpdelmidware
 			}
 		}
+		// 合并 groupKey
 		if route.groupKey == "" {
 			route.groupKey = group.groupKey
 			route.groupLable = group.groupLable
 			route.groupTitle = group.groupTitle
 		}
+		// 合并 midware
 		if group.midware != nil {
 			//
 			if route.delmidware == nil {
 				route.midware = group.midware
 			} else {
-				route.midware = append(route.midware, group.midware...)
+				tmpmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+				tmpmidware = append(tmpmidware, group.midware...)
+				tmpmidware = append(tmpmidware, route.midware...)
+				route.midware = tmpmidware
 			}
 
 		}
+		// 合并 reqHeader
 		if group.reqHeader != nil {
 			//
 			if route.reqHeader == nil {
 				route.reqHeader = group.reqHeader
 			} else {
 				for k, v := range group.reqHeader {
-					route.reqHeader[k] = v
+					if _, ok := route.reqHeader[k]; !ok {
+						route.reqHeader[k] = v
+					}
 				}
 			}
 
 		}
-
+		// 合并 header
 		if group.header != nil {
 			//
 			if route.header == nil {
 				route.header = group.header
 			} else {
 				for k, v := range group.header {
-					route.header[k] = v
+					if _, ok := route.header[k]; !ok {
+						route.header[k] = v
+					}
 				}
 			}
 
+		}
+		// 合并 codeMsg
+		if group.codeMsg != nil {
+			//
+			if route.codeMsg == nil {
+				route.codeMsg = group.reqHeader
+			} else {
+				for k, v := range group.reqHeader {
+					if _, ok := route.reqHeader[k]; !ok {
+						route.reqHeader[k] = v
+					}
+
+				}
+			}
+
+		}
+		// 合并 codeField
+		if route.codeField == "" {
+			route.codeField = group.codeField
 		}
 
 	}

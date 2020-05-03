@@ -19,6 +19,8 @@ type GroupRoute struct {
 	groupTitle string
 	groupLable string
 	reqHeader  map[string]string
+	codeMsg    map[string]string
+	codeField  string
 }
 
 var reUrl map[string]*reroute
@@ -47,6 +49,21 @@ func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
 		g.header = make(map[string]string)
 	}
 	g.header[k] = v
+	return g
+}
+
+func (g *GroupRoute) ApiCodeMsg(k, v string) *GroupRoute {
+
+	if g.codeMsg == nil {
+		g.codeMsg = make(map[string]string)
+	}
+	g.codeMsg[k] = v
+	return g
+}
+
+func (g *GroupRoute) ApiCodeField(name string) *GroupRoute {
+
+	g.codeField = name
 	return g
 }
 
