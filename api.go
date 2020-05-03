@@ -3,8 +3,6 @@ package xmux
 import (
 	"net/http"
 	"strconv"
-
-	"github.com/hyahm/golog"
 )
 
 func css(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +79,6 @@ func homeDoc(w http.ResponseWriter, r *http.Request) {
 func ShowApi(pattern string, r *Router) *GroupRoute {
 	api := NewGroupRoute()
 	NewDocs(r)
-	golog.Info(r.route["/home"][http.MethodGet].midware)
 	api.Pattern("/-/js/{name}.js").Get(js).SetHeader("Content-Type", "application/javascript; charset=utf8")
 	api.Pattern("/-/css/{name}.css").Get(css).SetHeader("Content-Type", "text/css; charset=utf8")
 	api.Pattern("/-/api/{int:id}.html").Get(showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
