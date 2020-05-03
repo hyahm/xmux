@@ -91,6 +91,7 @@ func main() {
 	router.AddMidware(filter)
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
 	user.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").
+		AddMidware(filter).
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).

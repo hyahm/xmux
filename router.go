@@ -343,12 +343,7 @@ func favicon() http.Handler {
 
 // 组路由添加到router
 func (r *Router) AddGroup(group *GroupRoute) *Router {
-	// if r.group == nil {
-	// 	r.group = make(map[string]*GroupRoute)
-	// }
-	// if group.name == "" {
-	// 	group.name = fmt.Sprintf("%d", time.Now().UnixNano())
-	// }
+
 	if r.header == nil {
 		r.header = make(map[string]string)
 	}
@@ -425,7 +420,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		// 合并 midware
 		if group.midware != nil {
 			//
-			if route.delmidware == nil {
+			if route.midware == nil {
 				route.midware = group.midware
 			} else {
 				tmpmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
