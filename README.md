@@ -34,7 +34,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func Article() *xmux.GroupRoute {
-	article := xmux.NewGroupRoute("article")
+	article := xmux.NewGroupRoute()
 	article.Pattern("/{int:id}").Get(hello)
 	return article
 }
@@ -59,7 +59,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 var Article *xmux.GroupRoute
 
 func init() {
-	Article = xmux.NewGroupRoute("article")
+	Article = xmux.NewGroupRoute()
 	Article.Pattern("/{int:id}").Get(hello)
 
 }
@@ -350,7 +350,7 @@ xmux.GetData(r).Del(k string)
 ```go
 // 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱, 调用的时候只会显示到当前位置以上的路由
 router := xmux.NewRouter()
-api := xmux.ShowApi("doc", "/doc", router)
+api := xmux.ShowApi("/doc", router)
 router.ShowApi(api).
 ApiCreateGroup("test", "api test", "apitest").  //增加了侧边栏 所有组路由或单路由必须加上这个才会显示, 第一个参数是组key, 第二个是组的标题， 第三个是侧边栏url显示的文字 ， 或者添加到某个组上 ApiAddGroup(key), 组路由添加的key 会被子路由继承， 如果不想显示可以ApiAddGroup 挂载到其他路由或者 ApiExitGroup， 移除此组
 ApiDescribe("这是home接口的测试").  // 接口的简述
