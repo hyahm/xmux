@@ -18,36 +18,7 @@
 
 
 ### 添加了组的概念
-几十个路由写一个文件里面， 嗯， 还好， 但是多了呢， 眼睛是不是有点花， 并且某些名字重名了也不知道
- 增加组了后， 可以分开写路由了，
-###### 第一种
-> 函数封装   
 
-aritclegroup.article.go
-```go
-
-
-func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["id"])
-	w.Write([]byte("hello world!!!!"))
-	return
-}
-
-func Article() *xmux.GroupRoute {
-	article := xmux.NewGroupRoute()
-	article.Pattern("/{int:id}").Get(hello)
-	return article
-}
-```
-> main.go
-```go
-func main() {
-	router := xmux.NewRouter()
-	router.AddGroup(aritclegroup.Article())
-}
-```
-
-###### 第二种
 > aritclegroup.article.go
 ```go
 func hello(w http.ResponseWriter, r *http.Request) {
