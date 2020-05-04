@@ -85,16 +85,6 @@ func main() {
 访问 /get -> 返回 show   
 访问  /post   -> 返回 Who  
 
-### 如上所示， 多methods 分开使用
-```go
-func main() {
-	router := xmux.NewRouter()
-	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
-	router.Pattern("/{string:age}").Get(Who)
-}
-```
-/get get 请求 返回 show，    post 请求 返回 postme
-
 ### 自动检测重复项,
 ```go
 func main() {
