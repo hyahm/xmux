@@ -15,6 +15,7 @@
 - [x] 支持收尾操作
 - [x] 增加数据结构绑定， 适合中间件传递
 - [x] 增加websocket， 可以学习，不建议使用
+- [x] 集成pprof， router.AddGroup(xmux.Debug())
 
 
 ### 添加了组的概念
