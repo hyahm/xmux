@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -112,6 +113,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		ctx: make(map[string]interface{}),
 		mu:  &sync.RWMutex{},
 	}
+	fmt.Println(allconn)
 	// 去掉路径多余的斜杠
 	defer delete(allconn, req)
 	url := req.URL.Path
@@ -173,21 +175,35 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 			r.MethodNotFound.ServeHTTP(w, req)
 			return
 		}
-		this_route = r.route[url][req.Method]
+		if _, ok := r.route[url][req.Method]; ok {
+			this_route = r.route[url][req.Method]
+		} else {
+			r.MethodNotAllowed.ServeHTTP(w, req)
+			return
+		}
 
 	} else {
 		for reUrl, mr := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
-				this_route = mr[req.Method]
-				vm := make(map[string]string)
-				slashUrl := slash(url)
-				vl := re.FindStringSubmatch(url)
-				for i, v := range r.pattern[reUrl] {
-					vm[v] = vl[i+1]
+				if len(r.tpl[reUrl]) == 0 {
+					r.MethodNotFound.ServeHTTP(w, req)
+					return
 				}
-				allparams[slashUrl] = vm
-				goto endloop
+				if _, ok := r.tpl[reUrl][req.Method]; ok {
+					this_route = mr[req.Method]
+					vm := make(map[string]string)
+					slashUrl := slash(url)
+					vl := re.FindStringSubmatch(url)
+					for i, v := range r.pattern[reUrl] {
+						vm[v] = vl[i+1]
+					}
+					allparams[slashUrl] = vm
+					goto endloop
+				} else {
+					r.MethodNotAllowed.ServeHTTP(w, req)
+					return
+				}
 
 			}
 
@@ -196,6 +212,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		return
 	}
 endloop:
+
+	fmt.Println(allconn[req])
+	fmt.Println(req)
 	allconn[req].Data = this_route.dataSource
 
 	// 全局的请求头

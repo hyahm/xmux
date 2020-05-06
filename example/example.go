@@ -107,7 +107,7 @@ func main() {
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa")
-	user.Pattern("/aaa/bbbb/{path:me}").Get(me).
+	user.Pattern("/aaa/bbbb/{path:me}").Post(me).
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
