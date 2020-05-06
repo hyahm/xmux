@@ -7,7 +7,7 @@ import (
 )
 
 // 自动生成接口文档
-type Opt struct {
+type option struct {
 	Name        string
 	Typ         string
 	Need        string
@@ -15,8 +15,8 @@ type Opt struct {
 	Information string
 }
 
-func PostOpt(s interface{}) []Opt {
-	opts := make([]Opt, 0)
+func postOpt(s interface{}) []option {
+	opts := make([]option, 0)
 	tpy := reflect.TypeOf(s)
 	if tpy.Kind() == reflect.Ptr {
 		tpy = tpy.Elem()
@@ -26,7 +26,7 @@ func PostOpt(s interface{}) []Opt {
 	}
 
 	for i := 0; i < tpy.NumField(); i++ {
-		opt := Opt{}
+		opt := option{}
 		opt.Default = tpy.Field(i).Tag.Get("default")
 		opt.Name = strings.Split(tpy.Field(i).Tag.Get("json"), ",")[0]
 		opt.Need = tpy.Field(i).Tag.Get("need")
@@ -37,7 +37,7 @@ func PostOpt(s interface{}) []Opt {
 	return opts
 }
 
-func GetOpt(s map[string]string) string {
+func getOpt(s map[string]string) string {
 	if len(s) == 0 {
 		return ""
 	}

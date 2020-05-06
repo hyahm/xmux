@@ -18,8 +18,8 @@ func (ptn PatternMR) AppendTo(count *int) {
 		// 初始化document
 		for md, rt := range v {
 			doc := Document{
-				Opt:     make([]Opt, 0),
-				Callbak: make([]Opt, 0),
+				Opt:     make([]option, 0),
+				Callbak: make([]option, 0),
 			}
 			doc.Url = url
 
@@ -31,7 +31,7 @@ func (ptn PatternMR) AppendTo(count *int) {
 				}
 			}
 			if rt.st_response != nil {
-				doc.Callbak = PostOpt(rt.st_response)
+				doc.Callbak = postOpt(rt.st_response)
 			}
 
 			doc.Request = rt.request
@@ -45,11 +45,11 @@ func (ptn PatternMR) AppendTo(count *int) {
 			doc.Method = md
 			if md == http.MethodGet {
 				if rt.params_request != nil {
-					doc.Url += GetOpt(rt.params_request)
+					doc.Url += getOpt(rt.params_request)
 				}
 			} else {
 				if rt.st_request != nil {
-					doc.Opt = PostOpt(rt.st_request)
+					doc.Opt = postOpt(rt.st_request)
 				}
 			}
 			rt.makeDoc(url, count, &doc)

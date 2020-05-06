@@ -10,8 +10,8 @@ type Document struct {
 	Url        string
 	Method     string
 	Header     map[string]string // 请求头
-	Opt        []Opt
-	Callbak    []Opt
+	Opt        []option
+	Callbak    []option
 	Request    string // json 请求实例
 	Response   string // json 返回实例
 	Supplement string // 最后的补充说明
@@ -41,14 +41,6 @@ func NewDocs(r *Router) {
 	r.route.AppendTo(&count)
 	r.tpl.AppendTo(&count)
 
-	// 组路由
-
-	// for _, g := range r.group {
-
-	// 	g.route.AppendTo(&count)
-	// 	g.tpl.AppendTo(&count)
-
-	// }
 }
 
 // 获取html 基础页面
