@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // type Midware
@@ -18,7 +16,6 @@ type reroute struct {
 }
 
 type rt struct {
-	ctx        context.Context
 	Handle     http.Handler
 	Header     map[string]string
 	Midware    []func(http.ResponseWriter, *http.Request) bool
@@ -243,7 +240,6 @@ endloop:
 
 	// 缓存handler
 	thisRouter := &rt{
-		ctx:     context.Background(),
 		Handle:  this_route.handle,
 		Header:  tmpHeader,
 		Midware: tmpMidware,
