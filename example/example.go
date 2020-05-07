@@ -84,11 +84,11 @@ type Call struct {
 
 func main() {
 
-	router := xmux.NewRouter()
+	router := xmux.NewRouter().SetHeader("Content-Type", "aaa")
 	router.IgnoreIco = true
 	router.AddMidware(filter)
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
-	user.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").
+	user.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).

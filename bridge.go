@@ -20,6 +20,7 @@ type params map[string]string // url 参数对应的值
 var allparams map[string]params // 保存的url 参数
 
 var allconn map[*http.Request]*Data
+var allmu *sync.RWMutex
 
 func Var(r *http.Request) params {
 	url := slash(r.URL.Path)
@@ -29,6 +30,7 @@ func Var(r *http.Request) params {
 func init() {
 	allparams = make(map[string]params)
 	allconn = make(map[*http.Request]*Data)
+	allmu = &sync.RWMutex{}
 }
 
 func GetData(r *http.Request) *Data {
@@ -46,7 +48,7 @@ func (data *Data) Set(k string, v interface{}) {
 	data.mu.Unlock()
 }
 
-func (data *Data) Get( k string) interface{} {
+func (data *Data) Get(k string) interface{} {
 
 	data.mu.Lock()
 	defer data.mu.Unlock()

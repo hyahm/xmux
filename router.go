@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -108,14 +107,18 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// 初始化默认路由
 		r.initHandler()
 	})
-
+	allmu.Lock()
 	allconn[req] = &Data{
 		ctx: make(map[string]interface{}),
 		mu:  &sync.RWMutex{},
 	}
-	fmt.Println(allconn)
+	allmu.Unlock()
 	// 去掉路径多余的斜杠
-	defer delete(allconn, req)
+	defer func() {
+		allmu.Lock()
+		delete(allconn, req)
+		allmu.Unlock()
+	}()
 	url := req.URL.Path
 	if r.Slash {
 		url = slash(req.URL.Path)
@@ -141,7 +144,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable[url+req.Method]; ok {
 		// 设置请求头
+		allmu.Lock()
 		allconn[req].Data = route.dataSource
+		allmu.Unlock()
 		for k, v := range route.Header {
 			w.Header().Set(k, v)
 		}
@@ -212,11 +217,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		return
 	}
 endloop:
-
-	fmt.Println(allconn[req])
-	fmt.Println(req)
+	allmu.Lock()
 	allconn[req].Data = this_route.dataSource
-
+	allmu.Unlock()
 	// 全局的请求头
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
