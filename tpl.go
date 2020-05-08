@@ -150,9 +150,7 @@ var tpl = `<!DOCTYPE html>
                 {{ if .Request }}
                     <h3>请求示例</h3>
                     <div class="dl-ex-box">
-                        <p hidden id="req">{{ .Request }} </p>
-                        <pre class="dl-expl" id="json_req">{{ .Request }}
-                        </pre>
+                        <pre class="dl-expl">{{ .Request }} </pre>
                     </div>
                 {{ end }}
 
@@ -177,8 +175,7 @@ var tpl = `<!DOCTYPE html>
                 {{ if .Response }}
                     <h3>返回示例</h3>
                     <div class="dl-ex-box">
-                        <p hidden id="res">{{ .Response }}</p>
-                        <pre class="dl-expl" id="json_res">{{ .Response }}
+                        <pre class="dl-expl">{{ .Response }}
                         </pre>
                     </div>
                 {{ end }}

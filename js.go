@@ -123,15 +123,15 @@ $(function() {
 	})
  })
 
-var textr = document.getElementById('json_req').innerText;
-console.log(textr);
-var result1 = JSON.stringify(JSON.parse(textr), null, 4);
-document.getElementById('json_req').innerText= result1 ;
+// var textr = document.getElementById('json_req').innerText;
+// console.log(textr);
+// var result1 = JSON.stringify(JSON.parse(textr), null, 4);
+// document.getElementById('json_req').innerText= result1 ;
 
-var textq = document.getElementById('json_res').innerText; 
-console.log(textq);
-var result2 = JSON.stringify(JSON.parse(textq), null, 4);
-document.getElementById('json_res').innerText= result2 ;
+// var textq = document.getElementById('json_res').innerText; 
+// console.log(textq);
+// var result2 = JSON.stringify(JSON.parse(textq), null, 4);
+// document.getElementById('json_res').innerText= result2 ;
 
 
  `

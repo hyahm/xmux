@@ -171,17 +171,17 @@ func (rt *Route) ApiDelReqHeader(k string) *Route {
 	return rt
 }
 
-func (rt *Route) ApiRequestTemplate(s string) *Route {
+func (rt *Route) ApiRequestTemplate(s JsonStr) *Route {
 	// 接口的请求实例， 一般是json的字符串
 
-	rt.request = s
+	rt.request = s.Json()
 	return rt
 }
 
-func (rt *Route) ApiResponseTemplate(s string) *Route {
+func (rt *Route) ApiResponseTemplate(s JsonStr) *Route {
 	// 接口的返回实例， 一般是json的字符串
 
-	rt.response = s
+	rt.response = s.Json()
 	return rt
 }
 

@@ -1,8 +1,23 @@
 package xmux
 
 import (
+	"bytes"
+	"encoding/json"
 	"html/template"
+	"log"
 )
+
+type JsonStr string
+
+func (js JsonStr) Json() string {
+	b := &bytes.Buffer{}
+	err := json.Indent(b, []byte(js), "", "    ")
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	return b.String()
+}
 
 // 获取每一个路由的url， 请求， header， body， response（后面3个需要手动添加）, 只支持json 格式, 数据结构绑定
 type Document struct {
