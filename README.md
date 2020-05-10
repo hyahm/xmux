@@ -9,7 +9,7 @@
 - [x] 完全匹配优先于正则匹配
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局handle ,MethodnotFound(忘记写方法), MethodNotAllowed(method没定义), HandleNotFound(没有找到页面), Options请求）  
-- [x] 强大的中间件让你的代码自动模块化  
+- [x] 强大的中间件让你的代码模块化变得非常简单  
 - [x] 增加全局上下文， 方便中间件传递值
 - [x] 内嵌接口文档
 - [x] 支持收尾操作
