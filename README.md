@@ -539,7 +539,7 @@ func main() {
 
 
 ```
-运行上面的代码， 打开localhost:9000/doc, 会看到下面的api, (样式和js来自网络， 请保证有网络)
+运行上面的代码， 打开localhost:9000/doc, 会看到下面的api
 
 ![api.png](http://download.hyahm.com/api.png)
 
