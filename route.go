@@ -98,10 +98,10 @@ func (rt *Route) ApiReqStruct(s interface{}) *Route {
 	return rt
 }
 
-func (rt *Route) ApiReqParams(s map[string]string) *Route {
+func (rt *Route) ApiReqParams(k, v string) *Route {
 	// 接口返回数据的结构
 
-	rt.params_request = s
+	rt.params_request[k] = v
 	return rt
 }
 
