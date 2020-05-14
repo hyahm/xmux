@@ -2,7 +2,7 @@ package xmux
 
 import "net/http/pprof"
 
-func Debug() *GroupRoute {
+func Pprof() *GroupRoute {
 	debug := NewGroupRoute()
 	debug.Pattern("/debug/pprof/").Get(pprof.Index)
 	debug.Pattern("/debug/pprof/cmdline").Get(pprof.Cmdline)
