@@ -100,7 +100,9 @@ func (rt *Route) ApiReqStruct(s interface{}) *Route {
 
 func (rt *Route) ApiReqParams(k, v string) *Route {
 	// 接口返回数据的结构
-
+	if rt.params_request == nil {
+		rt.params_request = make(map[string]string)
+	}
 	rt.params_request[k] = v
 	return rt
 }
