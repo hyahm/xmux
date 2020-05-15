@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -188,7 +189,9 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		}
 
 	} else {
+		fmt.Printf("%v+ \n\n\n\n\n\n", r.tpl)
 		for reUrl, mr := range r.tpl {
+
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
 				if len(r.tpl[reUrl]) == 0 {
@@ -385,124 +388,167 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	}
 	for url, args := range group.pattern {
 		r.pattern[url] = args
-		var route *Route
-		var m string
+
 		if len(args) == 0 {
-			for m, route = range group.route[url] {
+			for m, _ := range group.route[url] {
 				if _, ok := r.route[url][m]; ok {
 					log.Fatalf("%s %s is Duplication", url, m)
 				}
+
+				merge(group, group.route[url][m])
+
 			}
+			if r.route[url] == nil {
+				r.route[url] = make(map[string]*Route)
+			}
+
 			r.route[url] = group.route[url]
+
 		} else {
-			for m, route = range group.tpl[url] {
+			for m, _ := range group.tpl[url] {
 				if _, ok := r.tpl[url][m]; ok {
 					log.Fatalf("%s %s is Duplication", url, m)
 				}
+
+				merge(group, group.tpl[url][m])
+
+			}
+			if r.tpl[url] == nil {
+				r.tpl[url] = make(map[string]*Route)
 			}
 			r.tpl[url] = group.tpl[url]
-		}
+			r.DebugTpl()
 
-		// 合并 delheader
-		if group.delheader != nil {
-			//
-			if route.delheader == nil {
-				route.delheader = group.delheader
-			} else {
-				tmpdelheader := make([]string, 0)
-				tmpdelheader = append(tmpdelheader, group.delheader...)
-				tmpdelheader = append(tmpdelheader, route.delheader...)
-				route.delheader = tmpdelheader
-			}
-
-		}
-
-		// 合并 delmidware
-		if group.delmidware != nil {
-			//
-			if route.delmidware == nil {
-				route.delmidware = group.delmidware
-			} else {
-				tmpdelmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-				tmpdelmidware = append(tmpdelmidware, group.delmidware...)
-				tmpdelmidware = append(tmpdelmidware, route.delmidware...)
-				route.midware = tmpdelmidware
-			}
-		}
-		// 合并 groupKey
-		if route.groupKey == "" {
-			route.groupKey = group.groupKey
-			route.groupLable = group.groupLable
-			route.groupTitle = group.groupTitle
-		}
-		// 合并 midware
-		if group.midware != nil {
-			//
-			if route.midware == nil {
-				route.midware = group.midware
-			} else {
-				tmpmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-				tmpmidware = append(tmpmidware, group.midware...)
-				tmpmidware = append(tmpmidware, route.midware...)
-				route.midware = tmpmidware
-			}
-
-		}
-		// 合并 reqHeader
-		if group.reqHeader != nil {
-			//
-			var tmpReqHeader map[string]string
-			if route.reqHeader != nil {
-				tmpReqHeader = route.reqHeader
-			} else {
-				tmpReqHeader = make(map[string]string)
-			}
-			for k, v := range group.reqHeader {
-				if _, ok := route.reqHeader[k]; !ok {
-					tmpReqHeader[k] = v
-				}
-			}
-			route.reqHeader = tmpReqHeader
-		}
-		// 合并 header
-		if group.header != nil {
-			//
-
-			var tmpHeader map[string]string
-			if route.header != nil {
-				tmpHeader = route.header
-			} else {
-				tmpHeader = make(map[string]string)
-			}
-
-			for k, v := range group.header {
-				if _, ok := route.header[k]; !ok {
-					tmpHeader[k] = v
-				}
-			}
-			route.header = tmpHeader
-
-		}
-		// 合并 codeMsg
-		if group.codeMsg != nil {
-			//
-			var tmpReqHeader map[string]string
-			if route.header != nil {
-				tmpReqHeader = route.header
-			} else {
-				tmpReqHeader = make(map[string]string)
-			}
-			for k, v := range group.reqHeader {
-				tmpReqHeader[k] = v
-
-			}
-			route.reqHeader = tmpReqHeader
-		}
-		// 合并 codeField
-		if route.codeField == "" {
-			route.codeField = group.codeField
 		}
 
 	}
+	r.DebugTpl()
 	return r
+}
+
+func merge(group *GroupRoute, route *Route) {
+	// 合并 delheader
+	if group.delheader != nil {
+		//
+		if route.delheader == nil {
+			route.delheader = group.delheader
+		} else {
+			tmpdelheader := make([]string, 0)
+			tmpdelheader = append(tmpdelheader, group.delheader...)
+			tmpdelheader = append(tmpdelheader, route.delheader...)
+			route.delheader = tmpdelheader
+		}
+
+	}
+
+	// 合并 delmidware
+	if group.delmidware != nil {
+		//
+		if route.delmidware == nil {
+			route.delmidware = group.delmidware
+		} else {
+			tmpdelmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+			tmpdelmidware = append(tmpdelmidware, group.delmidware...)
+			tmpdelmidware = append(tmpdelmidware, route.delmidware...)
+			route.midware = tmpdelmidware
+		}
+	}
+	// 合并 groupKey
+	if route.groupKey == "" {
+		route.groupKey = group.groupKey
+		route.groupLable = group.groupLable
+		route.groupTitle = group.groupTitle
+	}
+	// 合并 midware
+	if group.midware != nil {
+		//
+		if route.midware == nil {
+			route.midware = group.midware
+		} else {
+			tmpmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+			tmpmidware = append(tmpmidware, group.midware...)
+			tmpmidware = append(tmpmidware, route.midware...)
+			route.midware = tmpmidware
+		}
+
+	}
+	// 合并 reqHeader
+	if group.reqHeader != nil {
+		//
+		tmpReqHeader := make(map[string]string)
+		for k, v := range group.reqHeader {
+			tmpReqHeader[k] = v
+		}
+
+		if route.header != nil {
+			for k, v := range route.reqHeader {
+				tmpReqHeader[k] = v
+			}
+
+		}
+
+		route.header = tmpReqHeader
+
+	}
+	// 合并 header
+	if group.header != nil {
+		//
+		tmpHeader := make(map[string]string)
+		for k, v := range group.header {
+			tmpHeader[k] = v
+		}
+		if route.header != nil {
+			for k, v := range route.header {
+				tmpHeader[k] = v
+			}
+
+		}
+
+		route.header = tmpHeader
+
+	}
+	// 合并 codeMsg
+	if group.codeMsg != nil {
+		//
+		tmpCodeMsg := make(map[string]string)
+		for k, v := range group.codeMsg {
+			tmpCodeMsg[k] = v
+		}
+		if route.codeMsg != nil {
+			for k, v := range route.codeMsg {
+				if v == "" {
+					delete(tmpCodeMsg, k)
+				} else {
+					tmpCodeMsg[k] = v
+				}
+
+			}
+
+		}
+
+		route.codeMsg = tmpCodeMsg
+	}
+	// 合并 codeField
+	if route.codeField == "" {
+		route.codeField = group.codeField
+	}
+
+}
+
+func (r *Router) DebugRoute() {
+	for url, mr := range r.route {
+		for k, v := range mr {
+			fmt.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
+		}
+
+	}
+}
+
+func (r *Router) DebugTpl() {
+	for url, mr := range r.tpl {
+		for k, v := range mr {
+			fmt.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
+		}
+
+	}
 }
