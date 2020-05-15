@@ -476,14 +476,14 @@ func merge(group *GroupRoute, route *Route) {
 			tmpReqHeader[k] = v
 		}
 
-		if route.header != nil {
+		if route.reqHeader != nil {
 			for k, v := range route.reqHeader {
 				tmpReqHeader[k] = v
 			}
 
 		}
 
-		route.header = tmpReqHeader
+		route.reqHeader = tmpReqHeader
 
 	}
 	// 合并 header
