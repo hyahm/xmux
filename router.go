@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -189,7 +188,6 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		}
 
 	} else {
-		fmt.Printf("%v+ \n\n\n\n\n\n", r.tpl)
 		for reUrl, mr := range r.tpl {
 
 			re := regexp.MustCompile(reUrl)
@@ -417,12 +415,10 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				r.tpl[url] = make(map[string]*Route)
 			}
 			r.tpl[url] = group.tpl[url]
-			r.DebugTpl()
 
 		}
 
 	}
-	r.DebugTpl()
 	return r
 }
 
@@ -538,7 +534,7 @@ func merge(group *GroupRoute, route *Route) {
 func (r *Router) DebugRoute() {
 	for url, mr := range r.route {
 		for k, v := range mr {
-			fmt.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
+			log.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
 		}
 
 	}
@@ -547,7 +543,7 @@ func (r *Router) DebugRoute() {
 func (r *Router) DebugTpl() {
 	for url, mr := range r.tpl {
 		for k, v := range mr {
-			fmt.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
+			log.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
 		}
 
 	}
