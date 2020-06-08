@@ -520,7 +520,7 @@ func main() {
 	// fmt.Println(router.Slash)
 	router.AddMidware(filter)
 	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").ApiCreateGroup("home","home page", "home").
-		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqHeader("content-type": "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
