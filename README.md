@@ -218,8 +218,6 @@ func TestHome(t *testing.T) {
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	r.Header.Set("bbb", "ccc")
-
-	data := GetData(r) 
 	return false
 }
 
