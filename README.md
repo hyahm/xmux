@@ -20,7 +20,7 @@
 
 ### 添加了组的概念
 
-> aritclegroup.article.go
+> aritclegroup.go
 ```go
 func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["id"])
