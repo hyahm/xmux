@@ -8,6 +8,11 @@ import (
 )
 
 // type Midware
+var connections int
+
+func GetConnents() int {
+	return connections
+}
 
 type reroute struct {
 	R      *Route
@@ -91,6 +96,10 @@ func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	connections++
+	defer func() {
+		connections--
+	}()
 	if r.once == nil {
 		r.once = &sync.Once{}
 	}
@@ -388,7 +397,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		r.pattern[url] = args
 
 		if len(args) == 0 {
-			for m, _ := range group.route[url] {
+			for m := range group.route[url] {
 				if _, ok := r.route[url][m]; ok {
 					log.Fatalf("%s %s is Duplication", url, m)
 				}
@@ -403,7 +412,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 			r.route[url] = group.route[url]
 
 		} else {
-			for m, _ := range group.tpl[url] {
+			for m := range group.tpl[url] {
 				if _, ok := r.tpl[url][m]; ok {
 					log.Fatalf("%s %s is Duplication", url, m)
 				}
