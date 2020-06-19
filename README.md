@@ -20,7 +20,7 @@
 
 ### 添加了组的概念
 
-> aritclegroup.article.go
+> aritclegroup.go
 ```go
 func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var[r.URL.Path]["id"])
@@ -218,8 +218,6 @@ func TestHome(t *testing.T) {
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
 	r.Header.Set("bbb", "ccc")
-
-	data := GetData(r) 
 	return false
 }
 
@@ -520,7 +518,7 @@ func main() {
 	// fmt.Println(router.Slash)
 	router.AddMidware(filter)
 	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").ApiCreateGroup("home","home page", "home").
-		ApiReqHeader(map[string]string{"content-type": "application/json"}).
+		ApiReqHeader("content-type": "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
