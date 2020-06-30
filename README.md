@@ -252,8 +252,12 @@ router.Slash = true
 是可以直接访问 http://www.hyahm.com/mmm/af/af 这个地址的请求
 
 ### 匹配路由
-如上面代码所示  
-  
+支持以下5种
+ word   只匹配数字和字母
+ string  匹配所有不含/的字符
+ int  匹配整数
+ all： 匹配所有的包括/
+ re： 自定义正则
 /aaa/{name}          这个和下面一个一样， 省略类型， 默认是string  
 /aaa/{string:name}   这个和上面一样， string类型  
 /aaa/{int:name}       这个匹配int类型   
