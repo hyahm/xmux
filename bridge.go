@@ -37,7 +37,8 @@ func GetData(r *http.Request) *Data {
 	if r == nil {
 		return nil
 	}
-
+	allmu.Lock()
+	defer allmu.Unlock()
 	return allconn[r]
 }
 
