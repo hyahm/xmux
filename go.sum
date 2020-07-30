@@ -1,0 +1,4 @@
+github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
+github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/hyahm/golog v0.0.0-20200629040556-4b3a37edc13b h1:6w0MUbe38I8r6iy7+bjyAG46oAQsCxY8rYQBNuNWLfw=
+github.com/hyahm/golog v0.0.0-20200629040556-4b3a37edc13b/go.mod h1:zKiO0JeV7UoTS6Gx7jZaGr+GblF6B57e04Q+/+ChEZA=

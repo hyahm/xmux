@@ -6,9 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
+
+	"github.com/hyahm/golog"
 )
 
 var ErrorConnect = errors.New("connect error")
@@ -60,6 +63,7 @@ const (
 func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	//解包
 	lpack := make([]byte, 2)
+	golog.Info(lpack)
 	_, err := io.ReadFull(xws.Conn, lpack)
 	if err != nil {
 		xws.Conn.Write([]byte("websocket: client sent data before handshake is complete"))
@@ -125,6 +129,7 @@ func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) {
 	if len(typ) == 0 || header == byte(0) {
 		header = TypeMsg
 	} else {
+		fmt.Println("typ: ", typ[0])
 		header = typ[0]
 	}
 	send = append(send, header)
@@ -146,8 +151,9 @@ func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) {
 	xws.Conn.Write(send)
 }
 
-func (xws *BaseWs) Websocket(w http.ResponseWriter, r *http.Request) {
+func NewWebsocket(w http.ResponseWriter, r *http.Request) (xws *BaseWs) {
 	// show num of goroutine
+	xws = &BaseWs{}
 	w.Header().Set("Content-Type", "text/plain")
 	key := r.Header.Get("Sec-WebSocket-Key")
 	if key == "" {
@@ -168,6 +174,7 @@ func (xws *BaseWs) Websocket(w http.ResponseWriter, r *http.Request) {
 	netConn, brw, err := h.Hijack()
 	if err != nil {
 		netConn.Write([]byte(err.Error()))
+		golog.Info(err)
 		xws.Err = err
 		return
 	}
@@ -187,7 +194,7 @@ func (xws *BaseWs) Websocket(w http.ResponseWriter, r *http.Request) {
 	netConn.Write([]byte(header))
 	xws.Conn = netConn
 	go xws.HandleWsFunc()
-
+	return
 }
 
 type WebSocket interface {
