@@ -63,7 +63,6 @@ const (
 func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	//解包
 	lpack := make([]byte, 2)
-	golog.Info(lpack)
 	_, err := io.ReadFull(xws.Conn, lpack)
 	if err != nil {
 		xws.Conn.Write([]byte("websocket: client sent data before handshake is complete"))

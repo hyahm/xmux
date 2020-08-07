@@ -142,6 +142,7 @@ var style = `
     border: 1px solid #eee;
     text-align: left;
     padding: 10px;
+    white-space: pre-wrap;
     color: #080;
 }
 .dl-table1 span{
