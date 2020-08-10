@@ -9,7 +9,7 @@ import (
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
 	route      PatternMR // 路由对应的methodsroute
-	Slash      bool
+	slash      bool
 	header     map[string]string
 	tpl        PatternMR // 路由对应的methodsroute
 	midware    []func(http.ResponseWriter, *http.Request) bool
@@ -117,7 +117,7 @@ func (g *GroupRoute) FirstMidware(handle func(http.ResponseWriter, *http.Request
 func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 
 	// 格式路径
-	if g.Slash {
+	if g.slash {
 		pattern = slash(pattern)
 	}
 

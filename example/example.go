@@ -31,7 +31,6 @@ func me(w http.ResponseWriter, r *http.Request) {
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
-	xmux.GetData(r).End = "13333"
 	w.Write([]byte("hello world all"))
 	return
 }
@@ -53,7 +52,7 @@ func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("-----------------------")
 	fmt.Println("login filter.............")
 	r.Header.Set("bbb", "ccc")
-
+	xmux.GetData(r).Get()
 	return false
 }
 

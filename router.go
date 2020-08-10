@@ -9,7 +9,6 @@ import (
 	"github.com/hyahm/golog"
 )
 
-// type Midware
 var connections int
 
 func GetConnents() int {
@@ -26,21 +25,19 @@ type rt struct {
 	Handle     http.Handler
 	Header     map[string]string
 	Midware    []func(http.ResponseWriter, *http.Request) bool
-	end        func(interface{})
 	dataSource interface{}
 }
 
 type Router struct {
-	IgnoreIco        bool // 是否忽略 /favicon.ico 请求。 默认忽略
-	HanleFavicon     http.Handler
-	DisableOption    bool         // 禁止全局option
-	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	HandleNotFound   http.Handler
-	MethodNotAllowed http.Handler
-	Doc              http.Handler
-	Slash            bool
-	route            PatternMR // 单实例路由， 组路由最后也会合并过来
-	tpl              PatternMR // 正则路由， 组路由最后也会合并过来
+	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
+	HanleFavicon   http.Handler
+	DisableOption  bool         // 禁止全局option
+	Options        http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
+	HandleNotFound http.Handler
+	Doc            http.Handler
+	Slash          bool
+	route          PatternMR // 单实例路由， 组路由最后也会合并过来
+	tpl            PatternMR // 正则路由， 组路由最后也会合并过来
 
 	pattern map[string][]string // 记录所有路由， value 是正则匹配的参数
 
@@ -48,7 +45,6 @@ type Router struct {
 	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 
 	routeTable map[string]*rt // 路由表
-	once       *sync.Once
 	mu         *sync.RWMutex
 }
 
@@ -100,36 +96,16 @@ func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	connections++
-	defer func() {
-		connections--
-	}()
-	if r.once == nil {
-		r.once = &sync.Once{}
-	}
+
 	if r.mu == nil {
 		r.mu = &sync.RWMutex{}
 	}
 	if r.routeTable == nil {
 		r.routeTable = make(map[string]*rt)
 	}
-	if r.routeTable == nil {
-		r.routeTable = make(map[string]*rt)
-	}
-	r.once.Do(func() {
-		// 初始化默认路由
-		r.initHandler()
-	})
-	allmu.Lock()
-	allconn[req] = &Data{
-		ctx: make(map[string]interface{}),
-		mu:  &sync.RWMutex{},
-	}
-	allmu.Unlock()
-	// 去掉路径多余的斜杠
 	defer func() {
-		allmu.Lock()
+		connections--
 		delete(allconn, req)
-		allmu.Unlock()
 	}()
 	url := req.URL.Path
 	if r.Slash {
@@ -156,9 +132,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// 先进行路由表缓存寻找
 	if route, ok := r.routeTable[url+req.Method]; ok {
 		// 设置请求头
-		allmu.Lock()
-		allconn[req].Data = route.dataSource
-		allmu.Unlock()
+		if route.dataSource != nil {
+			allconn[req] = &Data{
+				ctx: make(map[string]interface{}),
+				mu:  &sync.RWMutex{},
+			}
+			allconn[req].Data = route.dataSource
+		}
+
 		for k, v := range route.Header {
 			w.Header().Set(k, v)
 		}
@@ -171,9 +152,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 		route.Handle.ServeHTTP(w, req)
-		if route.end != nil {
-			go route.end(GetData(req).End)
-		}
 
 	} else {
 		// 获取handler
@@ -183,37 +161,26 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request) {
+
 	var this_route *Route
-
 	if _, ok := r.route[url]; ok {
-
-		if _, ok := r.route[url][req.Method]; ok {
-			this_route = r.route[url][req.Method]
-		} else {
-			r.MethodNotAllowed.ServeHTTP(w, req)
-			return
-		}
+		this_route = r.route[url][req.Method]
 
 	} else {
 		for reUrl, mr := range r.tpl {
-
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
-
-				if _, ok := r.tpl[reUrl][req.Method]; ok {
-					this_route = mr[req.Method]
-					vm := make(map[string]string)
-					slashUrl := slash(url)
-					vl := re.FindStringSubmatch(url)
-					for i, v := range r.pattern[reUrl] {
-						vm[v] = vl[i+1]
-					}
-					allparams[slashUrl] = vm
-					goto endloop
-				} else {
-					r.MethodNotAllowed.ServeHTTP(w, req)
-					return
+				this_route = mr[req.Method]
+				if r.Slash {
+					url = slash(url)
 				}
+				ap := make(map[string]string, 0)
+				vl := re.FindStringSubmatch(url)
+				for i, v := range r.pattern[reUrl] {
+					ap[v] = vl[i+1]
+				}
+				allparams[url] = ap
+				goto endloop
 
 			}
 
@@ -222,9 +189,14 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		return
 	}
 endloop:
-	allmu.Lock()
-	allconn[req].Data = this_route.dataSource
-	allmu.Unlock()
+	if this_route.dataSource != nil {
+		allconn[req] = &Data{
+			ctx: make(map[string]interface{}),
+			mu:  &sync.RWMutex{},
+		}
+		allconn[req].Data = this_route.dataSource
+	}
+
 	// 全局的请求头
 	tmpHeader := make(map[string]string)
 	for k, v := range r.header {
@@ -270,7 +242,6 @@ endloop:
 		Handle:     this_route.handle,
 		Header:     tmpHeader,
 		Midware:    tmpMidware,
-		end:        this_route.end,
 		dataSource: this_route.dataSource,
 	}
 	r.mu.Lock()
@@ -282,30 +253,7 @@ endloop:
 			return
 		}
 	}
-
 	this_route.handle.ServeHTTP(w, req)
-	if this_route.end != nil {
-		go this_route.end(GetData(req).End)
-	}
-}
-
-func (r *Router) initHandler() {
-	// 匹配完成后，最先执行这个， 初始化当前方法
-	if r.MethodNotAllowed == nil {
-		// 405
-		r.MethodNotAllowed = methodNotAllowed()
-	}
-
-	if r.HanleFavicon == nil {
-		r.HanleFavicon = favicon()
-	}
-
-	if r.Options == nil {
-		r.Options = options()
-	}
-	if r.HandleNotFound == nil {
-		r.HandleNotFound = handleNotFound()
-	}
 
 }
 
@@ -318,15 +266,16 @@ func (r *Router) Debug() {
 
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco: true,
-		// group:      make(map[string]map[string]string),
-		Slash:      true,
-		routeTable: make(map[string]*rt),
-		header:     map[string]string{},
-		route:      make(map[string]MethodsRoute),
-		tpl:        make(map[string]MethodsRoute),
-		pattern:    make(map[string][]string),
-		once:       &sync.Once{},
+		IgnoreIco:      true,
+		Slash:          true,
+		routeTable:     make(map[string]*rt),
+		header:         map[string]string{},
+		route:          make(map[string]MethodsRoute),
+		tpl:            make(map[string]MethodsRoute),
+		pattern:        make(map[string][]string),
+		HanleFavicon:   favicon(),
+		Options:        options(),
+		HandleNotFound: handleNotFound(),
 	}
 }
 
@@ -361,21 +310,17 @@ func favicon() http.Handler {
 // 组路由添加到router
 func (r *Router) AddGroup(group *GroupRoute) *Router {
 
+	// 将路由的所有变量全部移交到route
+	if group.pattern == nil && group.route == nil {
+		return nil
+	}
 	if r.header == nil {
 		r.header = make(map[string]string)
 	}
-
-	// 将路由的所有变量全部移交到route
-
 	if r.pattern == nil {
 		r.pattern = make(map[string][]string)
 	}
-	if group.pattern == nil {
-		return nil
-	}
-	if group.route == nil {
-		return nil
-	}
+
 	if r.route == nil {
 		r.route = make(map[string]MethodsRoute)
 	}

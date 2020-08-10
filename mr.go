@@ -8,6 +8,7 @@ import (
 type MethodsRoute map[string]*Route
 
 func (mr MethodsRoute) getRoute(method string, handler func(http.ResponseWriter, *http.Request)) *Route {
+
 	if _, ok := mr[method]; ok {
 		log.Fatal("method post duplicate")
 	}
