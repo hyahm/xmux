@@ -1,12 +1,11 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
 	"sync"
-
-	"github.com/hyahm/golog"
 )
 
 var connections int
@@ -250,10 +249,10 @@ endloop:
 }
 
 func (r *Router) Debug() {
-	golog.Infof("%+v", r)
-	golog.Infof("%+v", r.pattern)
-	golog.Infof("%+v", r.route)
-	golog.Infof("%+v", r.tpl)
+	fmt.Printf("%+v \n", r)
+	fmt.Printf("%+v \n", r.pattern)
+	fmt.Printf("%+v \n", r.route)
+	fmt.Printf("%+v \n", r.tpl)
 }
 
 func NewRouter() *Router {
@@ -354,7 +353,6 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		}
 
 	}
-	golog.Infof("%+v", *r)
 	return r
 }
 
