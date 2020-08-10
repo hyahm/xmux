@@ -34,18 +34,14 @@ type Router struct {
 	DisableOption  bool         // 禁止全局option
 	Options        http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound http.Handler
-	Doc            http.Handler
 	Slash          bool
-	route          PatternMR // 单实例路由， 组路由最后也会合并过来
-	tpl            PatternMR // 正则路由， 组路由最后也会合并过来
-
-	pattern map[string][]string // 记录所有路由， value 是正则匹配的参数
-
-	header  map[string]string                               // 全局路由头
-	midware []func(http.ResponseWriter, *http.Request) bool // 全局中间件
-
-	routeTable map[string]*rt // 路由表
-	mu         *sync.RWMutex
+	route          PatternMR                                       // 单实例路由， 组路由最后也会合并过来
+	tpl            PatternMR                                       // 正则路由， 组路由最后也会合并过来
+	pattern        map[string][]string                             // 记录所有路由， value 是正则匹配的参数
+	header         map[string]string                               // 全局路由头
+	midware        []func(http.ResponseWriter, *http.Request) bool // 全局中间件
+	routeTable     map[string]*rt                                  // 路由表
+	mu             *sync.RWMutex
 }
 
 func (r *Router) makeRoute(pattern string) (string, bool) {
@@ -96,7 +92,6 @@ func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	connections++
-
 	if r.mu == nil {
 		r.mu = &sync.RWMutex{}
 	}
@@ -171,9 +166,6 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
 				this_route = mr[req.Method]
-				if r.Slash {
-					url = slash(url)
-				}
 				ap := make(map[string]string, 0)
 				vl := re.FindStringSubmatch(url)
 				for i, v := range r.pattern[reUrl] {
