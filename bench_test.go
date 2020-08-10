@@ -8,7 +8,7 @@ import (
 
 func BenchmarkOneRoute(B *testing.B) {
 	router := NewRouter()
-	router.Pattern("/ping").Get(func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/ping")
 }
 
@@ -103,14 +103,14 @@ func BenchmarkOneRoute(B *testing.B) {
 
 func Benchmark404Many(B *testing.B) {
 	router := NewRouter()
-	router.Pattern("/").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/path/to/something").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/post/{id}").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/view/:id").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/favicon.ico").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/robots.txt").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/delete/:id").Get(func(w http.ResponseWriter, r *http.Request) {})
-	router.Pattern("/user/:id/:mode").Get(func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/path/to/something", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/post/{id}", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/view/:id", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/delete/:id", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/user/:id/:mode", func(w http.ResponseWriter, r *http.Request) {})
 
 	// router.NoRoute(func(c *Context) {})
 	runRequest(B, router, "GET", "/viewfake")
@@ -156,7 +156,7 @@ func runRequest(B *testing.B, r *Router, method, path string) {
 func BenchmarkMux(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.Pattern("/v1/{v1}").Get(handler)
+	router.Get("/v1/{v1}", handler)
 	request, _ := http.NewRequest("GET", "/v1/anything", nil)
 	for i := 0; i < b.N; i++ {
 		router.ServeHTTP(nil, request)
@@ -166,7 +166,7 @@ func BenchmarkMux(b *testing.B) {
 func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.Pattern("/v1/{v1}").Get(handler)
+	router.Get("/v1/{v1}", handler)
 
 	requestA, _ := http.NewRequest("GET", "/v1/a", nil)
 	requestB, _ := http.NewRequest("GET", "/v1/b", nil)
@@ -179,7 +179,7 @@ func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 func BenchmarkManyPathVariables(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
-	router.Pattern("/v1/{v1}/{v2}/{v3}/{v4}/{v5}").Get(handler)
+	router.Get("/v1/{v1}/{v2}/{v3}/{v4}/{v5}", handler)
 
 	matchingRequest, _ := http.NewRequest("GET", "/v1/1/2/3/4/5", nil)
 	notMatchingRequest, _ := http.NewRequest("GET", "/v1/1/2/3/4", nil)

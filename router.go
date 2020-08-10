@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
+
+	"github.com/hyahm/golog"
 )
 
 // type Midware
@@ -34,7 +36,6 @@ type Router struct {
 	DisableOption    bool         // 禁止全局option
 	Options          http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound   http.Handler
-	MethodNotFound   http.Handler
 	MethodNotAllowed http.Handler
 	Doc              http.Handler
 	Slash            bool
@@ -51,32 +52,34 @@ type Router struct {
 	mu         *sync.RWMutex
 }
 
-func (r *Router) Pattern(pattern string) MethodsRoute {
+func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
-	if r.route == nil {
-		r.route = make(map[string]MethodsRoute)
+	// 格式路径
+	if r.Slash {
+		pattern = slash(pattern)
 	}
+
 	if r.pattern == nil {
 		r.pattern = make(map[string][]string)
 	}
-	pattern = slash(pattern)
-	if _, ok := r.pattern[pattern]; ok {
-		log.Fatalf("Pattern Duplicate for %s", pattern)
-	}
-	mr := make(map[string]*Route)
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
 		if _, ok := r.pattern[v]; ok {
-			log.Fatalf("Pattern Duplicate for %s", v)
+			log.Fatalf("pattern %s is Duplication", pattern)
 		}
-		r.tpl[v] = mr
+		r.tpl[v] = make(map[string]*Route)
 		r.pattern[v] = listvar
-		return mr
+		return v, true
+		// 判断是否重复
+	} else {
+		if _, ok := r.pattern[pattern]; ok {
+			log.Fatalf("pattern %s is Duplication", pattern)
+		}
+		r.route[pattern] = make(map[string]*Route)
+		r.pattern[pattern] = make([]string, 0)
+		return pattern, false
 	}
-	r.pattern[pattern] = make([]string, 0)
-	r.route[pattern] = mr
-	return mr
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
@@ -184,11 +187,6 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 
 	if _, ok := r.route[url]; ok {
 
-		// 完全匹配的
-		if len(r.route[url]) == 0 {
-			r.MethodNotFound.ServeHTTP(w, req)
-			return
-		}
 		if _, ok := r.route[url][req.Method]; ok {
 			this_route = r.route[url][req.Method]
 		} else {
@@ -201,10 +199,7 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(url) {
-				if len(r.tpl[reUrl]) == 0 {
-					r.MethodNotFound.ServeHTTP(w, req)
-					return
-				}
+
 				if _, ok := r.tpl[reUrl][req.Method]; ok {
 					this_route = mr[req.Method]
 					vm := make(map[string]string)
@@ -272,10 +267,9 @@ endloop:
 
 	// 缓存handler
 	thisRouter := &rt{
-		Handle:  this_route.handle,
-		Header:  tmpHeader,
-		Midware: tmpMidware,
-
+		Handle:     this_route.handle,
+		Header:     tmpHeader,
+		Midware:    tmpMidware,
 		end:        this_route.end,
 		dataSource: this_route.dataSource,
 	}
@@ -302,11 +296,6 @@ func (r *Router) initHandler() {
 		r.MethodNotAllowed = methodNotAllowed()
 	}
 
-	if r.MethodNotFound == nil {
-		//
-		r.MethodNotFound = methodNotFound()
-	}
-
 	if r.HanleFavicon == nil {
 		r.HanleFavicon = favicon()
 	}
@@ -318,6 +307,13 @@ func (r *Router) initHandler() {
 		r.HandleNotFound = handleNotFound()
 	}
 
+}
+
+func (r *Router) Debug() {
+	golog.Infof("%+v", r)
+	golog.Infof("%+v", r.pattern)
+	golog.Infof("%+v", r.route)
+	golog.Infof("%+v", r.tpl)
 }
 
 func NewRouter() *Router {
@@ -344,13 +340,6 @@ func handleNotFound() http.Handler {
 func options() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		return
-	})
-}
-
-func methodNotFound() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
 		return
 	})
 }
@@ -428,6 +417,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		}
 
 	}
+	golog.Infof("%+v", *r)
 	return r
 }
 

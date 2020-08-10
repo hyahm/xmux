@@ -2,12 +2,12 @@ package xmux
 
 import "net/http/pprof"
 
-func Pprof() *GroupRoute {
+func (r *Router) Pprof() *GroupRoute {
 	debug := NewGroupRoute()
-	debug.Pattern("/debug/pprof/").Get(pprof.Index)
-	debug.Pattern("/debug/pprof/cmdline").Get(pprof.Cmdline)
-	debug.Pattern("/debug/pprof/profile").Get(pprof.Profile)
-	debug.Pattern("/debug/pprof/symbol").Get(pprof.Symbol)
-	debug.Pattern("/debug/pprof/trace").Get(pprof.Trace)
+	debug.Get("/debug/pprof/", pprof.Index)
+	debug.Get("/debug/pprof/cmdline", pprof.Cmdline)
+	debug.Get("/debug/pprof/profile", pprof.Profile)
+	debug.Get("/debug/pprof/symbol", pprof.Symbol)
+	debug.Get("/debug/pprof/trace", pprof.Trace)
 	return debug
 }

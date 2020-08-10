@@ -92,7 +92,7 @@ func main() {
 	user.ApiCodeMsg("78", "你是78")
 	user.ApiCodeMsg("0", "成功")
 
-	user.Pattern("/home").Get(home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
+	router.Get("/home", home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
@@ -102,7 +102,7 @@ func main() {
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").End(end).ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
 
-	user.Pattern("/aaa/{name}").Post(name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
+	user.Post("/aaa/{name}", name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
 		DelMidware(filter).
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
@@ -111,7 +111,7 @@ func main() {
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
-	user.Pattern("/aaa/bbbb/{path:me}").Post(me).
+	user.Post("/aaa/bbbb/{path:me}", me).
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
@@ -120,14 +120,15 @@ func main() {
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 
-	user.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all).End(end)
+	user.Get("/bbb/ccc/{int:oid}/{string:all}", all).End(end)
 
 	router.AddGroup(user)
 
-	router.AddGroup(xmux.Pprof())
-
-	doc := xmux.ShowApi("/docs", router).DelMidware(filter)
+	prof := router.Pprof()
+	router.AddGroup(prof)
+	doc := router.ShowApi("/docs").DelMidware(filter)
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
+	router.Debug()
 	if err := http.ListenAndServe(":9000", router); err != nil {
 		log.Fatal(err)
 	}

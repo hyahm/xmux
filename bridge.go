@@ -23,8 +23,7 @@ var allconn map[*http.Request]*Data
 var allmu *sync.RWMutex
 
 func Var(r *http.Request) params {
-	url := slash(r.URL.Path)
-	return allparams[url]
+	return allparams[slash(r.URL.Path)]
 }
 
 func init() {

@@ -49,7 +49,7 @@ func main() {
 func main() {
 	router := xmux.NewRouter()
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
-	router.Pattern("/{all:age}").Get(Who)   // 这个可以匹配任何路由
+	router.Get("/{all:age}", Who)   // 这个可以匹配任何路由
 }
 ```
 
@@ -61,8 +61,8 @@ func main() {
 ```go
 func main() {
 	router := xmux.NewRouter()
-	router.Pattern("/get").Get(show) // 不同请求分别处理
-	router.Pattern("/get").Get(show) // 不同请求分别处理
+	router.Get("/get",show) // 不同请求分别处理
+	router.Get("/get",show) // 不同请求分别处理
 
 }
 写一大堆路由，  有没有重复的都不知道  
@@ -76,8 +76,8 @@ func main() {
 ```go
 func main() {
 	router := xmux.NewRouter()
-	router.Pattern("/get").Get(show) // 不同请求分别处理
-	router.Pattern("/get/").Get(show) // 不同请求分别处理
+	router.Get("/get",show) // 不同请求分别处理
+	router.Get("/get/",show) // 不同请求分别处理
 
 }
 
@@ -86,30 +86,11 @@ func main() {
 
 ```
 
-### 看到上面的代码可能想到了什么，  上面如果忘了 设置请求怎么办， 原来不写会语法报错
-```go
-func main() {
-	router := xmux.NewRouter()
-	router.Options = Options()                    // 
-	router.Pattern("/get").Get(show) // 不同请求分别处理
-
-	router.AddGroup(aritclegroup.Article)
-
-	router.Pattern("/{string:age}").Get(Who).SetHeader("Host", "two")
-	router.Pattern("/home/id").SetHeader("Host", "two")
-	log.Fatal(http.ListenAndServe(":8080", router))
-}
-```
-上面的路由  /home/id  没写方法  
-
-当get请求的时候， 页面返回了这个. 应该就明白了  
-<h1>when you see this page, it means you forget set handle in /home/id</h1>  
 
 ### 四大全局handle
 ```go
 Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 HandleNotFound: handleNotFound(),   // 404 返回
-MethodNotFound: methodNotFound(),   // 这个就是上面提示的忘了写handle 的提示页面
 MethodNotAllowed methodNotAllowed(),
 
 // 默认调用的方法如下
@@ -134,12 +115,6 @@ func handleNotFound() http.Handler {
 	})
 }
 
-func methodNotAllowed() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	})
-}
 
 ```
 
@@ -196,7 +171,7 @@ func hf1(w http.ResponseWriter, r *http.Request)  bool {
 
 func TestHome(t *testing.T) {
 	router := xmux.NewRouter()
-	router.Pattern("/home/{test}").Get(home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
+	router.Get("/home/{test}",home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
 	var a string
 	// client := http.Client{}
 	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
@@ -314,7 +289,7 @@ xmux.GetData(r).Del(k string)
 ```go
 // 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱, 调用的时候只会显示到当前位置以上的路由
 router := xmux.NewRouter()
-api := xmux.ShowApi("/doc", router)
+api := router.ShowApi("/doc")
 router.ShowApi(api).
 ApiCreateGroup("test", "api test", "apitest").  //增加了侧边栏 所有组路由或单路由必须加上这个才会显示, 第一个参数是组key, 第二个是组的标题， 第三个是侧边栏url显示的文字 ， 或者添加到某个组上 ApiAddGroup(key), 组路由添加的key 会被子路由继承， 如果不想显示可以ApiAddGroup 挂载到其他路由或者 ApiExitGroup， 移除此组
 ApiDescribe("这是home接口的测试").  // 接口的简述
@@ -397,11 +372,11 @@ func Options() http.Handler {
 func main() {
 	router := xmux.NewRouter()
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
-	router.Pattern("/get").Get(show).Post(postme) // 不同请求分别处理
+
 
 	router.AddGroup(aritclegroup.Article())
 
-	router.Pattern("/people/{string:name}/{int:age}").Get(Who).SetHeader("Host", "two")
+	router.Get("/people/{string:name}/{int:age}", Who).SetHeader("Host", "two")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
@@ -521,16 +496,16 @@ func main() {
 	router.IgnoreIco = true
 	// fmt.Println(router.Slash)
 	router.AddMidware(filter)
-	router.Pattern("/home").Post(home).ApiDescribe("这是home接口的测试").ApiCreateGroup("home","home page", "home").
+	router.Post("/home",home).ApiDescribe("这是home接口的测试").ApiCreateGroup("home","home page", "home").
 		ApiReqHeader("content-type": "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home)
-	router.Pattern("/aaa/{name}").Post(name).DelMidware(filter).Get(name)
-	router.Pattern("/aaa/bbbb/{path:me}").Post(me)
-	router.Pattern("/bbb/ccc/{int:oid}/{string:all}").Get(all)
+	router.Post("/aaa/{name}",name).DelMidware(filter).Get(name)
+	router.Post("/aaa/bbbb/{path:me}",me)
+	router.Get("/bbb/ccc/{int:oid}/{string:all}",all)
 
 	router.ShowApi("/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	if err := http.ListenAndServe(":9000", router); err != nil {

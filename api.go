@@ -76,13 +76,13 @@ func homeDoc(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func ShowApi(pattern string, r *Router) *GroupRoute {
+func (r *Router) ShowApi(pattern string) *GroupRoute {
 	api := NewGroupRoute()
 	NewDocs(r)
-	api.Pattern("/-/js/{name}.js").Get(js).SetHeader("Content-Type", "application/javascript; charset=utf8")
-	api.Pattern("/-/css/{name}.css").Get(css).SetHeader("Content-Type", "text/css; charset=utf8")
-	api.Pattern("/-/api/{int:id}.html").Get(showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
-	api.Pattern("/-/api/0.html").Get(homeDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
-	api.Pattern(pattern).Get(homeDoc)
+	api.Get("/-/js/{name}.js", js).SetHeader("Content-Type", "application/javascript; charset=utf8")
+	api.Get("/-/css/{name}.css", css).SetHeader("Content-Type", "text/css; charset=utf8")
+	api.Get("/-/api/{int:id}.html", showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+	api.Get("/-/api/0.html", homeDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+	api.Get(pattern, homeDoc)
 	return api
 }

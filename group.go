@@ -9,6 +9,7 @@ import (
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
 	route      PatternMR // 路由对应的methodsroute
+	Slash      bool
 	header     map[string]string
 	tpl        PatternMR // 路由对应的methodsroute
 	midware    []func(http.ResponseWriter, *http.Request) bool
@@ -112,38 +113,34 @@ func (g *GroupRoute) FirstMidware(handle func(http.ResponseWriter, *http.Request
 	return g
 }
 
-// 组里面也包括路由 后面的其实还是patter和handle
-func (g *GroupRoute) Pattern(pattern string) MethodsRoute {
+// 组里面也包括路由 后面的其实还是patter和handle, 是否是正则表达式
+func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 
 	// 格式路径
-	pattern = slash(pattern)
-
-	mr := make(map[string]*Route)
+	if g.Slash {
+		pattern = slash(pattern)
+	}
 
 	if g.pattern == nil {
 		g.pattern = make(map[string][]string)
 	}
 
-	if _, ok := g.pattern[pattern]; ok {
-		log.Fatalf("pattern %s is Duplication", pattern)
-	}
-
 	if v, listvar := match(pattern); len(listvar) > 0 {
 		if _, ok := g.pattern[v]; ok {
-			log.Fatalf("Pattern Duplicate for %s", v)
+			log.Fatalf("pattern %s is Duplication", pattern)
 		}
-
-		if _, ok := g.pattern[v]; ok {
-			log.Fatalf("pattern %s is Duplication", v)
-		}
-		g.tpl[v] = mr
-		// 判断是否重复
+		g.tpl[v] = make(map[string]*Route)
 		g.pattern[v] = listvar
-		return mr
+		return v, true
+		// 判断是否重复
+	} else {
+		if _, ok := g.pattern[pattern]; ok {
+			log.Fatalf("pattern %s is Duplication", pattern)
+		}
+		g.route[pattern] = make(map[string]*Route)
+		g.pattern[pattern] = make([]string, 0)
+		return pattern, false
 	}
-	g.pattern[pattern] = make([]string, 0)
-	g.route[pattern] = mr
-	return mr
 }
 
 func (g *GroupRoute) appendVarToRoute() {

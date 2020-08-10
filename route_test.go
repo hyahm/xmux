@@ -132,7 +132,7 @@ func testPattern(t *testing.T, test routerTest) {
 	r := NewRouter()
 
 	test.pattern = slash(test.pattern)
-	r.Pattern(test.pattern)
+	r.makeRoute(test.pattern)
 	patternMatched := false
 	if _, ok := r.route[test.pattern]; ok {
 		patternMatched = true
@@ -208,4 +208,3 @@ func testFormat(path string, newpath string) string {
 	return ""
 
 }
-
