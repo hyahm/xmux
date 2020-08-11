@@ -97,6 +97,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.routeTable == nil {
 		r.routeTable = make(map[string]*rt)
 	}
+	allconn[req] = &Data{
+		ctx: make(map[string]interface{}),
+		mu:  &sync.RWMutex{},
+	}
 	defer func() {
 		connections--
 		delete(allconn, req)
@@ -127,10 +131,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if route, ok := r.routeTable[url+req.Method]; ok {
 		// 设置请求头
 		if route.dataSource != nil {
-			allconn[req] = &Data{
-				ctx: make(map[string]interface{}),
-				mu:  &sync.RWMutex{},
-			}
 			allconn[req].Data = route.dataSource
 		}
 
@@ -181,10 +181,6 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 	}
 endloop:
 	if this_route.dataSource != nil {
-		allconn[req] = &Data{
-			ctx: make(map[string]interface{}),
-			mu:  &sync.RWMutex{},
-		}
 		allconn[req].Data = this_route.dataSource
 	}
 
@@ -216,16 +212,15 @@ endloop:
 	}
 	// 删除多余的中间件
 	for _, v := range this_route.delmidware {
+		tmp := make([]func(http.ResponseWriter, *http.Request) bool, len(tmpMidware)-1)
 		for i, tmd := range tmpMidware {
 			if CompareFunc(v, tmd) {
-				tmp := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-				tmp = append(tmp, tmpMidware[0:i]...)
-				tmp = append(tmp, tmpMidware[i+1:]...)
-				tmpMidware = tmp
+				copy(tmp[i:], tmpMidware[i+1:])
 				break
 			}
+			tmp[i] = tmd
 		}
-
+		tmpMidware = tmp
 	}
 
 	// 缓存handler
