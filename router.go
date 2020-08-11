@@ -97,10 +97,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.routeTable == nil {
 		r.routeTable = make(map[string]*rt)
 	}
+	r.mu.Lock()
 	allconn[req] = &Data{
 		ctx: make(map[string]interface{}),
 		mu:  &sync.RWMutex{},
 	}
+	r.mu.Unlock()
 	defer func() {
 		connections--
 		delete(allconn, req)
