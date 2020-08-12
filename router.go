@@ -105,7 +105,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.mu.Unlock()
 	defer func() {
 		connections--
+		r.mu.Lock()
 		delete(allconn, req)
+		r.mu.Unlock()
 	}()
 	url := req.URL.Path
 	if r.Slash {
