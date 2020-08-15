@@ -21,7 +21,7 @@ var allparams map[string]params // 保存的url 参数
 var allconn map[*http.Request]*Data
 
 func Var(r *http.Request) params {
-	return allparams[slash(r.URL.Path)]
+	return allparams[r.URL.Path]
 }
 
 func init() {
@@ -37,6 +37,12 @@ func GetData(r *http.Request) *Data {
 }
 
 func (data *Data) Set(k string, v interface{}) {
+	if data.ctx == nil {
+		data.mu = &sync.RWMutex{}
+	}
+	if data.ctx == nil {
+		data.ctx = make(map[string]interface{})
+	}
 
 	data.mu.Lock()
 	data.ctx[k] = v
@@ -44,13 +50,13 @@ func (data *Data) Set(k string, v interface{}) {
 }
 
 func (data *Data) Get(k string) interface{} {
-	data.mu.Lock()
-	defer data.mu.Unlock()
 	return data.ctx[k]
 }
 
 func (data *Data) Del(k string) {
-
+	if data.ctx == nil {
+		return
+	}
 	data.mu.Lock()
 	delete(data.ctx, k)
 	data.mu.Unlock()

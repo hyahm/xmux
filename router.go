@@ -8,11 +8,11 @@ import (
 	"sync"
 )
 
-var connections int
+// var connections int
 
-func GetConnents() int {
-	return connections
-}
+// func GetConnents() int {
+// 	return connections
+// }
 
 type reroute struct {
 	R      *Route
@@ -36,7 +36,7 @@ type Router struct {
 	Slash          bool
 	route          PatternMR                                       // 单实例路由， 组路由最后也会合并过来
 	tpl            PatternMR                                       // 正则路由， 组路由最后也会合并过来
-	pattern        map[string][]string                             // 记录所有路由， value 是正则匹配的参数
+	pattern        map[string][]string                             // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string                               // 全局路由头
 	midware        []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 	routeTable     map[string]*rt                                  // 路由表
@@ -90,7 +90,6 @@ func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	connections++
 	if r.mu == nil {
 		r.mu = &sync.RWMutex{}
 	}
@@ -98,24 +97,15 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.routeTable = make(map[string]*rt)
 	}
 	r.mu.Lock()
-	allconn[req] = &Data{
-		ctx: make(map[string]interface{}),
-		mu:  &sync.RWMutex{},
-	}
+	allconn[req] = &Data{}
 	r.mu.Unlock()
-	defer func() {
-		connections--
-		r.mu.Lock()
-		delete(allconn, req)
-		r.mu.Unlock()
-	}()
-	url := req.URL.Path
+
 	if r.Slash {
-		url = slash(req.URL.Path)
+		req.URL.Path = slash(req.URL.Path)
 	}
 
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和中间件
-	if r.IgnoreIco && url == "/favicon.ico" {
+	if r.IgnoreIco && req.URL.Path == "/favicon.ico" {
 		for k, v := range r.header {
 			w.Header().Set(k, v)
 		}
@@ -132,49 +122,62 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// 先进行路由表缓存寻找
-	if route, ok := r.routeTable[url+req.Method]; ok {
+	if route, ok := r.routeTable[req.URL.Path+req.Method]; ok {
 		// 设置请求头
-		if route.dataSource != nil {
-			allconn[req].Data = route.dataSource
-		}
-
-		for k, v := range route.Header {
-			w.Header().Set(k, v)
-		}
-		// 请求中间件
-		var ok bool
-		for _, v := range route.Midware {
-			ok = v(w, req)
-			if ok {
-				return
-			}
-		}
-		route.Handle.ServeHTTP(w, req)
+		go r.readFromCache(route, w, req)
 
 	} else {
 		// 获取handler
-		r.serveHTTP(url, w, req)
+		go r.serveHTTP(w, req)
 	}
 }
 
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		r.mu.Lock()
+		delete(allconn, req)
+		r.mu.Unlock()
+	}()
+	if route.dataSource != nil {
+		allconn[req].Data = route.dataSource
+	}
+
+	for k, v := range route.Header {
+		w.Header().Set(k, v)
+	}
+	// 请求中间件
+	var ok bool
+	for _, v := range route.Midware {
+		ok = v(w, req)
+		if ok {
+			return
+		}
+	}
+	route.Handle.ServeHTTP(w, req)
+}
+
 // url 是匹配的路径， 可能不是规则的路径
-func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request) {
+func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		r.mu.Lock()
+		delete(allconn, req)
+		r.mu.Unlock()
+	}()
+	var thisRoute *Route
 
-	var this_route *Route
-	if _, ok := r.route[url]; ok {
-		this_route = r.route[url][req.Method]
-
+	if _, ok := r.route[req.URL.Path]; ok {
+		thisRoute = r.route[req.URL.Path][req.Method]
 	} else {
 		for reUrl, mr := range r.tpl {
 			re := regexp.MustCompile(reUrl)
-			if re.MatchString(url) {
-				this_route = mr[req.Method]
+			if re.MatchString(req.URL.Path) {
+				thisRoute = mr[req.Method]
 				ap := make(map[string]string, 0)
-				vl := re.FindStringSubmatch(url)
+				vl := re.FindStringSubmatch(req.URL.Path)
 				for i, v := range r.pattern[reUrl] {
 					ap[v] = vl[i+1]
 				}
-				allparams[url] = ap
+				allparams[req.URL.Path] = ap
 				goto endloop
 
 			}
@@ -184,8 +187,8 @@ func (r *Router) serveHTTP(url string, w http.ResponseWriter, req *http.Request)
 		return
 	}
 endloop:
-	if this_route.dataSource != nil {
-		allconn[req].Data = this_route.dataSource
+	if thisRoute.dataSource != nil {
+		allconn[req].Data = thisRoute.dataSource
 	}
 
 	// 全局的请求头
@@ -203,19 +206,19 @@ endloop:
 	}
 
 	// 增加单路由的请求头和中间件
-	for _, v := range this_route.midware {
+	for _, v := range thisRoute.midware {
 		tmpMidware = append(tmpMidware, v)
 	}
-	for k, v := range this_route.header {
+	for k, v := range thisRoute.header {
 		tmpHeader[k] = v
 		w.Header().Set(k, v)
 	}
-	for _, v := range this_route.delheader {
+	for _, v := range thisRoute.delheader {
 		delete(tmpHeader, v)
 		w.Header().Del(v)
 	}
 	// 删除多余的中间件
-	for _, v := range this_route.delmidware {
+	for _, v := range thisRoute.delmidware {
 		tmp := make([]func(http.ResponseWriter, *http.Request) bool, len(tmpMidware)-1)
 		for i, tmd := range tmpMidware {
 			if CompareFunc(v, tmd) {
@@ -229,13 +232,13 @@ endloop:
 
 	// 缓存handler
 	thisRouter := &rt{
-		Handle:     this_route.handle,
+		Handle:     thisRoute.handle,
 		Header:     tmpHeader,
 		Midware:    tmpMidware,
-		dataSource: this_route.dataSource,
+		dataSource: thisRoute.dataSource,
 	}
 	r.mu.Lock()
-	r.routeTable[url+req.Method] = thisRouter
+	r.routeTable[req.URL.Path+req.Method] = thisRouter
 	r.mu.Unlock()
 	for _, v := range tmpMidware {
 		ok := v(w, req)
@@ -243,7 +246,7 @@ endloop:
 			return
 		}
 	}
-	this_route.handle.ServeHTTP(w, req)
+	thisRoute.handle.ServeHTTP(w, req)
 
 }
 
@@ -257,7 +260,6 @@ func (r *Router) Debug() {
 func NewRouter() *Router {
 	return &Router{
 		IgnoreIco:      true,
-		Slash:          true,
 		routeTable:     make(map[string]*rt),
 		header:         map[string]string{},
 		route:          make(map[string]MethodsRoute),
