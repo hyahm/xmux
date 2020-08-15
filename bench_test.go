@@ -11,20 +11,20 @@ func BenchmarkOneRoute(B *testing.B) {
 	runRequest(B, router, "GET", "/ping")
 }
 
-// func Benchmark404Many(B *testing.B) {
-// 	router := NewRouter()
-// 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/path/to/something", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/post/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/view/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/delete/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
-// 	router.Get("/user/{int:id}/{word:mode}", func(w http.ResponseWriter, r *http.Request) {})
+func Benchmark404Many(B *testing.B) {
+	router := NewRouter()
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/path/to/something", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/post/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/view/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/delete/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
+	// router.Get("/user/{int:id}/{word:mode}", func(w http.ResponseWriter, r *http.Request) {})
 
-// 	// router.NoRoute(func(c *Context) {})
-// 	runRequest(B, router, "GET", "/viewfake")
-// }
+	// router.NoRoute(func(c *Context) {})
+	runRequest(B, router, "GET", "/viewfake")
+}
 
 type mockWriter struct {
 	headers http.Header
@@ -64,15 +64,15 @@ func runRequest(B *testing.B, r *Router, method, path string) {
 	}
 }
 
-// func BenchmarkMux(b *testing.B) {
-// 	router := NewRouter()
-// 	handler := func(w http.ResponseWriter, r *http.Request) {}
-// 	router.Get("/v1/{v1}", handler)
-// 	request, _ := http.NewRequest("GET", "/v1/anything", nil)
-// 	for i := 0; i < b.N; i++ {
-// 		router.ServeHTTP(nil, request)
-// 	}
-// }
+func BenchmarkMux(b *testing.B) {
+	router := NewRouter()
+	handler := func(w http.ResponseWriter, r *http.Request) {}
+	router.Get("/v1/{v1}", handler)
+	request, _ := http.NewRequest("GET", "/v1/anything", nil)
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(nil, request)
+	}
+}
 
 // func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
 // 	router := NewRouter()

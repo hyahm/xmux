@@ -40,17 +40,29 @@ type Router struct {
 	header         map[string]string                               // 全局路由头
 	midware        []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 	routeTable     map[string]*rt                                  // 路由表
-	mu             *sync.RWMutex
+	mu             *sync.RWMutex                                   // 传递参数的锁
+	rtLock         *sync.RWMutex                                   // 缓存表的锁
 }
 
 func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
 	// 格式路径
+	if r.mu == nil {
+		r.mu = &sync.RWMutex{}
+	}
+	if r.rtLock == nil {
+		r.rtLock = &sync.RWMutex{}
+	}
+	if r.routeTable == nil {
+		r.routeTable = make(map[string]*rt)
+	}
 	if r.Slash {
 		pattern = slash(pattern)
 	}
-
+	if r.route == nil {
+		r.route = make(map[string]MethodsRoute)
+	}
 	if r.pattern == nil {
 		r.pattern = make(map[string][]string)
 	}
@@ -90,12 +102,7 @@ func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if r.mu == nil {
-		r.mu = &sync.RWMutex{}
-	}
-	if r.routeTable == nil {
-		r.routeTable = make(map[string]*rt)
-	}
+
 	r.mu.Lock()
 	allconn[req] = &Data{}
 	r.mu.Unlock()
@@ -122,13 +129,16 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// 先进行路由表缓存寻找
-	if route, ok := r.routeTable[req.URL.Path+req.Method]; ok {
+	r.rtLock.Lock()
+	route, ok := r.routeTable[req.URL.Path+req.Method]
+	r.rtLock.Unlock()
+	if ok {
 		// 设置请求头
 		go r.readFromCache(route, w, req)
 
 	} else {
 		// 获取handler
-		go r.serveHTTP(w, req)
+		r.serveHTTP(w, req)
 	}
 }
 
@@ -168,10 +178,10 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute = r.route[req.URL.Path][req.Method]
 	} else {
-		for reUrl, mr := range r.tpl {
+		for reUrl, _ := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(req.URL.Path) {
-				thisRoute = mr[req.Method]
+				thisRoute = r.tpl[reUrl][req.Method]
 				ap := make(map[string]string, 0)
 				vl := re.FindStringSubmatch(req.URL.Path)
 				for i, v := range r.pattern[reUrl] {
@@ -237,9 +247,9 @@ endloop:
 		Midware:    tmpMidware,
 		dataSource: thisRoute.dataSource,
 	}
-	r.mu.Lock()
+	r.rtLock.Lock()
 	r.routeTable[req.URL.Path+req.Method] = thisRouter
-	r.mu.Unlock()
+	r.rtLock.Unlock()
 	for _, v := range tmpMidware {
 		ok := v(w, req)
 		if ok {
@@ -268,6 +278,8 @@ func NewRouter() *Router {
 		HanleFavicon:   favicon(),
 		Options:        options(),
 		HandleNotFound: handleNotFound(),
+		mu:             &sync.RWMutex{},
+		rtLock:         &sync.RWMutex{},
 	}
 }
 

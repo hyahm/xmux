@@ -5,7 +5,6 @@ import (
 )
 
 func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-
 	if pt, ok := r.makeRoute(pattern); ok {
 		return r.tpl[pt].getRoute(http.MethodPost, handler)
 	} else {

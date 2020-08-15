@@ -81,7 +81,8 @@ type Call struct {
 
 func main() {
 
-	router := xmux.NewRouter().SetHeader("Content-Type", "aaa")
+	router := xmux.NewRouter()
+	router.SetHeader("Content-Type", "aaa")
 	router.IgnoreIco = true
 	router.AddMidware(filter)
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
