@@ -10,8 +10,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-
-	"github.com/hyahm/golog"
 )
 
 var ErrorConnect = errors.New("connect error")
@@ -173,7 +171,6 @@ func NewWebsocket(w http.ResponseWriter, r *http.Request) (xws *BaseWs) {
 	netConn, brw, err := h.Hijack()
 	if err != nil {
 		netConn.Write([]byte(err.Error()))
-		golog.Info(err)
 		xws.Err = err
 		return
 	}
