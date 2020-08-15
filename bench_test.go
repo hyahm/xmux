@@ -20,7 +20,7 @@ func Benchmark404Many(B *testing.B) {
 	router.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
 	router.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {})
 	router.Get("/delete/{int:id}", func(w http.ResponseWriter, r *http.Request) {})
-	// router.Get("/user/{int:id}/{word:mode}", func(w http.ResponseWriter, r *http.Request) {})
+	router.Get("/user/{int:id}/{word:mode}", func(w http.ResponseWriter, r *http.Request) {})
 
 	// router.NoRoute(func(c *Context) {})
 	runRequest(B, router, "GET", "/viewfake")
@@ -68,35 +68,24 @@ func BenchmarkMux(b *testing.B) {
 	router := NewRouter()
 	handler := func(w http.ResponseWriter, r *http.Request) {}
 	router.Get("/v1/{v1}", handler)
-	request, _ := http.NewRequest("GET", "/v1/anything", nil)
-	for i := 0; i < b.N; i++ {
-		router.ServeHTTP(nil, request)
-	}
+	runRequest(b, router, "GET", "/v1/anything")
+
 }
 
-// func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
-// 	router := NewRouter()
-// 	handler := func(w http.ResponseWriter, r *http.Request) {}
-// 	router.Get("/v1/{v1}", handler)
+func BenchmarkMuxAlternativeInRegexp(b *testing.B) {
+	router := NewRouter()
+	handler := func(w http.ResponseWriter, r *http.Request) {}
+	router.Get("/v1/{v1}", handler)
 
-// 	requestA, _ := http.NewRequest("GET", "/v1/a", nil)
-// 	requestB, _ := http.NewRequest("GET", "/v1/b", nil)
-// 	for i := 0; i < b.N; i++ {
-// 		router.ServeHTTP(nil, requestA)
-// 		router.ServeHTTP(nil, requestB)
-// 	}
-// }
+	runRequest(b, router, "GET", "/v1/a")
+	runRequest(b, router, "GET", "/v1/b")
+}
 
-// func BenchmarkManyPathVariables(b *testing.B) {
-// 	router := NewRouter()
-// 	handler := func(w http.ResponseWriter, r *http.Request) {}
-// 	router.Get("/v1/{v1}/{v2}/{v3}/{v4}/{v5}", handler)
+func BenchmarkManyPathVariables(b *testing.B) {
+	router := NewRouter()
+	handler := func(w http.ResponseWriter, r *http.Request) {}
+	router.Get("/v1/{v1}/{v2}/{v3}/{v4}/{v5}", handler)
 
-// 	matchingRequest, _ := http.NewRequest("GET", "/v1/1/2/3/4/5", nil)
-// 	notMatchingRequest, _ := http.NewRequest("GET", "/v1/1/2/3/4", nil)
-// 	recorder := httptest.NewRecorder()
-// 	for i := 0; i < b.N; i++ {
-// 		router.ServeHTTP(nil, matchingRequest)
-// 		router.ServeHTTP(recorder, notMatchingRequest)
-// 	}
-// }
+	runRequest(b, router, "GET", "/v1/1/2/3/4/5")
+	runRequest(b, router, "GET", "/v1/1/2/3/4")
+}
