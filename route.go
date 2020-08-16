@@ -24,7 +24,6 @@ type Route struct {
 	reqHeader                        map[string]string
 	supplement                       string
 	delheader                        []string
-	end                              func(interface{})
 	codeMsg                          map[string]string
 	codeField                        string
 	groupKey, groupLable, groupTitle string
@@ -70,13 +69,6 @@ func (rt *Route) ApiCodeMsg(code string, msg string) *Route {
 	return rt
 }
 
-func (rt *Route) End(handle func(interface{})) *Route {
-	// 执行完主程序后， 执行最后的首位中间件
-
-	rt.end = handle
-	return rt
-}
-
 func (rt *Route) Bind(s interface{}) *Route {
 	// 接口补充说明
 
@@ -93,7 +85,6 @@ func (rt *Route) ApiSupplement(s string) *Route {
 
 func (rt *Route) ApiReqStruct(s interface{}) *Route {
 	// 接口返回数据的结构
-
 	rt.st_request = s
 	return rt
 }
@@ -129,7 +120,6 @@ func (rt *Route) makeDoc(url string, count *int, doc *Document) {
 			ApiDocument[id] = d
 
 		} else {
-
 			keys[rt.groupKey] = *count
 			d := Doc{
 				Title: rt.groupTitle,

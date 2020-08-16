@@ -54,13 +54,6 @@ func filter(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func end(end interface{}) {
-	fmt.Println("-----------------------")
-	fmt.Println(end)
-	fmt.Println("end function ")
-
-}
-
 type aaa struct {
 	Age int
 }
@@ -98,7 +91,7 @@ func main() {
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
-		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").End(end).ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
+		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
 
 	user.Post("/aaa/{name}", name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
 		DelMidware(filter).
@@ -118,7 +111,7 @@ func main() {
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 
-	user.Get("/bbb/ccc/{int:oid}/{string:all}", all).End(end)
+	user.Get("/bbb/ccc/{int:oid}/{string:all}", all)
 
 	router.AddGroup(user)
 

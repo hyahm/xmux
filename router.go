@@ -106,7 +106,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.mu.Lock()
 	allconn[req] = &Data{}
 	r.mu.Unlock()
-
+	defer func() {
+		r.mu.Lock()
+		delete(allconn, req)
+		r.mu.Unlock()
+	}()
 	if r.Slash {
 		req.URL.Path = slash(req.URL.Path)
 	}
@@ -129,12 +133,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// 先进行路由表缓存寻找
-	r.rtLock.Lock()
-	route, ok := r.routeTable[req.URL.Path+req.Method]
-	r.rtLock.Unlock()
-	if ok {
+	if route, ok := r.routeTable[req.URL.Path+req.Method]; ok {
 		// 设置请求头
-		go r.readFromCache(route, w, req)
+		r.readFromCache(route, w, req)
 
 	} else {
 		// 获取handler
@@ -143,11 +144,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
-	defer func() {
-		r.mu.Lock()
-		delete(allconn, req)
-		r.mu.Unlock()
-	}()
+
 	if route.dataSource != nil {
 		allconn[req].Data = route.dataSource
 	}
@@ -168,11 +165,6 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 // url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
-	defer func() {
-		r.mu.Lock()
-		delete(allconn, req)
-		r.mu.Unlock()
-	}()
 	var thisRoute *Route
 
 	if _, ok := r.route[req.URL.Path]; ok {
