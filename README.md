@@ -248,31 +248,7 @@ xmux.Var(r)["name"]
 ```
 后面会增加自定义正则匹配
 
-### 收尾操作
-用来处理一些无关紧要的收尾处理，比如日志和消息通知，  处理的时候， 与客户端的连接已经断开了， 只有单路由(Route)才支持
-```go
-这是一个单路由实例（end 是xmux.GetData(r).End  的值）
-func end(end interface{}) {
-	fmt.Println("-----------------------")
-	fmt.Println(end)  // fmt.Println(xmux.GetDate(r).End) 和这个是一个东西
-	fmt.Println("end function ")
 
-}
-
-func all(w http.ResponseWriter, r *http.Request) {
-	xmux.GetData(r).End = "13333"
-	w.Write([]byte("hello world all"))
-	return
-}
-router.Pattern("/bbb/ccc").Get(all).End(end)
-
-```
-上面的路由请求后 , 客户端收到 hello world all, 最后会打印 
-```
------------------------
-13333
-end function 
-```
 ### 同一个路由各组件中通讯 （当前连接断开后，下面的数据会被清空）
 ```vim
 xmux.GetData(r).Data  // 这里对应的是Bind 方法绑定的数据
@@ -318,15 +294,15 @@ type Call struct {
 ```
 ### 压力测试
 ```
-canderdeAir:xmux cander$ go test -bench=. -benchmem
-goos: darwin
+PS F:\xmux> go test -bench .
+goos: windows
 goarch: amd64
-pkg: xmux
-BenchmarkMux-6                           2913423               397 ns/op             128 B/op          4 allocs/op
-BenchmarkMuxAlternativeInRegexp-6        1489166               799 ns/op             224 B/op          8 allocs/op
-BenchmarkManyPathVariables-6              802186              1404 ns/op             841 B/op         10 allocs/op
-PASS
-ok      xmux    5.674s
+pkg: github.com/hyahm/xmux
+BenchmarkOneRoute-8                      1000000              1007 ns/op              32 B/op          1 allocs/op
+Benchmark404Many-8                         61387             21462 ns/op           13044 B/op        170 allocs/op
+BenchmarkMux-8                           1270545               932 ns/op              32 B/op          1 allocs/op
+BenchmarkMuxAlternativeInRegexp-8        1285495               939 ns/op              32 B/op          1 allocs/op
+BenchmarkManyPathVariables-8               75098             16003 ns/op           10432 B/op        130 allocs/op
 ```
 
 
