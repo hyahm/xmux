@@ -114,10 +114,10 @@ func (rt *Route) makeDoc(url string, count *int, doc *Document) {
 		if id, ok := keys[rt.groupKey]; ok {
 			// 存在的话
 			// 添加文档就好了
-			d := ApiDocument[id]
+			d := apiDocument[id]
 			d.Api = append(d.Api, *doc)
-			// ApiDocument[id].Api = append(ApiDocument[id].Api, *doc)
-			ApiDocument[id] = d
+			// apiDocument[id].Api = append(apiDocument[id].Api, *doc)
+			apiDocument[id] = d
 
 		} else {
 			keys[rt.groupKey] = *count
@@ -126,7 +126,7 @@ func (rt *Route) makeDoc(url string, count *int, doc *Document) {
 				Api:   make([]Document, 0),
 			}
 			d.Api = append(d.Api, *doc)
-			ApiDocument[*count] = d
+			apiDocument[*count] = d
 
 			sideUrl := fmt.Sprintf("/-/api/%d.html", *count)
 			sidebar[sideUrl] = rt.groupLable

@@ -259,6 +259,18 @@ func (r *Router) Debug() {
 	fmt.Printf("%+v \n", r.tpl)
 }
 
+func (r *Router) Run(opt ...string) error {
+	addr := ":8080"
+	if len(opt) > 0 {
+		addr = opt[0]
+	}
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+	return srv.ListenAndServe()
+}
+
 func NewRouter() *Router {
 	return &Router{
 		IgnoreIco:      true,

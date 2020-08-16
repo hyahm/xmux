@@ -1,6 +1,8 @@
 package xmux
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -42,20 +44,18 @@ func showThisDoc(w http.ResponseWriter, r *http.Request) {
 	id := Var(r)["id"]
 	t := NewTemplate()
 	intid, _ := strconv.Atoi(id)
-	if api, ok := ApiDocument[intid]; ok {
+	if api, ok := apiDocument[intid]; ok {
 		api.Sidebar = sidebar
-
 		err := t.Execute(w, api)
 		if err != nil {
 			w.Write([]byte(err.Error()))
 		}
 		return
 	} else {
-		ApiDocument[0] = Doc{
+		apiDocument[0] = Doc{
 			Title:   "this is document home page",
 			Sidebar: sidebar,
 		}
-
 		http.Redirect(w, r, "/-/api/0.html", 302)
 	}
 
@@ -64,16 +64,26 @@ func showThisDoc(w http.ResponseWriter, r *http.Request) {
 func homeDoc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	t := NewHomeTemplate()
-	ApiDocument[0] = Doc{
+	apiDocument[0] = Doc{
 		Title:   "this is document home page",
 		Sidebar: sidebar,
 	}
-	err := t.Execute(w, ApiDocument[0])
+	err := t.Execute(w, apiDocument[0])
 	if err != nil {
 		w.Write([]byte(err.Error()))
 	}
 	return
 
+}
+
+func testdoc(w http.ResponseWriter, r *http.Request) {
+	send, err := json.Marshal(apiDocument)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	w.Write(send)
+	return
 }
 
 func (r *Router) ShowApi(pattern string) *GroupRoute {
@@ -83,6 +93,7 @@ func (r *Router) ShowApi(pattern string) *GroupRoute {
 	api.Get("/-/css/{name}.css", css).SetHeader("Content-Type", "text/css; charset=utf8")
 	api.Get("/-/api/{int:id}.html", showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
 	api.Get("/-/api/0.html", homeDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+	api.Get("/-/api/help", testdoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
 	api.Get(pattern, homeDoc)
 	return api
 }

@@ -43,12 +43,12 @@ type Doc struct {
 
 var sidebar map[string]string // 所有路由的这个都是相同的, url 和 lable
 
-var ApiDocument map[int]Doc // 应该是这个, 打开某地址， 返回对应的信息
+var apiDocument map[int]Doc // 应该是这个, 打开某地址， 返回对应的信息
 
 var keys map[string]int // 侧边栏与id 对应
 
 func NewDocs(r *Router) {
-	ApiDocument = make(map[int]Doc)
+	apiDocument = make(map[int]Doc)
 	sidebar = make(map[string]string) // url to lable
 	keys = make(map[string]int)
 	count := 1

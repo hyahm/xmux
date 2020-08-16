@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/hyahm/xmux"
@@ -119,9 +118,10 @@ func main() {
 	router.AddGroup(prof)
 	doc := router.ShowApi("/docs").DelMidware(filter)
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
-	router.Debug()
-	if err := http.ListenAndServe(":9000", router); err != nil {
-		log.Fatal(err)
-	}
+
+	router.Run()
+	// if err := http.ListenAndServe(":9000", router); err != nil {
+	// 	log.Fatal(err)
+	// }
 
 }
