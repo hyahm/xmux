@@ -72,7 +72,6 @@ type Call struct {
 }
 
 func main() {
-
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
 	router.IgnoreIco = true

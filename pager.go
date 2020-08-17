@@ -1,0 +1,39 @@
+package xmux
+
+// 分页用到的计算sql limit的数值
+
+func GetLimit(count, page, limit int) (int, int) {
+	// 如果limit是0， 那么返回 0 0
+	if limit <= 0 {
+		return 0, 0
+	}
+	// 如果page小于1页， 默认返回第一页
+	if page < 1 {
+		if count > limit {
+			return 1, limit
+		} else {
+			return 1, count % limit
+		}
+
+	}
+	// 超出了最大页码，返回最大的页码
+
+	if page*limit > count+limit {
+		if count%limit == 0 {
+			page = count / limit
+			// return ((count / limit) - 1) * limit, limit
+		} else {
+			page = count/limit + 1
+			// return (count/limit + 1) * limit, count % limit
+		}
+	}
+
+	start := (page - 1) * limit
+	// 计算最终返回的start, step
+	if count-start < limit {
+		return start, count - start
+	} else {
+		return start, limit
+	}
+
+}
