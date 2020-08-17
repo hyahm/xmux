@@ -104,15 +104,6 @@ func (g *GroupRoute) DelMidware(handle func(http.ResponseWriter, *http.Request) 
 	return g
 }
 
-func (g *GroupRoute) FirstMidware(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
-
-	if g.midware == nil {
-		g.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
-	}
-	g.midware = append(g.midware, handle)
-	return g
-}
-
 // 组里面也包括路由 后面的其实还是patter和handle, 是否是正则表达式
 func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 

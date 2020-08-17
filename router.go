@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -116,13 +115,18 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和中间件
-	if r.IgnoreIco && req.URL.Path == "/favicon.ico" {
-		for k, v := range r.header {
-			w.Header().Set(k, v)
+	if req.URL.Path == "/favicon.ico" {
+		if r.IgnoreIco {
+			return
+		} else {
+			for k, v := range r.header {
+				w.Header().Set(k, v)
+			}
+			r.HanleFavicon.ServeHTTP(w, req)
+			return
 		}
-		r.HanleFavicon.ServeHTTP(w, req)
-		return
 	}
+
 	// option 请求处理
 	if !r.DisableOption && req.Method == http.MethodOptions {
 		for k, v := range r.header {
@@ -250,14 +254,6 @@ endloop:
 	}
 	thisRoute.handle.ServeHTTP(w, req)
 
-}
-
-func (r *Router) Debug() {
-	// print router info
-	fmt.Printf("%+v \n", r)
-	fmt.Printf("%+v \n", r.pattern)
-	fmt.Printf("%+v \n", r.route)
-	fmt.Printf("%+v \n", r.tpl)
 }
 
 func (r *Router) Run(opt ...string) error {

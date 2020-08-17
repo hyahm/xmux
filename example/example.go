@@ -74,9 +74,7 @@ type Call struct {
 func main() {
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
-	router.IgnoreIco = false
 	router.AddMidware(filter)
-	fmt.Println(router.IgnoreIco)
 
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))

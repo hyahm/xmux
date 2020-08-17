@@ -2,6 +2,7 @@
 应该是基于原生net.http包唯一一个带缓存， 使用简单并强大的路由， 内嵌接口文档，告别另外写文档的烦恼
 
 ### 已完成功能
+- [x] xmux.NewGroupRoute(), 为了避免各种异常， 请使用自带的来创建路由
 - [x] 支持路由分组
 - [x] 支持全局请求头， 组请求头， 私有请求头
 - [x] 支持自定义method， 多method
@@ -16,6 +17,7 @@
 - [x] 增加数据结构绑定， 适合中间件传递
 - [x] 增加websocket， 可以学习，不建议使用
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
+
 
 
 ### 添加了组的概念
@@ -37,7 +39,7 @@ func init() {
 }
 ```
 > main.go
-```
+```go
 func main() {
 	router := xmux.NewRouter()
 	router.AddGroup(aritclegroup.Article)
@@ -104,6 +106,7 @@ func handleNotFound() http.Handler {
 ```
 
 ###  header 和 中间件 func(w http.ResponseWriter, r *http.Request)  bool  
+###### 说是中间件， 准确来说叫模块，但是功能类似中间件
 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
@@ -207,7 +210,7 @@ http://www.hyahm.com/mmm///af/af,  默认是请求不到的
 但是设置后
 ```go
 router := xmux.NewRouter()
-router.Slash = true
+router.Slash = true  (性能消耗较大， 不建议开启)
 ```
 是可以直接访问 http://www.hyahm.com/mmm/af/af 这个地址的请求
 
@@ -234,7 +237,7 @@ xmux.Var(r)["name"]
 后面会增加自定义正则匹配
 
 
-### 同一个路由各组件中通讯 （当前连接断开后，下面的数据会被清空）
+### 同一个路由各中间件之间通讯 （注意中间件的顺序。当前连接断开后，下面的数据会被清空）
 ```vim
 xmux.GetData(r).Data  // 这里对应的是Bind 方法绑定的数据
 xmux.GetData(r).Set(k string, v interface{})
@@ -334,7 +337,6 @@ func main() {
 	router := xmux.NewRouter()
 	router.Options = Options()                    // 这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
 
-
 	router.AddGroup(aritclegroup.Article())
 
 	router.Get("/people/{string:name}/{int:age}", Who).SetHeader("Host", "two")
@@ -413,7 +415,6 @@ func all(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("login mw")
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write([]byte("not found data"))
@@ -468,8 +469,9 @@ func main() {
 	router.Post("/aaa/bbbb/{path:me}",me)
 	router.Get("/bbb/ccc/{int:oid}/{string:all}",all)
 
-	router.ShowApi("/doc") // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
-	if err := http.ListenAndServe(":9000", router); err != nil {
+	router.ShowApi("/doc") // 开启文档， 一般都是写在路由的最后,
+	
+	if err := router.Run(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -477,7 +479,7 @@ func main() {
 
 
 ```
-运行上面的代码， 打开localhost:9000/doc, 会看到下面的api
+运行上面的代码， 打开localhost:8080/doc, 会看到下面的api
 
 ![api.png](http://download.hyahm.com/api.png)
 
