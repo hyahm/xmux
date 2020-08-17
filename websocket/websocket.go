@@ -21,16 +21,14 @@ var ps map[*xmux.BaseWs]byte
 
 func sendMsg() {
 	for {
-		select {
-		case c := <-msgchan:
-			for p, _ := range ps {
-				if c.c == p {
-					// 不发给自己
-					continue
-				}
-				// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
-				p.SendMessage([]byte(c.msg), ps[p])
+		c := <-msgchan
+		for p := range ps {
+			if c.c == p {
+				// 不发给自己
+				continue
 			}
+			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
+			p.SendMessage([]byte(c.msg), ps[p])
 		}
 	}
 }
@@ -44,11 +42,9 @@ func ws(w http.ResponseWriter, r *http.Request) {
 	tt := time.NewTicker(time.Second * 2)
 	go func() {
 		for {
-			select {
-			case <-tt.C:
-				// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
-				p.SendMessage([]byte(time.Now().String()), xmux.TypeMsg)
-			}
+			<-tt.C
+			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
+			p.SendMessage([]byte(time.Now().String()), xmux.TypeMsg)
 		}
 	}()
 	for {
@@ -80,6 +76,7 @@ func main() {
 	ps = make(map[*xmux.BaseWs]byte)
 	router.SetHeader("Access-Control-Allow-Origin", "*")
 	router.Get("/ws", ws)
+
 	go sendMsg()
 	if err := http.ListenAndServe(":7000", router); err != nil {
 		log.Fatal(err)
