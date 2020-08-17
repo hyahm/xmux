@@ -32,7 +32,7 @@ var Article *xmux.GroupRoute
 
 func init() {
 	Article = xmux.NewGroupRoute()
-	Article.Pattern("/{int:id}").Get(hello)
+	Article.Get("/{int:id}", hello)
 
 }
 ```
