@@ -74,8 +74,14 @@ type Call struct {
 func main() {
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
-	router.IgnoreIco = true
+	router.IgnoreIco = false
 	router.AddMidware(filter)
+	fmt.Println(router.IgnoreIco)
+
+	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
+		return
+	})
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
 	user.ApiCodeMsg("98", "你是98")
 	user.ApiCodeMsg("78", "你是78")

@@ -31,7 +31,7 @@ type Router struct {
 	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
 	HanleFavicon   http.Handler
 	DisableOption  bool         // 禁止全局option
-	Options        http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
+	HandleOptions  http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound http.Handler
 	Slash          bool
 	route          PatternMR                                       // 单实例路由， 组路由最后也会合并过来
@@ -128,7 +128,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		for k, v := range r.header {
 			w.Header().Set(k, v)
 		}
-		r.Options.ServeHTTP(w, req)
+		r.HandleOptions.ServeHTTP(w, req)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute = r.route[req.URL.Path][req.Method]
 	} else {
-		for reUrl, _ := range r.tpl {
+		for reUrl := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(req.URL.Path) {
 				thisRoute = r.tpl[reUrl][req.Method]
@@ -253,6 +253,7 @@ endloop:
 }
 
 func (r *Router) Debug() {
+	// print router info
 	fmt.Printf("%+v \n", r)
 	fmt.Printf("%+v \n", r.pattern)
 	fmt.Printf("%+v \n", r.route)
@@ -279,8 +280,8 @@ func NewRouter() *Router {
 		route:          make(map[string]MethodsRoute),
 		tpl:            make(map[string]MethodsRoute),
 		pattern:        make(map[string][]string),
-		HanleFavicon:   favicon(),
-		Options:        options(),
+		HanleFavicon:   handleFavicon(),
+		HandleOptions:  handleOptions(),
 		HandleNotFound: handleNotFound(),
 		mu:             &sync.RWMutex{},
 		rtLock:         &sync.RWMutex{},
@@ -294,7 +295,7 @@ func handleNotFound() http.Handler {
 	})
 }
 
-func options() http.Handler {
+func handleOptions() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
@@ -308,7 +309,7 @@ func methodNotAllowed() http.Handler {
 	})
 }
 
-func favicon() http.Handler {
+func handleFavicon() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return

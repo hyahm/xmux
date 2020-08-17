@@ -36,7 +36,7 @@ func (r *Router) Head(pattern string, handler func(http.ResponseWriter, *http.Re
 	}
 }
 
-func (r *Router) Option(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *Router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if pt, ok := r.makeRoute(pattern); ok {
 		return r.tpl[pt].getRoute(http.MethodOptions, handler)
 	} else {
