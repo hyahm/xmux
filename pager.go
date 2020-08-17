@@ -21,10 +21,8 @@ func GetLimit(count, page, limit int) (int, int) {
 	if page*limit > count+limit {
 		if count%limit == 0 {
 			page = count / limit
-			// return ((count / limit) - 1) * limit, limit
 		} else {
 			page = count/limit + 1
-			// return (count/limit + 1) * limit, count % limit
 		}
 	}
 
