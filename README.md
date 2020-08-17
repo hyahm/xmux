@@ -87,34 +87,19 @@ func main() {
 ```
 
 
-### 四大全局handle
+### 三大全局handle
 ```go
-Options:        options(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理
-HandleNotFound: handleNotFound(),   // 404 返回
-MethodNotAllowed methodNotAllowed(),
+HandleOptions:        handleoptions(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理, 默认会返回ok， 也可以自定义
+HandleNotFound: handleNotFound(),   // 默认返回404 ， 也可以自定义
+HanleFavicon methodNotAllowed(),    // 默认请求 favicon
 
-// 默认调用的方法如下
+// 默认调用的方法如下， 没有找到路由
 func handleNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	})
 }
-
-func options() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		return
-	})
-}
-
-func handleNotFound() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("<h1>when you see this page, it means you forget set handle in " + r.URL.Path + "<h1>"))
-		return
-	})
-}
-
 
 ```
 
