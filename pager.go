@@ -4,17 +4,12 @@ package xmux
 
 func GetLimit(count, page, limit int) (int, int) {
 	// 如果limit是0， 那么返回 0 0
-	if limit <= 0 {
+	if limit <= 0 || count == 0 {
 		return 0, 0
 	}
 	// 如果page小于1页， 默认返回第一页
 	if page < 1 {
-		if count > limit {
-			return 1, limit
-		} else {
-			return 1, count % limit
-		}
-
+		page = 1
 	}
 	// 超出了最大页码，返回最大的页码
 
