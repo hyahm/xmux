@@ -13,7 +13,7 @@ func (js JsonStr) Json() string {
 	b := &bytes.Buffer{}
 	err := json.Indent(b, []byte(js), "", "    ")
 	if err != nil {
-		log.Println(err)
+		log.Printf("%v in %v\n", err, js)
 		return ""
 	}
 	return b.String()

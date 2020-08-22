@@ -165,7 +165,6 @@ func (rt *Route) ApiDelReqHeader(k string) *Route {
 
 func (rt *Route) ApiRequestTemplate(s JsonStr) *Route {
 	// 接口的请求实例， 一般是json的字符串
-
 	rt.request = s.Json()
 	return rt
 }
