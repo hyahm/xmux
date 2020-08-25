@@ -12,8 +12,8 @@ type GroupRoute struct {
 	slash      bool
 	header     map[string]string
 	tpl        PatternMR // 路由对应的methodsroute
-	midware    []func(http.ResponseWriter, *http.Request) bool
-	delmidware []func(http.ResponseWriter, *http.Request) bool
+	module     []func(http.ResponseWriter, *http.Request) bool
+	delmodule  []func(http.ResponseWriter, *http.Request) bool
 	pattern    map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
 	delheader  []string
 	groupKey   string
@@ -28,10 +28,10 @@ var reUrl map[string]*reroute
 
 func NewGroupRoute() *GroupRoute {
 	return &GroupRoute{
-		route:   make(map[string]MethodsRoute),
-		header:  make(map[string]string),
-		tpl:     make(map[string]MethodsRoute),
-		midware: make([]func(http.ResponseWriter, *http.Request) bool, 0),
+		route:  make(map[string]MethodsRoute),
+		header: make(map[string]string),
+		tpl:    make(map[string]MethodsRoute),
+		module: make([]func(http.ResponseWriter, *http.Request) bool, 0),
 	}
 }
 
@@ -86,21 +86,21 @@ func (g *GroupRoute) ApiCreateGroup(key string, title string, lable string) *Gro
 	return g
 }
 
-func (g *GroupRoute) AddMidware(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
+func (g *GroupRoute) AddModule(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
 
-	if g.midware == nil {
-		g.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	if g.module == nil {
+		g.module = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
-	g.midware = append(g.midware, handle)
+	g.module = append(g.module, handle)
 	return g
 }
 
-func (g *GroupRoute) DelMidware(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
+func (g *GroupRoute) DelModule(handle func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
 
-	if g.delmidware == nil {
-		g.delmidware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	if g.delmodule == nil {
+		g.delmodule = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
-	g.delmidware = append(g.delmidware, handle)
+	g.delmodule = append(g.delmodule, handle)
 	return g
 }
 

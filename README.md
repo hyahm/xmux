@@ -10,11 +10,10 @@
 - [x] 完全匹配优先于正则匹配
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
 - [x] 支持四大全局handle ,MethodnotFound(忘记写方法), MethodNotAllowed(method没定义), HandleNotFound(没有找到页面), Options请求）  
-- [x] 强大的中间件让你的代码模块化变得非常简单  
-- [x] 增加全局上下文， 方便中间件传递值
+- [x] 强大的模块让你的代码模块化变得非常简单  
 - [x] 内嵌接口文档
 - [x] 支持收尾操作
-- [x] 增加数据结构绑定， 适合中间件传递
+- [x] 增加数据结构绑定， 适合模块间传递
 - [x] 增加websocket， 可以学习，不建议使用
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
 
@@ -105,8 +104,8 @@ func handleNotFound() http.Handler {
 
 ```
 
-###  header 和 中间件 func(w http.ResponseWriter, r *http.Request)  bool  
-###### 说是中间件， 准确来说叫模块，但是功能类似中间件
+###  header 和 模块 func(w http.ResponseWriter, r *http.Request)  bool  
+
 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
@@ -115,7 +114,7 @@ func handleNotFound() http.Handler {
 私有路由 > 组路由 > 全局路由  (如果存在优先级大的就覆盖优先级小的)
 
 中间类似上面header   
-最后一个返回值是表示是否直接返回， 如果直接返回，后面的中间件和方法将不会执行   
+最后一个返回值是表示是否直接返回， 如果直接返回，后面的模块和方法将不会执行   
 例如下面的方法， 执行的话， 将不会打印66666    
 但是如果 hf 返回false   
 那么将打印  
@@ -159,7 +158,7 @@ func hf1(w http.ResponseWriter, r *http.Request)  bool {
 
 func TestHome(t *testing.T) {
 	router := xmux.NewRouter()
-	router.Get("/home/{test}",home).AddMidware(hf).SetHeader("name", "cander").AddMidware(hf1)
+	router.Get("/home/{test}",home).AddModule(hf).SetHeader("name", "cander").AddModule(hf1)
 	var a string
 	// client := http.Client{}
 	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))
@@ -188,7 +187,7 @@ func name(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello world name"))
 	return
 }
-router.Pattern("/aaa/{name}").Get(name).AddMidware(filter).AddMidware(login)
+router.Pattern("/aaa/{name}").Get(name).AddModule(filter).AddModule(login)
 ```
 
 
@@ -237,9 +236,10 @@ xmux.Var(r)["name"]
 后面会增加自定义正则匹配
 
 
-### 同一个路由各中间件之间通讯 （注意中间件的顺序。当前连接断开后，下面的数据会被清空）
+### 同一个路由各模块之间通讯 （注意模块的顺序。当前连接断开后，下面的数据会被清空）
 ```vim
 xmux.GetData(r).Data  // 这里对应的是Bind 方法绑定的数据
+xmux.GetData(r).End  // 这里是最后结束后的模块， 可以统计执行时间 等
 xmux.GetData(r).Set(k string, v interface{})
 xmux.GetData(r).Get(k string) (v interface{})
 xmux.GetData(r).Del(k string)
@@ -457,15 +457,15 @@ func main() {
 	router := xmux.NewRouter()
 	router.IgnoreIco = true
 	// fmt.Println(router.Slash)
-	router.AddMidware(filter)
+	router.AddModule(filter)
 	router.Post("/home",home).ApiDescribe("这是home接口的测试").ApiCreateGroup("home","home page", "home").
 		ApiReqHeader("content-type": "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddMidware(login).Get(home)
-	router.Post("/aaa/{name}",name).DelMidware(filter).Get(name)
+		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).Get(home)
+	router.Post("/aaa/{name}",name).DelModule(filter).Get(name)
 	router.Post("/aaa/bbbb/{path:me}",me)
 	router.Get("/bbb/ccc/{int:oid}/{string:all}",all)
 

@@ -7,11 +7,11 @@ import (
 	"sync"
 )
 
-// var connections int
+var connections int
 
-// func GetConnents() int {
-// 	return connections
-// }
+func GetConnents() int {
+	return connections
+}
 
 type reroute struct {
 	R      *Route
@@ -22,7 +22,7 @@ type reroute struct {
 type rt struct {
 	Handle     http.Handler
 	Header     map[string]string
-	Midware    []func(http.ResponseWriter, *http.Request) bool
+	Module     []func(http.ResponseWriter, *http.Request) bool
 	dataSource interface{}
 }
 
@@ -37,7 +37,7 @@ type Router struct {
 	tpl            PatternMR                                       // 正则路由， 组路由最后也会合并过来
 	pattern        map[string][]string                             // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string                               // 全局路由头
-	midware        []func(http.ResponseWriter, *http.Request) bool // 全局中间件
+	module         []func(http.ResponseWriter, *http.Request) bool // 全局中间件
 	routeTable     map[string]*rt                                  // 路由表
 	mu             *sync.RWMutex                                   // 传递参数的锁
 	rtLock         *sync.RWMutex                                   // 缓存表的锁
@@ -92,23 +92,27 @@ func (r *Router) SetHeader(k, v string) *Router {
 	return r
 }
 
-func (r *Router) AddMidware(handle func(http.ResponseWriter, *http.Request) bool) *Router {
-	if r.midware == nil {
-		r.midware = make([]func(http.ResponseWriter, *http.Request) bool, 0)
+func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool) *Router {
+	if r.module == nil {
+		r.module = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
-	r.midware = append(r.midware, handle)
+	r.module = append(r.module, handle)
 	return r
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-
+	connections++
 	r.mu.Lock()
 	allconn[req] = &Data{}
 	r.mu.Unlock()
 	defer func() {
+		if allconn[req].End != nil {
+			allconn[req].End(w, req)
+		}
 		r.mu.Lock()
 		delete(allconn, req)
 		r.mu.Unlock()
+		connections--
 	}()
 	if r.Slash {
 		req.URL.Path = slash(req.URL.Path)
@@ -158,7 +162,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 	// 请求中间件
 	var ok bool
-	for _, v := range route.Midware {
+	for _, v := range route.Module {
 		ok = v(w, req)
 		if ok {
 			return
@@ -205,15 +209,15 @@ endloop:
 	}
 
 	// 全局的中间件
-	tmpMidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+	tmpModule := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
-	for _, v := range r.midware {
-		tmpMidware = append(tmpMidware, v)
+	for _, v := range r.module {
+		tmpModule = append(tmpModule, v)
 	}
 
 	// 增加单路由的请求头和中间件
-	for _, v := range thisRoute.midware {
-		tmpMidware = append(tmpMidware, v)
+	for _, v := range thisRoute.module {
+		tmpModule = append(tmpModule, v)
 	}
 	for k, v := range thisRoute.header {
 		tmpHeader[k] = v
@@ -224,29 +228,29 @@ endloop:
 		w.Header().Del(v)
 	}
 	// 删除多余的中间件
-	for _, v := range thisRoute.delmidware {
-		tmp := make([]func(http.ResponseWriter, *http.Request) bool, len(tmpMidware)-1)
-		for i, tmd := range tmpMidware {
+	for _, v := range thisRoute.delmodule {
+		tmp := make([]func(http.ResponseWriter, *http.Request) bool, len(tmpModule)-1)
+		for i, tmd := range tmpModule {
 			if CompareFunc(v, tmd) {
-				copy(tmp[i:], tmpMidware[i+1:])
+				copy(tmp[i:], tmpModule[i+1:])
 				break
 			}
 			tmp[i] = tmd
 		}
-		tmpMidware = tmp
+		tmpModule = tmp
 	}
 
 	// 缓存handler
 	thisRouter := &rt{
 		Handle:     thisRoute.handle,
 		Header:     tmpHeader,
-		Midware:    tmpMidware,
+		Module:     tmpModule,
 		dataSource: thisRoute.dataSource,
 	}
 	r.rtLock.Lock()
 	r.routeTable[req.URL.Path+req.Method] = thisRouter
 	r.rtLock.Unlock()
-	for _, v := range tmpMidware {
+	for _, v := range tmpModule {
 		ok := v(w, req)
 		if ok {
 			return
@@ -385,16 +389,16 @@ func merge(group *GroupRoute, route *Route) {
 
 	}
 
-	// 合并 delmidware
-	if group.delmidware != nil {
+	// 合并 delmodule
+	if group.delmodule != nil {
 		//
-		if route.delmidware == nil {
-			route.delmidware = group.delmidware
+		if route.delmodule == nil {
+			route.delmodule = group.delmodule
 		} else {
-			tmpdelmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-			tmpdelmidware = append(tmpdelmidware, group.delmidware...)
-			tmpdelmidware = append(tmpdelmidware, route.delmidware...)
-			route.midware = tmpdelmidware
+			tmpdelmodule := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+			tmpdelmodule = append(tmpdelmodule, group.delmodule...)
+			tmpdelmodule = append(tmpdelmodule, route.delmodule...)
+			route.module = tmpdelmodule
 		}
 	}
 	// 合并 groupKey
@@ -403,16 +407,16 @@ func merge(group *GroupRoute, route *Route) {
 		route.groupLable = group.groupLable
 		route.groupTitle = group.groupTitle
 	}
-	// 合并 midware
-	if group.midware != nil {
+	// 合并 module
+	if group.module != nil {
 		//
-		if route.midware == nil {
-			route.midware = group.midware
+		if route.module == nil {
+			route.module = group.module
 		} else {
-			tmpmidware := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-			tmpmidware = append(tmpmidware, group.midware...)
-			tmpmidware = append(tmpmidware, route.midware...)
-			route.midware = tmpmidware
+			tmpmodule := make([]func(http.ResponseWriter, *http.Request) bool, 0)
+			tmpmodule = append(tmpmodule, group.module...)
+			tmpmodule = append(tmpmodule, route.module...)
+			route.module = tmpmodule
 		}
 
 	}
