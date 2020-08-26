@@ -29,6 +29,7 @@ func init() {
 }
 
 func GetData(r *http.Request) *Data {
+
 	if r == nil {
 		return nil
 	}
@@ -49,6 +50,8 @@ func (data *Data) Set(k string, v interface{}) {
 }
 
 func (data *Data) Get(k string) interface{} {
+	data.mu.RLock()
+	defer data.mu.RUnlock()
 	return data.ctx[k]
 }
 
