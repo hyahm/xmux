@@ -109,14 +109,16 @@ func (r *Router) EndModule(handle func(http.ResponseWriter, *http.Request)) *Rou
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	connections++
 	r.mu.Lock()
-	allconn[req] = &Data{}
+
+	allconn[req.RemoteAddr] = &Data{}
 	r.mu.Unlock()
 	defer func() {
 		if r.end != nil && req.URL.Path != "/favicon.ico" && !r.IgnoreIco || req.Method != http.MethodOptions {
 			r.end(w, req)
 		}
+
 		r.mu.Lock()
-		delete(allconn, req)
+		delete(allconn, req.RemoteAddr)
 		r.mu.Unlock()
 		connections--
 	}()
@@ -160,7 +162,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
 
 	if route.dataSource != nil {
-		allconn[req].Data = route.dataSource
+		allconn[req.RemoteAddr].Data = route.dataSource
 	}
 
 	for k, v := range route.Header {
@@ -204,7 +206,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 endloop:
 	if thisRoute.dataSource != nil {
-		allconn[req].Data = thisRoute.dataSource
+		allconn[req.RemoteAddr].Data = thisRoute.dataSource
 	}
 
 	// 全局的请求头
