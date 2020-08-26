@@ -112,10 +112,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	allconn[req] = &Data{}
 	r.mu.Unlock()
 	defer func() {
-		if r.end != nil {
-			if req.URL.Path != "/favicon.ico" || !r.IgnoreIco {
-				r.end(w, req)
-			}
+		if r.end != nil && req.URL.Path != "/favicon.ico" && !r.IgnoreIco || req.Method != http.MethodOptions {
+			r.end(w, req)
 		}
 
 		r.mu.Lock()
