@@ -115,7 +115,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if r.end != nil && req.URL.Path != "/favicon.ico" && !r.IgnoreIco || req.Method != http.MethodOptions {
 			r.end(w, req)
 		}
-
 		r.mu.Lock()
 		delete(allconn, req)
 		r.mu.Unlock()

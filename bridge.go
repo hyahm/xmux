@@ -50,6 +50,9 @@ func (data *Data) Set(k string, v interface{}) {
 }
 
 func (data *Data) Get(k string) interface{} {
+	if data.ctx == nil {
+		data.mu = &sync.RWMutex{}
+	}
 	data.mu.RLock()
 	defer data.mu.RUnlock()
 	return data.ctx[k]
