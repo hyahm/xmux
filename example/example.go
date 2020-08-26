@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/hyahm/xmux"
 )
@@ -47,9 +48,8 @@ func login(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func filter(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("-----------------------")
-	fmt.Println("login filter.............")
 	r.Header.Set("bbb", "ccc")
+	xmux.GetData(r).Set("start", time.Now())
 	return false
 }
 
@@ -71,10 +71,14 @@ type Call struct {
 	Msg  string `json:"msg" type:"string" need:"是" information:"错误信息"`
 }
 
+func end(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("time: %f \n", time.Since(xmux.GetData(r).Get("start").(time.Time)).Seconds())
+}
+
 func main() {
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
-	router.AddModule(filter)
+	router.AddModule(filter).EndModule(end)
 
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))

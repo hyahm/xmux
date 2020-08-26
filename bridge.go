@@ -11,7 +11,6 @@ type Data struct {
 	Data interface{}            // 处理后的数据
 	ctx  map[string]interface{} // 用来传递自定义值
 	mu   *sync.RWMutex
-	End  func(http.ResponseWriter, *http.Request)
 }
 
 type params map[string]string // url 参数对应的值

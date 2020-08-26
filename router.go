@@ -37,10 +37,11 @@ type Router struct {
 	tpl            PatternMR                                       // 正则路由， 组路由最后也会合并过来
 	pattern        map[string][]string                             // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string                               // 全局路由头
-	module         []func(http.ResponseWriter, *http.Request) bool // 全局中间件
+	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
 	routeTable     map[string]*rt                                  // 路由表
 	mu             *sync.RWMutex                                   // 传递参数的锁
 	rtLock         *sync.RWMutex                                   // 缓存表的锁
+	end            func(http.ResponseWriter, *http.Request)
 }
 
 func (r *Router) makeRoute(pattern string) (string, bool) {
@@ -100,15 +101,23 @@ func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool)
 	return r
 }
 
+func (r *Router) EndModule(handle func(http.ResponseWriter, *http.Request)) *Router {
+	r.end = handle
+	return r
+}
+
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	connections++
 	r.mu.Lock()
 	allconn[req] = &Data{}
 	r.mu.Unlock()
 	defer func() {
-		if allconn[req].End != nil {
-			allconn[req].End(w, req)
+		if r.end != nil {
+			if req.URL.Path != "/favicon.ico" || !r.IgnoreIco {
+				r.end(w, req)
+			}
 		}
+
 		r.mu.Lock()
 		delete(allconn, req)
 		r.mu.Unlock()
@@ -118,7 +127,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req.URL.Path = slash(req.URL.Path)
 	}
 
-	// /favicon.ico  和 Option 请求， 不支持自定义请求头和中间件
+	// /favicon.ico  和 Option 请求， 不支持自定义请求头和模块
 	if req.URL.Path == "/favicon.ico" {
 		if r.IgnoreIco {
 			return
@@ -160,7 +169,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
-	// 请求中间件
+	// 请求模块
 	var ok bool
 	for _, v := range route.Module {
 		ok = v(w, req)
@@ -208,14 +217,14 @@ endloop:
 		w.Header().Set(k, v)
 	}
 
-	// 全局的中间件
+	// 全局的模块
 	tmpModule := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
 	for _, v := range r.module {
 		tmpModule = append(tmpModule, v)
 	}
 
-	// 增加单路由的请求头和中间件
+	// 增加单路由的请求头和模块
 	for _, v := range thisRoute.module {
 		tmpModule = append(tmpModule, v)
 	}
@@ -227,7 +236,7 @@ endloop:
 		delete(tmpHeader, v)
 		w.Header().Del(v)
 	}
-	// 删除多余的中间件
+	// 删除多余的模块
 	for _, v := range thisRoute.delmodule {
 		tmp := make([]func(http.ResponseWriter, *http.Request) bool, len(tmpModule)-1)
 		for i, tmd := range tmpModule {
