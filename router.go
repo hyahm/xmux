@@ -286,7 +286,6 @@ func NewRouter() *Router {
 		HanleFavicon:   handleFavicon(),
 		HandleOptions:  handleOptions(),
 		HandleNotFound: handleNotFound(),
-		mu:             &sync.RWMutex{},
 		rtLock:         &sync.RWMutex{},
 	}
 }
