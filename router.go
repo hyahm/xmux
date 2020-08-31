@@ -39,7 +39,6 @@ type Router struct {
 	header         map[string]string                               // 全局路由头
 	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
 	routeTable     map[string]*rt                                  // 路由表
-	mu             *sync.RWMutex                                   // 传递参数的锁
 	rtLock         *sync.RWMutex                                   // 缓存表的锁
 	end            func(http.ResponseWriter, *http.Request)
 }
@@ -48,9 +47,7 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
 	// 格式路径
-	if r.mu == nil {
-		r.mu = &sync.RWMutex{}
-	}
+
 	if r.rtLock == nil {
 		r.rtLock = &sync.RWMutex{}
 	}
@@ -108,17 +105,16 @@ func (r *Router) EndModule(handle func(http.ResponseWriter, *http.Request)) *Rou
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	connections++
-	r.mu.Lock()
+	dataLock.Lock()
 	allconn[req] = &Data{}
-	r.mu.Unlock()
+	dataLock.Unlock()
 	defer func() {
 		if r.end != nil && req.URL.Path != "/favicon.ico" && !r.IgnoreIco || req.Method != http.MethodOptions {
 			r.end(w, req)
 		}
-
-		r.mu.Lock()
+		dataLock.Lock()
 		delete(allconn, req)
-		r.mu.Unlock()
+		dataLock.Unlock()
 		connections--
 	}()
 	if r.Slash {

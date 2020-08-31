@@ -18,6 +18,7 @@ type params map[string]string // url 参数对应的值
 var allparams map[string]params // 保存的url 参数
 
 var allconn map[*http.Request]*Data
+var dataLock *sync.RWMutex
 
 func Var(r *http.Request) params {
 	return allparams[r.URL.Path]
@@ -26,6 +27,7 @@ func Var(r *http.Request) params {
 func init() {
 	allparams = make(map[string]params)
 	allconn = make(map[*http.Request]*Data)
+	dataLock = &sync.RWMutex{}
 }
 
 func GetData(r *http.Request) *Data {
@@ -33,6 +35,8 @@ func GetData(r *http.Request) *Data {
 	if r == nil {
 		return nil
 	}
+	dataLock.Lock()
+	defer dataLock.Unlock()
 	return allconn[r]
 }
 

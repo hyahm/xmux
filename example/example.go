@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -118,7 +119,16 @@ func main() {
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
 
 	user.Get("/bbb/ccc/{int:oid}/{string:all}", all)
-
+	router.Post("/cut", func(w http.ResponseWriter, r *http.Request) {
+		b, _ := ioutil.ReadAll(r.Body)
+		golog.Info(string(b))
+		a := struct {
+			Code int    `json:"code"`
+			Msg  string `json:"msg"`
+		}{}
+		send, _ := json.Marshal(a)
+		w.Write(send)
+	})
 	router.AddGroup(user)
 
 	prof := router.Pprof()
@@ -127,8 +137,10 @@ func main() {
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 
 	router.Run()
-	// if err := http.ListenAndServe(":9000", router); err != nil {
-	// 	log.Fatal(err)
-	// }
 
+}
+
+func Midware(midware func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request) bool {
+	midware(w, r)
+	return true
 }
