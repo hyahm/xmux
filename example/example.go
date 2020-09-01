@@ -48,7 +48,7 @@ func login(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func filter(w http.ResponseWriter, r *http.Request) bool {
+func Start(w http.ResponseWriter, r *http.Request) bool {
 	r.Header.Set("bbb", "ccc")
 	xmux.GetData(r).Set("start", time.Now())
 	return false
@@ -72,15 +72,15 @@ type Call struct {
 	Msg  string `json:"msg" type:"string" need:"是" information:"错误信息"`
 }
 
-func end(w http.ResponseWriter, r *http.Request) {
+func End(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("time: %f \n", time.Since(xmux.GetData(r).Get("start").(time.Time)).Seconds())
 }
 
 func main() {
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
-	router.AddModule(filter).EndModule(end)
-
+	router.AddModule(Start).EndModule(End)
+	router.Get("/asdf/{name}", all)
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
 		return
@@ -101,7 +101,6 @@ func main() {
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
 
 	user.Post("/aaa/{name}", name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
-		DelModule(filter).
 		ApiReqHeader("content-type", "application/json").
 		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
@@ -130,10 +129,9 @@ func main() {
 		w.Write(send)
 	})
 	router.AddGroup(user)
-
-	prof := router.Pprof()
-	router.AddGroup(prof)
-	doc := router.ShowApi("/docs").DelModule(filter)
+	router.DebugRoute()
+	router.AddGroup(router.Pprof())
+	doc := router.ShowApi("/docs")
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 
 	router.Run()

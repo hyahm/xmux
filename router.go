@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
+
+	"github.com/hyahm/golog"
 )
 
 var connections int
@@ -106,11 +108,16 @@ func (r *Router) EndModule(handle func(http.ResponseWriter, *http.Request)) *Rou
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	connections++
 	dataLock.Lock()
-	allconn[req] = &Data{}
+	allconn[req] = &Data{
+		mu: &sync.RWMutex{},
+	}
 	dataLock.Unlock()
 	defer func() {
-		if r.end != nil && req.URL.Path != "/favicon.ico" && !r.IgnoreIco || req.Method != http.MethodOptions {
-			r.end(w, req)
+		golog.Info(allconn[req])
+		if r.end != nil {
+			if (req.URL.Path != "/favicon.ico" && !r.IgnoreIco) || req.Method != http.MethodOptions {
+				r.end(w, req)
+			}
 		}
 		dataLock.Lock()
 		delete(allconn, req)
@@ -320,7 +327,7 @@ func handleFavicon() http.Handler {
 
 // 组路由添加到router
 func (r *Router) AddGroup(group *GroupRoute) *Router {
-
+	golog.Info(r)
 	// 将路由的所有变量全部移交到route
 	if group.pattern == nil && group.route == nil {
 		return nil
@@ -346,9 +353,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				if _, ok := r.route[url][m]; ok {
 					log.Fatalf("%s %s is Duplication", url, m)
 				}
-
 				merge(group, group.route[url][m])
-
 			}
 			if r.route[url] == nil {
 				r.route[url] = make(map[string]*Route)
