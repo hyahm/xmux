@@ -9,10 +9,10 @@
 - [x] 支持正则匹配和参数获取
 - [x] 完全匹配优先于正则匹配
 - [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
-- [x] 支持四大全局handle ,MethodnotFound(忘记写方法), MethodNotAllowed(method没定义), HandleNotFound(没有找到页面), Options请求）  
-- [x] 强大的模块让你的代码模块化变得非常简单  
+- [x] 支持三大全局handle ,MethodnotFound(忘记写方法), MethodNotAllowed(method没定义), HandleNotFound(没有找到页面), Options请求）  
+- [x] 强大的模块让你的代码模块化变得非常简单 
+- [x] 中间件支持 
 - [x] 内嵌接口文档
-- [x] 支持收尾操作
 - [x] 增加数据结构绑定， 适合模块间传递
 - [x] 增加websocket， 可以学习，不建议使用
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
@@ -104,20 +104,18 @@ func handleNotFound() http.Handler {
 
 ```
 
-###  header 和 模块 func(w http.ResponseWriter, r *http.Request)  bool  
+###  header ， 中间件 和 模块 
 
-路由有3种路由头  
+- 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
 组路由： 所有组的路由都会带上这个， 还有带上全局的， 组的请求头覆盖全局的  
 私有路由： 单一路由的请求头， 属于某组的话， 带上组路由头， 全局的话带上全局的  
 优先级  
 私有路由 > 组路由 > 全局路由  (如果存在优先级大的就覆盖优先级小的)
 
-中间类似上面header   
-最后一个返回值是表示是否直接返回， 如果直接返回，后面的模块和方法将不会执行   
-例如下面的方法， 执行的话， 将不会打印66666    
-但是如果 hf 返回false   
-那么将打印  
+- 模块类似上面header   
+
+模块会根据添加的顺序执行  
 44444444444444444444444444  
 66666  
 cander  
@@ -174,8 +172,20 @@ func TestHome(t *testing.T) {
 
 ```
 
-### 全局 数据  GetData(r) , 对基础路由的数据补充， 用法后面详细补充
+- 中间件最多只能有一个， 功能较多建议使用模块  
+中间件如下， 这是个计算执行时间的例子  
+```go
+func GetExecTime(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	handle(w, r)
+	fmt.Printf("url: %s -- addr: %s -- method: %s -- exectime: %f\n", r.URL.Path, r.RemoteAddr, r.Method, time.Since(start).Seconds())
+}
 
+```
+
+
+### 适合在当前handle 的 module， 中间件， handle 传递值   
+> 生命周期从定义开始， 到此handle执行完毕将被释放
 ```go
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
@@ -194,14 +204,15 @@ router.Pattern("/aaa/{name}").Get(name).AddModule(filter).AddModule(login)
 ### 获取正则匹配的参数
 ```go
 func Who(w http.ResponseWriter, r *http.Request) {
-fmt.Println(xmux.Var[r.URL.Path]["name"])
-fmt.Println(xmux.Var[r.URL.Path]["age"])
+fmt.Println(xmux.Var(r)["name"])
+fmt.Println(xmux.Var(r)["age"])
 w.Write([]byte("yes is mine"))
 return
 }
 
 ``` 
-
+### 模块， 中间件， handle 执行顺序
+- 模块 > 中间件 > handle  
 
 ### 自动修复请求的url
 例如： 请求的url 是这个样子的
@@ -235,15 +246,6 @@ xmux.Var(r)["name"]
 ```
 后面会增加自定义正则匹配
 
-
-### 同一个路由各模块之间通讯 （注意模块的顺序。当前连接断开后，下面的数据会被清空）
-```vim
-xmux.GetData(r).Data  // 这里对应的是Bind 方法绑定的数据
-xmux.GetData(r).End  // 这里是最后结束后的模块， 可以统计执行时间 等
-xmux.GetData(r).Set(k string, v interface{})
-xmux.GetData(r).Get(k string) (v interface{})
-xmux.GetData(r).Del(k string)
-```
 
 ### 编写接口文档， 
 > 使用接口文档,  第一个参数是组路由名， 第二个参数是挂载的路由uri
