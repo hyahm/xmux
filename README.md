@@ -189,12 +189,14 @@ func GetExecTime(handle func(http.ResponseWriter, *http.Request), w http.Respons
 ```go
 func filter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("login mw")
+	xmux.GetData(r).Set("name","xmux")
 	r.Header.Set("bbb", "ccc")
 	return false
 }
 
-func name(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("hello world name"))
+func name(w http.ResponseWriter, r *http.Request) {\
+	name := xmux.GetData(r).Get("name").(string)
+	w.Write([]byte("hello world " + value))
 	return
 }
 router.Pattern("/aaa/{name}").Get(name).AddModule(filter).AddModule(login)
