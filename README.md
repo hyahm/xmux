@@ -13,6 +13,7 @@
 - [x] 强大的模块让你的代码模块化变得非常简单 
 - [x] 中间件支持 
 - [x] 内嵌接口文档
+- [x] 数据绑定
 - [x] 增加数据结构绑定， 适合模块间传递
 - [x] 增加websocket， 可以学习，不建议使用, 如果其他的不好可以试试  
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
@@ -104,7 +105,7 @@ func handleNotFound() http.Handler {
 
 ```
 
-###  header ， 中间件 和 模块 
+###  Header ， 中间件 和 模块 
 
 - 路由有3种路由头  
 全局路由： 所有请求都会带上这个  
@@ -201,7 +202,8 @@ func name(w http.ResponseWriter, r *http.Request) {\
 }
 router.Pattern("/aaa/{name}").Get(name).AddModule(filter).AddModule(login)
 ```
-
+### 模块， 中间件， handle 执行顺序
+- 模块 > 中间件 > handle  
 
 ### 获取正则匹配的参数
 ```go
@@ -213,8 +215,66 @@ return
 }
 
 ``` 
-### 模块， 中间件， handle 执行顺序
-- 模块 > 中间件 > handle  
+### 数据绑定（Bind(), 与Module 一起使用）
+将数据结构绑定到此 Handle 里， 通过读取r.Body 来解析数据
+因为解析的代码都是一样的， 绑定后可以共用同一份代码
+```
+func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
+	// 任何报错信息， 直接return true， 就是此handle 直接执行完毕了， 不继续向后面走了
+	resp := &response.Response{}
+	if goconfig.ReadBool("debug", false) {
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			golog.Error(err)
+			w.Write(resp.ErrorE(err))
+			return true
+		}
+		golog.Info(string(b))
+		err = json.Unmarshal(b, xmux.GetData(r).Data)
+		if err != nil {
+			golog.Error(err)
+			w.Write(resp.ErrorE(err))
+			return true
+		}
+	} else {
+		err := json.NewDecoder(r.Body).Decode(xmux.GetData(r).Data)
+		if err != nil {
+			golog.Error(err)
+			w.Write(resp.ErrorE(err))
+			return true
+		}
+
+	}
+	return false
+}
+
+
+Router.Post("/important/add", handle.AddName).Bind(&model.DataName{}).AddMidware(midware.JsonToStruct)
+Router.Post("/important/add", handle.AddStd).Bind(&model.DataStd{}).AddMidware(midware.JsonToStruct)
+Router.Post("/important/add", handle.AddFoo).Bind(&model.DataFoo{}).AddMidware(midware.JsonToStruct)
+
+
+func AddName(w http.ResponseWriter, r *http.Request) {
+	// 这里的data 就是解析后出来的数据
+	data := xmux.GetData(r).Data.(*model.DataName)
+	/// todo...
+}
+```
+
+### 有model可以没有Handle(module 本身可以当handle使用）
+确定没有midware， 是可以没有handle的  
+```
+func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
+	w.Write([]byte("hello world"))
+	// 这里必须返回true， 否则接口报错
+	return true
+}
+user.Get("/no/handle", nil).AddModule(NoHandleModule)
+
+resp: /no/handle
+return:  hello world
+```
+
 
 ### 自动修复请求的url
 例如： 请求的url 是这个样子的
@@ -222,7 +282,7 @@ http://www.hyahm.com/mmm///af/af,  默认是请求不到的
 但是设置后
 ```go
 router := xmux.NewRouter()
-router.Slash = true  (性能消耗较大， 不建议开启)
+router.Slash = true  (有性能消耗， 不建议开启)
 ```
 是可以直接访问 http://www.hyahm.com/mmm/af/af 这个地址的请求
 
