@@ -116,7 +116,7 @@ func handleNotFound() http.Handler {
 
 - 模块类似上面header         
 不过优先级相反    
-私有路由 < 组路由 < 全局路由    (如果存在优先级大的就覆盖优先级小的)
+全局路由 > 组路由 > 私有路由 (如果存在优先级大的就覆盖优先级小的)
 ```go
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -170,7 +170,7 @@ cander
 hello world home  
 
 - 中间件最多只能有一个， 功能较多建议使用模块  
-中间件如下， 这是个计算执行时间的例子  
+优先级与header 一样， 中间件如下， 这是个计算执行时间的例子  
 ```go
 func GetExecTime(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
