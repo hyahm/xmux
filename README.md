@@ -114,17 +114,7 @@ func handleNotFound() http.Handler {
 优先级  
 私有路由 > 组路由 > 全局路由  (如果存在优先级大的就覆盖优先级小的)
 
-- 模块类似上面header   
-
-模块会根据添加的顺序执行  
-44444444444444444444444444  
-66666  
-cander  
-页面将看到  
-hello world home  
-```
-go test -v -run TestHome github.com/hyahm/xmux/example
-```       
+- 模块类似上面header         
 不过优先级相反    
 私有路由 < 组路由 < 全局路由    (如果存在优先级大的就覆盖优先级小的)
 ```go
@@ -172,6 +162,12 @@ func TestHome(t *testing.T) {
 }
 
 ```
+模块会根据添加的顺序执行  
+44444444444444444444444444  
+66666  
+cander  
+页面将看到  
+hello world home  
 
 - 中间件最多只能有一个， 功能较多建议使用模块  
 中间件如下， 这是个计算执行时间的例子  
