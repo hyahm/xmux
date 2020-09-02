@@ -14,7 +14,7 @@
 - [x] 中间件支持 
 - [x] 内嵌接口文档
 - [x] 增加数据结构绑定， 适合模块间传递
-- [x] 增加websocket， 可以学习，不建议使用
+- [x] 增加websocket， 可以学习，不建议使用, 如果其他的不好可以试试  
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
 
 
