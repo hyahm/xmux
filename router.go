@@ -3,10 +3,9 @@ package xmux
 import (
 	"log"
 	"net/http"
+	"reflect"
 	"regexp"
 	"sync"
-
-	"github.com/hyahm/golog"
 )
 
 var connections int
@@ -26,6 +25,7 @@ type rt struct {
 	Header     map[string]string
 	Module     []func(http.ResponseWriter, *http.Request) bool
 	dataSource interface{}
+	midware    func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
 
 type Router struct {
@@ -42,7 +42,12 @@ type Router struct {
 	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
 	routeTable     map[string]*rt                                  // 路由表
 	rtLock         *sync.RWMutex                                   // 缓存表的锁
-	end            func(http.ResponseWriter, *http.Request)
+	midware        func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
+}
+
+func (r *Router) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Router {
+	r.midware = midware
+	return r
 }
 
 func (r *Router) makeRoute(pattern string) (string, bool) {
@@ -100,9 +105,29 @@ func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool)
 	return r
 }
 
-func (r *Router) EndModule(handle func(http.ResponseWriter, *http.Request)) *Router {
-	r.end = handle
-	return r
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
+
+	if route.dataSource != nil {
+		allconn[req].Data = route.dataSource
+	}
+
+	for k, v := range route.Header {
+		w.Header().Set(k, v)
+	}
+	// 请求模块
+	var ok bool
+	for _, v := range route.Module {
+		ok = v(w, req)
+		if ok {
+			return
+		}
+	}
+	if route.midware != nil {
+		route.midware(route.Handle.ServeHTTP, w, req)
+	} else {
+		route.Handle.ServeHTTP(w, req)
+	}
+
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -113,12 +138,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	dataLock.Unlock()
 	defer func() {
-		golog.Info(allconn[req])
-		if r.end != nil {
-			if (req.URL.Path != "/favicon.ico" && !r.IgnoreIco) || req.Method != http.MethodOptions {
-				r.end(w, req)
-			}
-		}
 		dataLock.Lock()
 		delete(allconn, req)
 		dataLock.Unlock()
@@ -159,26 +178,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// 获取handler
 		r.serveHTTP(w, req)
 	}
-}
-
-func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
-
-	if route.dataSource != nil {
-		allconn[req].Data = route.dataSource
-	}
-
-	for k, v := range route.Header {
-		w.Header().Set(k, v)
-	}
-	// 请求模块
-	var ok bool
-	for _, v := range route.Module {
-		ok = v(w, req)
-		if ok {
-			return
-		}
-	}
-	route.Handle.ServeHTTP(w, req)
 }
 
 // url 是匹配的路径， 可能不是规则的路径
@@ -256,6 +255,7 @@ endloop:
 		Header:     tmpHeader,
 		Module:     tmpModule,
 		dataSource: thisRoute.dataSource,
+		midware:    thisRoute.midware,
 	}
 	r.rtLock.Lock()
 	r.routeTable[req.URL.Path+req.Method] = thisRouter
@@ -266,7 +266,12 @@ endloop:
 			return
 		}
 	}
-	thisRoute.handle.ServeHTTP(w, req)
+	if thisRoute.midware != nil {
+		thisRoute.midware(thisRoute.handle.ServeHTTP, w, req)
+	} else {
+		thisRoute.handle.ServeHTTP(w, req)
+	}
+	// thisRoute.handle.ServeHTTP(w, req)
 
 }
 
@@ -327,7 +332,6 @@ func handleFavicon() http.Handler {
 
 // 组路由添加到router
 func (r *Router) AddGroup(group *GroupRoute) *Router {
-	golog.Info(r)
 	// 将路由的所有变量全部移交到route
 	if group.pattern == nil && group.route == nil {
 		return nil
@@ -344,6 +348,9 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	}
 	if r.tpl == nil {
 		r.tpl = make(map[string]MethodsRoute)
+	}
+	if r.midware != nil && !reflect.DeepEqual(group.delmidware, r.midware) && group.midware == nil {
+		group.midware = r.midware
 	}
 	for url, args := range group.pattern {
 		r.pattern[url] = args
@@ -487,7 +494,12 @@ func merge(group *GroupRoute, route *Route) {
 	if route.codeField == "" {
 		route.codeField = group.codeField
 	}
-
+	if group.midware != nil && route.midware == nil {
+		route.midware = group.midware
+	}
+	if group.midware != nil && !reflect.DeepEqual(route.delmidware, group.midware) && route.midware == nil {
+		route.midware = group.midware
+	}
 }
 
 func (r *Router) DebugRoute() {

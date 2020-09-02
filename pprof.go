@@ -16,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/hyahm/golog"
 )
 
 func (r *Router) Pprof() *GroupRoute {
@@ -181,8 +179,6 @@ func Symbol(w http.ResponseWriter, r *http.Request) {
 func Debug(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	name := Var(r)["name"]
-	fmt.Println(name)
-	golog.Info(name)
 	p := pprof.Lookup(name)
 	if p == nil {
 		serveError(w, http.StatusNotFound, "Unknown profile")

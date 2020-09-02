@@ -4,74 +4,46 @@ import (
 	"net/http"
 )
 
-func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
 	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodPost, handler)
+		return r.tpl[pt].getRoute(method, handler, r.midware)
 	} else {
-		return r.route[pt].getRoute(http.MethodPost, handler)
+		return r.route[pt].getRoute(method, handler, r.midware)
 	}
+}
+
+func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+	return r.method(pattern, handler, http.MethodPost)
 }
 
 func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodGet, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodGet, handler)
-	}
+	return r.method(pattern, handler, http.MethodGet)
 }
 
 func (r *Router) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodDelete, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodDelete, handler)
-	}
+	return r.method(pattern, handler, http.MethodDelete)
 }
 
 func (r *Router) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodHead, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodHead, handler)
-	}
+	return r.method(pattern, handler, http.MethodHead)
 }
 
 func (r *Router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodOptions, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodOptions, handler)
-	}
+	return r.method(pattern, handler, http.MethodOptions)
 }
 
 func (r *Router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodConnect, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodConnect, handler)
-	}
+	return r.method(pattern, handler, http.MethodConnect)
 }
 
 func (r *Router) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodPatch, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodPatch, handler)
-	}
+	return r.method(pattern, handler, http.MethodPatch)
 }
 
 func (r *Router) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodTrace, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodTrace, handler)
-	}
+	return r.method(pattern, handler, http.MethodTrace)
 }
 
 func (r *Router) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if pt, ok := r.makeRoute(pattern); ok {
-		return r.tpl[pt].getRoute(http.MethodPut, handler)
-	} else {
-		return r.route[pt].getRoute(http.MethodPut, handler)
-	}
+	return r.method(pattern, handler, http.MethodPut)
 }

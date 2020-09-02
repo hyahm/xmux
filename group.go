@@ -22,6 +22,8 @@ type GroupRoute struct {
 	reqHeader  map[string]string
 	codeMsg    map[string]string
 	codeField  string
+	midware    func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
+	delmidware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
 
 var reUrl map[string]*reroute
@@ -41,6 +43,18 @@ func (g *GroupRoute) ApiReqHeader(k, v string) *GroupRoute {
 		g.reqHeader = make(map[string]string)
 	}
 	g.reqHeader[k] = v
+	return g
+}
+
+func (g *GroupRoute) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *GroupRoute {
+	// 接口的请求头
+	g.midware = midware
+	return g
+}
+
+func (g *GroupRoute) DelMiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *GroupRoute {
+	// 接口的请求头
+	g.midware = midware
 	return g
 }
 

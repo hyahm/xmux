@@ -7,19 +7,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.GetData(r).Data)
+	time.Sleep(1 * time.Second)
 	w.Write([]byte("hello world home"))
 	return
 }
 
 func name(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("home")
-	fmt.Println(xmux.Var(r)["name"])
 
 	w.Write([]byte("hello world name"))
 	return
@@ -36,15 +33,12 @@ func all(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("login mw")
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write([]byte("not found data"))
 		return true
 	}
 	err = json.Unmarshal(b, xmux.GetData(r).Data)
-
-	fmt.Println(xmux.GetData(r).Data)
 	return false
 }
 
@@ -79,7 +73,6 @@ func End(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
-	router.AddModule(Start).EndModule(End)
 	router.Get("/asdf/{name}", all)
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
@@ -98,29 +91,10 @@ func main() {
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
-		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
-
-	user.Post("/aaa/{name}", name).ApiCreateGroup("test", "这是一个大写的测试组", "testaaa").
-		ApiReqHeader("content-type", "application/json").
-		ApiReqStruct(&Home{}).
-		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
-		ApiResStruct(Call{}).
-		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
-		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "")
-	user.Post("/aaa/bbbb/{path:me}", me).
-		ApiReqHeader("content-type", "application/json").
-		ApiReqStruct(&Home{}).
-		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
-		ApiResStruct(Call{}).
-		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
-		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")
+		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "").MiddleWare(xmux.GetExecTime)
 
 	user.Get("/bbb/ccc/{int:oid}/{string:all}", all)
 	router.Post("/cut", func(w http.ResponseWriter, r *http.Request) {
-		b, _ := ioutil.ReadAll(r.Body)
-		golog.Info(string(b))
 		a := struct {
 			Code int    `json:"code"`
 			Msg  string `json:"msg"`
@@ -129,16 +103,10 @@ func main() {
 		w.Write(send)
 	})
 	router.AddGroup(user)
-	router.DebugRoute()
 	router.AddGroup(router.Pprof())
 	doc := router.ShowApi("/docs")
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 
 	router.Run()
 
-}
-
-func Midware(midware func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request) bool {
-	midware(w, r)
-	return true
 }

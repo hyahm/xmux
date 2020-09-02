@@ -3,8 +3,6 @@ package xmux
 import (
 	"net/http"
 	"sync"
-
-	"github.com/hyahm/golog"
 )
 
 // bridge  数据二次封装
@@ -51,7 +49,6 @@ func (data *Data) Set(k string, v interface{}) {
 	}
 
 	data.mu.Lock()
-	golog.Info(k)
 	data.ctx[k] = v
 	data.mu.Unlock()
 }
