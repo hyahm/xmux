@@ -10,6 +10,8 @@ import (
 
 var connections int
 
+var Stop bool
+
 func GetConnents() int {
 	return connections
 }
@@ -131,6 +133,9 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if Stop {
+		return
+	}
 	connections++
 	dataLock.Lock()
 	allconn[req] = &Data{

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -66,8 +65,24 @@ type Call struct {
 	Msg  string `json:"msg" type:"string" need:"是" information:"错误信息"`
 }
 
-func End(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("time: %f \n", time.Since(xmux.GetData(r).Get("start").(time.Time)).Seconds())
+func (c *Call) Marshal() []byte {
+	send, _ := json.Marshal(c)
+	return send
+}
+
+func (c *Call) Error(msg string) []byte {
+	c.Code = 1
+	c.Msg = msg
+	return c.Marshal()
+}
+
+func api(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("ajdfkjalsdjf"))
+}
+
+func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
+	w.Write([]byte("hello world"))
+	return false
 }
 
 func main() {
@@ -78,11 +93,12 @@ func main() {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
 		return
 	})
+
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
 	user.ApiCodeMsg("98", "你是98")
 	user.ApiCodeMsg("78", "你是78")
 	user.ApiCodeMsg("0", "成功")
-
+	user.Post("/api", api)
 	router.Get("/home", home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
@@ -92,7 +108,7 @@ func main() {
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "").MiddleWare(xmux.GetExecTime)
-
+	user.Get("/no/handle", nil).AddModule(NoHandleModule)
 	user.Get("/bbb/ccc/{int:oid}/{string:all}", all)
 	router.Post("/cut", func(w http.ResponseWriter, r *http.Request) {
 		a := struct {
