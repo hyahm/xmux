@@ -77,7 +77,8 @@ func (c *Call) Error(msg string) []byte {
 }
 
 func api(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("ajdfkjalsdjf"))
+	c := &Call{}
+	w.Write(c.Marshal())
 }
 
 func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {

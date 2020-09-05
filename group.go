@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -131,18 +130,18 @@ func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
-		if _, ok := g.pattern[v]; ok {
-			log.Fatalf("pattern %s is Duplication", pattern)
+		if _, ok := g.tpl[v]; !ok {
+			g.tpl[v] = make(map[string]*Route)
 		}
-		g.tpl[v] = make(map[string]*Route)
+
 		g.pattern[v] = listvar
 		return v, true
 		// 判断是否重复
 	} else {
-		if _, ok := g.pattern[pattern]; ok {
-			log.Fatalf("pattern %s is Duplication", pattern)
+		if _, ok := g.tpl[v]; !ok {
+			g.route[pattern] = make(map[string]*Route)
 		}
-		g.route[pattern] = make(map[string]*Route)
+
 		g.pattern[pattern] = make([]string, 0)
 		return pattern, false
 	}

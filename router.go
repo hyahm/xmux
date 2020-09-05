@@ -74,16 +74,16 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
-		if _, ok := r.pattern[v]; ok {
-			log.Fatalf("pattern %s is Duplication", pattern)
+		if _, ok := r.tpl[v]; !ok {
+			r.tpl[v] = make(map[string]*Route)
 		}
 		r.tpl[v] = make(map[string]*Route)
 		r.pattern[v] = listvar
 		return v, true
 		// 判断是否重复
 	} else {
-		if _, ok := r.pattern[pattern]; ok {
-			log.Fatalf("pattern %s is Duplication", pattern)
+		if _, ok := r.route[v]; !ok {
+			r.route[v] = make(map[string]*Route)
 		}
 		r.route[pattern] = make(map[string]*Route)
 		r.pattern[pattern] = make([]string, 0)
