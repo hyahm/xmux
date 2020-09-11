@@ -203,9 +203,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 				}
 				allparams[req.URL.Path] = ap
 				goto endloop
-
 			}
-
 		}
 		r.HandleNotFound.ServeHTTP(w, req)
 		return
