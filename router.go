@@ -43,7 +43,6 @@ type Router struct {
 	header         map[string]string                               // 全局路由头
 	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
 	routeTable     cacheTable                                      // 路由表
-	rtLock         *sync.RWMutex                                   // 缓存表的锁
 	midware        func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
 
@@ -57,9 +56,6 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 创建 methodsRoute
 	// 格式路径
 
-	if r.rtLock == nil {
-		r.rtLock = &sync.RWMutex{}
-	}
 	if r.routeTable == nil {
 		r.routeTable = make(map[string]*rt)
 	}
@@ -298,7 +294,6 @@ func NewRouter() *Router {
 		HanleFavicon:   handleFavicon(),
 		HandleOptions:  handleOptions(),
 		HandleNotFound: handleNotFound(),
-		rtLock:         &sync.RWMutex{},
 	}
 }
 
