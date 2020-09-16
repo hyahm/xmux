@@ -42,7 +42,7 @@ type Router struct {
 	pattern        map[string][]string                             // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string                               // 全局路由头
 	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
-	routeTable     map[string]*rt                                  // 路由表
+	routeTable     cacheTable                                      // 路由表
 	rtLock         *sync.RWMutex                                   // 缓存表的锁
 	midware        func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
@@ -175,10 +175,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// 先进行路由表缓存寻找
-	if route, ok := r.routeTable[req.URL.Path+req.Method]; ok {
-		// 设置请求头
+	route, ok := r.routeTable.Get(req.URL.Path + req.Method)
+	if ok {
 		r.readFromCache(route, w, req)
-
 	} else {
 		// 获取handler
 		r.serveHTTP(w, req)
@@ -260,9 +259,7 @@ endloop:
 		dataSource: thisRoute.dataSource,
 		midware:    thisRoute.midware,
 	}
-	r.rtLock.Lock()
-	r.routeTable[req.URL.Path+req.Method] = thisRouter
-	r.rtLock.Unlock()
+	r.routeTable.Set(req.URL.Path+req.Method, thisRouter)
 	for _, v := range tmpModule {
 		ok := v(w, req)
 		if ok {
