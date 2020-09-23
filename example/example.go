@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -10,8 +11,7 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(1 * time.Second)
-	w.Write([]byte("hello world home"))
+	w.Write([]byte(time.Now().String()))
 	return
 }
 
@@ -124,6 +124,12 @@ func main() {
 	doc := router.ShowApi("/docs")
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 
-	router.Run()
+	// router.Run()
+	svc := http.Server{
+		Addr:    ":7777",
+		Handler: router,
+	}
+
+	log.Fatal(svc.ListenAndServeTLS("aaa.pem", "aaa.key"))
 
 }
