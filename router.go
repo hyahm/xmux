@@ -196,7 +196,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 				for i, v := range r.pattern[reUrl] {
 					ap[v] = vl[i+1]
 				}
-				allparams[req.URL.Path] = ap
+				SetParams(req.URL.Path, ap)
 				goto endloop
 			}
 		}
