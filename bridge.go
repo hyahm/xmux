@@ -13,36 +13,12 @@ type Data struct {
 	mu   *sync.RWMutex
 }
 
-type params map[string]string // url 参数对应的值
-
-var allparams map[string]params // 保存的url 参数
-var paramsLocker sync.RWMutex
-
 var allconn map[*http.Request]*Data
 var dataLock *sync.RWMutex
 
-func Var(r *http.Request) params {
-	return GetParams(r.URL.Path)
-}
-
 func init() {
-	allparams = make(map[string]params)
 	allconn = make(map[*http.Request]*Data)
 	dataLock = &sync.RWMutex{}
-	paramsLocker = sync.RWMutex{}
-}
-
-func GetParams(key string) params {
-	paramsLocker.Lock()
-	defer paramsLocker.Unlock()
-	return allparams[key]
-}
-
-func SetParams(key string, params params) {
-	paramsLocker.Lock()
-
-	allparams[key] = params
-	paramsLocker.Unlock()
 }
 
 func GetData(r *http.Request) *Data {

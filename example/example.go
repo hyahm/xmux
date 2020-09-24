@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
@@ -124,12 +123,6 @@ func main() {
 	doc := router.ShowApi("/docs")
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 
-	// router.Run()
-	svc := http.Server{
-		Addr:    ":7777",
-		Handler: router,
-	}
-
-	log.Fatal(svc.ListenAndServeTLS("aaa.pem", "aaa.key"))
+	router.Run()
 
 }
