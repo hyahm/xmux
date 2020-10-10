@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"sync"
+	"time"
 )
 
 var connections int
@@ -31,6 +32,7 @@ type rt struct {
 }
 
 type Router struct {
+	ReadTimeout    time.Duration
 	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
 	HanleFavicon   http.Handler
 	DisableOption  bool         // 禁止全局option
@@ -277,10 +279,24 @@ func (r *Router) Run(opt ...string) error {
 		addr = opt[0]
 	}
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
+		Addr:        addr,
+		ReadTimeout: r.ReadTimeout,
+		Handler:     r,
 	}
 	return srv.ListenAndServe()
+}
+
+func (r *Router) RunTLS(crt, key string, opt ...string) error {
+	addr := ":443"
+	if len(opt) > 0 {
+		addr = opt[0]
+	}
+	srv := &http.Server{
+		Addr:        addr,
+		ReadTimeout: r.ReadTimeout,
+		Handler:     r,
+	}
+	return srv.ListenAndServeTLS(crt, key)
 }
 
 func NewRouter() *Router {
