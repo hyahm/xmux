@@ -29,9 +29,7 @@ var reUrl map[string]*reroute
 
 func NewGroupRoute() *GroupRoute {
 	return &GroupRoute{
-		route:  make(map[string]MethodsRoute),
 		header: make(map[string]string),
-		tpl:    make(map[string]MethodsRoute),
 		module: make([]func(http.ResponseWriter, *http.Request) bool, 0),
 	}
 }
@@ -130,18 +128,23 @@ func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
+		if g.tpl == nil {
+			g.tpl = make(map[string]MethodsRoute)
+
+		}
 		if _, ok := g.tpl[v]; !ok {
 			g.tpl[v] = make(map[string]*Route)
 		}
-
 		g.pattern[v] = listvar
 		return v, true
 		// 判断是否重复
 	} else {
-		if _, ok := g.tpl[v]; !ok {
+		if g.route == nil {
+			g.route = make(map[string]MethodsRoute)
+		}
+		if _, ok := g.route[pattern]; !ok {
 			g.route[pattern] = make(map[string]*Route)
 		}
-
 		g.pattern[pattern] = make([]string, 0)
 		return pattern, false
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -88,17 +89,12 @@ func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
 func main() {
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
-	router.Get("/asdf/{name}", all)
+	// router.Get("/asdf/{name}", all)
+	router.Post("/home", home)
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
 		return
 	})
-
-	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
-	user.ApiCodeMsg("98", "你是98")
-	user.ApiCodeMsg("78", "你是78")
-	user.ApiCodeMsg("0", "成功")
-	user.Post("/api", api)
 	router.Get("/home", home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
@@ -108,21 +104,30 @@ func main() {
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "").MiddleWare(xmux.GetExecTime)
+
+	// router.Post("/cut", func(w http.ResponseWriter, r *http.Request) {
+	// 	a := struct {
+	// 		Code int    `json:"code"`
+	// 		Msg  string `json:"msg"`
+	// 	}{}
+	// 	send, _ := json.Marshal(a)
+	// 	w.Write(send)
+	// })
+
+	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
+	user.ApiCodeMsg("98", "你是98")
+	user.ApiCodeMsg("78", "你是78")
+	user.ApiCodeMsg("0", "成功")
+	user.Post("/api", api)
 	user.Get("/no/handle", nil).AddModule(NoHandleModule)
 	user.Get("/bbb/ccc/{int:oid}/{string:all}", all)
-	router.Post("/cut", func(w http.ResponseWriter, r *http.Request) {
-		a := struct {
-			Code int    `json:"code"`
-			Msg  string `json:"msg"`
-		}{}
-		send, _ := json.Marshal(a)
-		w.Write(send)
-	})
+
 	router.AddGroup(user)
 	router.AddGroup(router.Pprof())
 	doc := router.ShowApi("/docs")
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
-
+	fmt.Println("-----------------------")
+	router.DebugRoute()
 	router.Run()
 
 }

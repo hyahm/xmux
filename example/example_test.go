@@ -10,12 +10,6 @@ import (
 	"github.com/hyahm/xmux"
 )
 
-// func home(w http.ResponseWriter, r *http.Request) {
-// 	w.WriteHeader(http.StatusOK)
-// 	fmt.Println("77777")
-// 	return
-// }
-
 func hf(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("44444444444444444444444444")
 	r.Header.Set("name", "cander")
@@ -32,6 +26,8 @@ func hf1(w http.ResponseWriter, r *http.Request) bool {
 func TestHome(t *testing.T) {
 	router := xmux.NewRouter()
 	router.Get("/home/{test}", home).AddModule(hf).SetHeader("name", "cander").AddModule(hf1)
+	router.Get("/home", home)
+	router.Post("/home", home)
 	var a string
 	// client := http.Client{}
 	r, err := http.NewRequest("GET", "/home/asdf", strings.NewReader(a))

@@ -2,12 +2,15 @@ package xmux
 
 import (
 	"net/http"
+
+	"github.com/hyahm/golog"
 )
 
 func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
 	if pt, ok := r.makeRoute(pattern); ok {
 		return r.tpl[pt].getRoute(method, handler, r.midware)
 	} else {
+		golog.Info(r.route[pt])
 		return r.route[pt].getRoute(method, handler, r.midware)
 	}
 }

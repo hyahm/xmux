@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/hyahm/golog"
 )
 
 var connections int
@@ -56,7 +58,6 @@ func (r *Router) MiddleWare(midware func(handle func(http.ResponseWriter, *http.
 func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
-	// 格式路径
 
 	if r.routeTable == nil {
 		r.routeTable = make(map[string]*rt)
@@ -64,27 +65,37 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	if r.Slash {
 		pattern = slash(pattern)
 	}
-	if r.route == nil {
-		r.route = make(map[string]MethodsRoute)
-	}
+
 	if r.pattern == nil {
 		r.pattern = make(map[string][]string)
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
+		if r.tpl == nil {
+			r.tpl = make(map[string]MethodsRoute)
+			r.tpl[v] = make(map[string]*Route)
+		}
 		if _, ok := r.tpl[v]; !ok {
 			r.tpl[v] = make(map[string]*Route)
 		}
-		r.tpl[v] = make(map[string]*Route)
 		r.pattern[v] = listvar
 		return v, true
 		// 判断是否重复
 	} else {
-		if _, ok := r.route[v]; !ok {
-			r.route[v] = make(map[string]*Route)
+
+		if r.route == nil {
+			golog.Info(pattern)
+			r.route = make(map[string]MethodsRoute)
+			r.route[pattern] = make(map[string]*Route)
+
 		}
-		r.route[pattern] = make(map[string]*Route)
+		if _, ok := r.route[pattern]; !ok {
+			golog.Info(pattern)
+			r.route[pattern] = make(map[string]*Route)
+
+		}
 		r.pattern[pattern] = make([]string, 0)
+		golog.Info(r.route[pattern])
 		return pattern, false
 	}
 }
@@ -309,11 +320,10 @@ func (r *Router) RunTLS(crt, key string, opt ...string) error {
 
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco:      true,
-		routeTable:     make(map[string]*rt),
-		header:         map[string]string{},
-		route:          make(map[string]MethodsRoute),
-		tpl:            make(map[string]MethodsRoute),
+		IgnoreIco:  true,
+		routeTable: make(map[string]*rt),
+		header:     map[string]string{},
+
 		pattern:        make(map[string][]string),
 		HanleFavicon:   handleFavicon(),
 		HandleOptions:  handleOptions(),
@@ -362,9 +372,6 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		r.pattern = make(map[string][]string)
 	}
 
-	if r.route == nil {
-		r.route = make(map[string]MethodsRoute)
-	}
 	if r.tpl == nil {
 		r.tpl = make(map[string]MethodsRoute)
 	}
