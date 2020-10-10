@@ -187,12 +187,20 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
 
 	if _, ok := r.route[req.URL.Path]; ok {
-		thisRoute = r.route[req.URL.Path][req.Method]
+		thisRoute, ok = r.route[req.URL.Path][req.Method]
+		if !ok {
+			r.HandleNotFound.ServeHTTP(w, req)
+			return
+		}
 	} else {
 		for reUrl := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			if re.MatchString(req.URL.Path) {
-				thisRoute = r.tpl[reUrl][req.Method]
+				thisRoute, ok = r.tpl[reUrl][req.Method]
+				if !ok {
+					r.HandleNotFound.ServeHTTP(w, req)
+					return
+				}
 				ap := make(map[string]string, 0)
 				vl := re.FindStringSubmatch(req.URL.Path)
 				for i, v := range r.pattern[reUrl] {
