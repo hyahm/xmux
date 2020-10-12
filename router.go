@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"sync"
 	"time"
-
-	"github.com/hyahm/golog"
 )
 
 var connections int
@@ -84,18 +82,15 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	} else {
 
 		if r.route == nil {
-			golog.Info(pattern)
 			r.route = make(map[string]MethodsRoute)
 			r.route[pattern] = make(map[string]*Route)
 
 		}
 		if _, ok := r.route[pattern]; !ok {
-			golog.Info(pattern)
 			r.route[pattern] = make(map[string]*Route)
 
 		}
 		r.pattern[pattern] = make([]string, 0)
-		golog.Info(r.route[pattern])
 		return pattern, false
 	}
 }
