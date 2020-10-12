@@ -371,7 +371,9 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	if r.pattern == nil {
 		r.pattern = make(map[string][]string)
 	}
-
+	if r.route == nil {
+		r.route = make(map[string]MethodsRoute)
+	}
 	if r.tpl == nil {
 		r.tpl = make(map[string]MethodsRoute)
 	}
@@ -388,10 +390,6 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				}
 				merge(group, group.route[url][m])
 			}
-			if r.route[url] == nil {
-				r.route[url] = make(map[string]*Route)
-			}
-
 			r.route[url] = group.route[url]
 
 		} else {
@@ -403,9 +401,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				merge(group, group.tpl[url][m])
 
 			}
-			if r.tpl[url] == nil {
-				r.tpl[url] = make(map[string]*Route)
-			}
+
 			r.tpl[url] = group.tpl[url]
 
 		}
