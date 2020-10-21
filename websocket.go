@@ -148,15 +148,14 @@ func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) {
 	xws.Conn.Write(send)
 }
 
-func NewWebsocket(w http.ResponseWriter, r *http.Request) (xws *BaseWs) {
+func NewWebsocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	// show num of goroutine
-	xws = &BaseWs{}
+	xws := &BaseWs{}
 	w.Header().Set("Content-Type", "text/plain")
 	key := r.Header.Get("Sec-WebSocket-Key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadGateway)
-		xws.Err = errors.New("not found Sec-WebSocket-Key")
-		return
+		return nil, errors.New("not found Sec-WebSocket-Key")
 	}
 	sha := sha1.New()
 
@@ -166,19 +165,17 @@ func NewWebsocket(w http.ResponseWriter, r *http.Request) (xws *BaseWs) {
 	if !ok {
 		w.Write([]byte("websocket: response does not implement http.Hijacker"))
 		xws.Err = errors.New("websocket: response does not implement http.Hijacker")
-		return
+		return nil, ErrorConnect
 	}
 	netConn, brw, err := h.Hijack()
 	if err != nil {
 		netConn.Write([]byte(err.Error()))
-		xws.Err = err
-		return
+		return nil, err
 	}
 
 	if brw.Reader.Buffered() > 0 {
 		netConn.Write([]byte("websocket: client sent data before handshake is complete"))
-		xws.Err = errors.New("websocket: client sent data before handshake is complete")
-		return
+		return nil, errors.New("websocket: client sent data before handshake is complete")
 	}
 
 	header := "HTTP/1.1 101 Switching Protocols\r\n" +
@@ -190,7 +187,7 @@ func NewWebsocket(w http.ResponseWriter, r *http.Request) (xws *BaseWs) {
 	netConn.Write([]byte(header))
 	xws.Conn = netConn
 	go xws.HandleWsFunc()
-	return
+	return xws, nil
 }
 
 type WebSocket interface {
