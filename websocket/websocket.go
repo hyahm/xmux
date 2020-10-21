@@ -34,7 +34,11 @@ func sendMsg() {
 }
 
 func ws(w http.ResponseWriter, r *http.Request) {
-	p := xmux.NewWebsocket(w, r)
+	p, err := xmux.NewWebsocket(w, r)
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return
+	}
 	p.SendMessage([]byte("hello"), xmux.TypeMsg)
 	wsmu.Lock()
 	ps[p] = xmux.TypeMsg
