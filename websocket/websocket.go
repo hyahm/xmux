@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -28,7 +28,10 @@ func sendMsg() {
 				continue
 			}
 			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
-			p.SendMessage([]byte(c.msg), ps[p])
+			if err := p.SendMessage([]byte(c.msg), ps[p]); err != nil {
+				golog.Error(err)
+				return
+			}
 		}
 	}
 }
@@ -36,6 +39,7 @@ func sendMsg() {
 func ws(w http.ResponseWriter, r *http.Request) {
 	p, err := xmux.NewWebsocket(w, r)
 	if err != nil {
+		golog.Error(err)
 		w.Write([]byte(err.Error()))
 		return
 	}
@@ -48,15 +52,18 @@ func ws(w http.ResponseWriter, r *http.Request) {
 		for {
 			<-tt.C
 			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
-			p.SendMessage([]byte(time.Now().String()), xmux.TypeMsg)
+			if err := p.SendMessage([]byte(time.Now().String()), xmux.TypeMsg); err != nil {
+				golog.Error(err)
+				break
+			}
 		}
 	}()
 	for {
 		// 封包
 		msgType, msg, err := p.ReadMessage()
 		if err != nil {
-			fmt.Println(err)
-			if err == xmux.ErrorConnect {
+			golog.Error(err)
+			if err == xmux.ConnectClose || err == xmux.ErrorConnect {
 				// 连接断开
 				wsmu.Lock()
 				delete(ps, p)

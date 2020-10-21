@@ -13,6 +13,7 @@ import (
 )
 
 var ErrorConnect = errors.New("connect error")
+var ConnectClose = errors.New("connect closed")
 var ErrorType = errors.New("type error")
 var ErrorGetLenth = errors.New("get length error")
 var ErrorGetMsg = errors.New("read data error")
@@ -66,9 +67,15 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 		xws.Conn.Write([]byte("websocket: client sent data before handshake is complete"))
 		return byte(0), "", ErrorConnect
 	}
+
 	if lpack[0] == TypePing {
 		xws.SendMessage([]byte(""), TypePong)
 		return TypePing, "", nil
+	}
+	if lpack[0] == TypeClose {
+		xws.Conn = nil
+		xws.SendMessage([]byte(""), TypePong)
+		return TypeClose, "", ConnectClose
 	}
 	// start := uint64(lpack[0] << 1)
 	// if start != 1 && start != 2 {
@@ -119,7 +126,10 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	return lpack[0], string(data), nil
 }
 
-func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) {
+func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) error {
+	if xws.Conn == nil {
+		return errors.New("connect close")
+	}
 	var send []byte
 	var header byte
 
@@ -145,7 +155,8 @@ func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) {
 		send = append(send, bytesBuffer.Bytes()...)
 	}
 	send = append(send, msg...)
-	xws.Conn.Write(send)
+	_, err := xws.Conn.Write(send)
+	return err
 }
 
 func NewWebsocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
