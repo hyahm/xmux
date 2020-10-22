@@ -29,10 +29,6 @@ type BaseWs struct {
 	Err    error
 }
 
-func NewWebSocket() *BaseWs {
-	return &BaseWs{}
-}
-
 func (xws *BaseWs) HandleWsFunc() {
 	if xws.Handle == nil {
 		xws.Err = errors.New("please write a Handle")
@@ -159,7 +155,7 @@ func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) error {
 	return err
 }
 
-func NewWebsocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
+func NewWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	// show num of goroutine
 	xws := &BaseWs{}
 	w.Header().Set("Content-Type", "text/plain")
