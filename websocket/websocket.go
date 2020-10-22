@@ -27,9 +27,7 @@ func sendMsg() {
 				continue
 			}
 			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
-			if err := p.SendMessage([]byte(c.msg), ps[p]); err != nil {
-				return
-			}
+			p.SendMessage([]byte(c.msg), ps[p])
 		}
 	}
 }
