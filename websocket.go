@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -122,20 +121,13 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	return lpack[0], string(data), nil
 }
 
-func (xws *BaseWs) SendMessage(msg []byte, typ ...byte) error {
+func (xws *BaseWs) SendMessage(msg []byte, typ byte) error {
 	if xws.Conn == nil {
-		return errors.New("connect close")
+		return ConnectClose
 	}
 	var send []byte
-	var header byte
 
-	if len(typ) == 0 || header == byte(0) {
-		header = TypeMsg
-	} else {
-		fmt.Println("typ: ", typ[0])
-		header = typ[0]
-	}
-	send = append(send, header)
+	send = append(send, typ)
 	l := len(msg)
 	if l < 126 {
 		send = append(send, byte(l))
