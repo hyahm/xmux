@@ -141,7 +141,7 @@ func (xws *BaseWs) SendMessage(msg []byte, typ byte) error {
 	return err
 }
 
-func NewWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
+func UpgradeWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	// show num of goroutine
 	xws := &BaseWs{}
 	w.Header().Set("Content-Type", "text/plain")

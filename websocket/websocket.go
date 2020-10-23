@@ -33,7 +33,7 @@ func sendMsg() {
 }
 
 func ws(w http.ResponseWriter, r *http.Request) {
-	p, err := xmux.NewWebSocket(w, r)
+	p, err := xmux.UpgradeWebSocket(w, r)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		return
