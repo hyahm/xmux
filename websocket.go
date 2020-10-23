@@ -17,23 +17,17 @@ var ErrorType = errors.New("type error")
 var ErrorGetLenth = errors.New("get length error")
 var ErrorGetMsg = errors.New("read data error")
 var ErrorMsgNotEnough = errors.New("data length not enough")
+var ErrorNotFoundHandle = errors.New("please write a Handle")
+var ErrorRespose = errors.New("websocket: response does not implement http.Hijacker")
+var ErrorHandshake = errors.New("websocket: client sent data before handshake is complete")
+var ErrorNoWebsocketKey = errors.New("not found Sec-WebSocket-Key")
 
 type WsHandler interface {
 	Websocket(w http.ResponseWriter, r *http.Request)
 }
 
 type BaseWs struct {
-	Conn   net.Conn
-	Handle func()
-	Err    error
-}
-
-func (xws *BaseWs) HandleWsFunc() {
-	if xws.Handle == nil {
-		xws.Err = errors.New("please write a Handle")
-		return
-	}
-	xws.Handle()
+	Conn net.Conn
 }
 
 // 对应的 Type
@@ -154,7 +148,7 @@ func NewWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	key := r.Header.Get("Sec-WebSocket-Key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadGateway)
-		return nil, errors.New("not found Sec-WebSocket-Key")
+		return nil, ErrorNoWebsocketKey
 	}
 	sha := sha1.New()
 
@@ -162,9 +156,8 @@ func NewWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	key = base64.StdEncoding.EncodeToString(sha.Sum(nil))
 	h, ok := w.(http.Hijacker)
 	if !ok {
-		w.Write([]byte("websocket: response does not implement http.Hijacker"))
-		xws.Err = errors.New("websocket: response does not implement http.Hijacker")
-		return nil, ErrorConnect
+		w.Write([]byte(ErrorRespose.Error()))
+		return nil, ErrorRespose
 	}
 	netConn, brw, err := h.Hijack()
 	if err != nil {
@@ -173,8 +166,7 @@ func NewWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	}
 
 	if brw.Reader.Buffered() > 0 {
-		netConn.Write([]byte("websocket: client sent data before handshake is complete"))
-		return nil, errors.New("websocket: client sent data before handshake is complete")
+		return nil, ErrorHandshake
 	}
 
 	header := "HTTP/1.1 101 Switching Protocols\r\n" +
@@ -185,7 +177,11 @@ func NewWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	// 升级为websocket
 	netConn.Write([]byte(header))
 	xws.Conn = netConn
-	go xws.HandleWsFunc()
+	// err = xws.HandleWsFunc()
+	// if err != nil {
+	// 	golog.Info(11111111)
+	// 	return nil, err
+	// }
 	return xws, nil
 }
 

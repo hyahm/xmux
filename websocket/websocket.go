@@ -79,10 +79,10 @@ func main() {
 	msgchan = make(chan client, 100)
 	ps = make(map[*xmux.BaseWs]byte)
 	router.SetHeader("Access-Control-Allow-Origin", "*")
-	router.Get("/ws", ws)
+	router.Get("/{int:uid}", ws)
 
 	go sendMsg()
-	if err := http.ListenAndServe(":7000", router); err != nil {
+	if err := http.ListenAndServe(":8282", router); err != nil {
 		log.Fatal(err)
 	}
 
