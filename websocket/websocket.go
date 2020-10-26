@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -53,16 +54,18 @@ func ws(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	for {
+		if p.Conn == nil {
+			return
+		}
 		// 封包
 		msgType, msg, err := p.ReadMessage()
 		if err != nil {
-			if err == xmux.ConnectClose || err == xmux.ErrorConnect {
-				// 连接断开
-				wsmu.Lock()
-				delete(ps, p)
-				wsmu.Unlock()
-				break
-			}
+			fmt.Println(err.Error())
+			// 连接断开
+			wsmu.Lock()
+			delete(ps, p)
+			wsmu.Unlock()
+			break
 		}
 		ps[p] = msgType
 		c := client{
@@ -82,7 +85,7 @@ func main() {
 	router.Get("/{int:uid}", ws)
 
 	go sendMsg()
-	if err := http.ListenAndServe(":8282", router); err != nil {
+	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatal(err)
 	}
 

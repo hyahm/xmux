@@ -11,8 +11,7 @@ import (
 	"net/http"
 )
 
-var ErrorConnect = errors.New("connect error")
-var ConnectClose = errors.New("connect closed")
+var ConnectClosed = errors.New("connect closed")
 var ErrorType = errors.New("type error")
 var ErrorGetLenth = errors.New("get length error")
 var ErrorGetMsg = errors.New("read data error")
@@ -27,7 +26,8 @@ type WsHandler interface {
 }
 
 type BaseWs struct {
-	Conn net.Conn
+	Conn       net.Conn
+	RemoteAddr string
 }
 
 // 对应的 Type
@@ -50,11 +50,13 @@ const (
 
 func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	//解包
+	if xws.Conn == nil {
+		return byte(0), "", ConnectClosed
+	}
 	lpack := make([]byte, 2)
 	_, err := io.ReadFull(xws.Conn, lpack)
 	if err != nil {
-		xws.Conn.Write([]byte("websocket: client sent data before handshake is complete"))
-		return byte(0), "", ErrorConnect
+		return byte(0), "", ErrorGetMsg
 	}
 
 	if lpack[0] == TypePing {
@@ -64,7 +66,9 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	if lpack[0] == TypeClose {
 		xws.Conn = nil
 		xws.SendMessage([]byte(""), TypePong)
-		return TypeClose, "", ConnectClose
+		xws.Conn.Close()
+		xws.Conn = nil
+		return TypeClose, "", ConnectClosed
 	}
 	// start := uint64(lpack[0] << 1)
 	// if start != 1 && start != 2 {
@@ -117,7 +121,7 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 
 func (xws *BaseWs) SendMessage(msg []byte, typ byte) error {
 	if xws.Conn == nil {
-		return ConnectClose
+		return ConnectClosed
 	}
 	var send []byte
 
@@ -142,6 +146,7 @@ func (xws *BaseWs) SendMessage(msg []byte, typ byte) error {
 }
 
 func UpgradeWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
+
 	// show num of goroutine
 	xws := &BaseWs{}
 	w.Header().Set("Content-Type", "text/plain")
@@ -177,6 +182,8 @@ func UpgradeWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	// 升级为websocket
 	netConn.Write([]byte(header))
 	xws.Conn = netConn
+	xws.RemoteAddr = r.RemoteAddr
+
 	// err = xws.HandleWsFunc()
 	// if err != nil {
 	// 	golog.Info(11111111)
