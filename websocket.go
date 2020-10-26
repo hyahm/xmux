@@ -64,7 +64,6 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 		return TypePing, "", nil
 	}
 	if lpack[0] == TypeClose {
-		xws.Conn = nil
 		xws.SendMessage([]byte(""), TypePong)
 		xws.Conn.Close()
 		xws.Conn = nil
@@ -142,6 +141,10 @@ func (xws *BaseWs) SendMessage(msg []byte, typ byte) error {
 	}
 	send = append(send, msg...)
 	_, err := xws.Conn.Write(send)
+	if err != nil {
+		xws.Conn.Close()
+		xws.Conn = nil
+	}
 	return err
 }
 

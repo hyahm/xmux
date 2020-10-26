@@ -47,7 +47,6 @@ func ws(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for {
 			<-tt.C
-			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
 			if err := p.SendMessage([]byte(time.Now().String()), xmux.TypeMsg); err != nil {
 				break
 			}
