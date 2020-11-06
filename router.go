@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -201,6 +202,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	} else {
 		for reUrl := range r.tpl {
 			re := regexp.MustCompile(reUrl)
+			req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
 				thisRoute, ok = r.tpl[reUrl][req.Method]
 				if !ok {
