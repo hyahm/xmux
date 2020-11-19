@@ -7,14 +7,15 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-var connections int
+var connections int32
 
 var Stop bool
 
-func GetConnents() int {
+func GetConnents() int32 {
 	return connections
 }
 
@@ -141,7 +142,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if Stop {
 		return
 	}
-	connections++
+	atomic.AddInt32(&connections, 1)
 	dataLock.Lock()
 	allconn[req] = &Data{
 		mu: &sync.RWMutex{},
@@ -151,7 +152,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		dataLock.Lock()
 		delete(allconn, req)
 		dataLock.Unlock()
-		connections--
+		atomic.AddInt32(&connections, -1)
 	}()
 	if r.Slash {
 		req.URL.Path = slash(req.URL.Path)

@@ -17,6 +17,7 @@
 - [x] 增加数据结构绑定， 适合模块间传递
 - [x] 增加websocket， 可以学习，不建议使用, 如果其他的不好可以试试  
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
+- [x] 支持代理（参考于:  https://github.com/ouqiang/goproxy）
 
 
 
@@ -353,3 +354,13 @@ BenchmarkMuxAlternativeInRegexp-8        1285495               939 ns/op        
 BenchmarkManyPathVariables-8               75098             16003 ns/op           10432 B/op        130 allocs/op
 ```
 
+
+###  代理使用
+```
+func main() {
+	# proxy 也是一个路由
+	proxy := NewProxy()
+	log.Fatal(http.ListenAndServe(":8080", proxy))
+}
+
+```
