@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 
@@ -59,7 +60,16 @@ func tttt(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	resp, err := cli.Do(req)
-	io.Copy(w, resp.Body)
+	if err != nil {
+		golog.Error(err)
+		return
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		golog.Error(err)
+		return
+	}
+	w.Write(b)
 	resp.Body.Close()
 }
 
