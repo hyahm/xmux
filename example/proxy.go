@@ -49,13 +49,12 @@ func conn(w http.ResponseWriter, r *http.Request) {
 
 func tttt(w http.ResponseWriter, r *http.Request) {
 	cli := &http.Client{}
-	req, err := http.NewRequest(r.Method, r.URL.Path, r.Body)
+	req, err := http.NewRequest(r.Method, r.URL.String(), r.Body)
 	if err != nil {
 		golog.Error(err)
 		return
 	}
 
-	golog.Info(r.URL.String())
 	for k, v := range r.Header {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
