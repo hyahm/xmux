@@ -47,7 +47,20 @@ func conn(w http.ResponseWriter, r *http.Request) {
 }
 
 func tttt(w http.ResponseWriter, r *http.Request) {
-	golog.Info("9999")
+	cli := &http.Client{}
+	req, err := http.NewRequest(r.Method, r.URL.Path, r.Body)
+	if err != nil {
+		golog.Error(err)
+		return
+	}
+	for k, v := range r.Header {
+		for _, vv := range v {
+			req.Header.Add(k, vv)
+		}
+	}
+	resp, err := cli.Do(req)
+	io.Copy(w, resp.Body)
+	resp.Body.Close()
 }
 
 func main() {
