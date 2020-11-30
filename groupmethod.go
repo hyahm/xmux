@@ -16,6 +16,10 @@ func (gr *GroupRoute) Post(pattern string, handler func(http.ResponseWriter, *ht
 	return gr.method(pattern, handler, http.MethodPost)
 }
 
+func (gr *GroupRoute) All(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+	return gr.method(pattern, handler, "*")
+}
+
 func (gr *GroupRoute) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return gr.method(pattern, handler, http.MethodGet)
 }

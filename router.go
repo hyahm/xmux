@@ -197,18 +197,26 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute, ok = r.route[req.URL.Path][req.Method]
 		if !ok {
-			r.HandleNotFound.ServeHTTP(w, req)
-			return
+			thisRoute, ok = r.route[req.URL.Path]["*"]
+			if !ok {
+				r.HandleNotFound.ServeHTTP(w, req)
+				return
+			}
 		}
 	} else {
 		for reUrl := range r.tpl {
+
 			re := regexp.MustCompile(reUrl)
 			req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
 				thisRoute, ok = r.tpl[reUrl][req.Method]
 				if !ok {
-					r.HandleNotFound.ServeHTTP(w, req)
-					return
+					thisRoute, ok = r.tpl[reUrl]["*"]
+					if !ok {
+						r.HandleNotFound.ServeHTTP(w, req)
+						return
+					}
+
 				}
 				ap := make(map[string]string, 0)
 				vl := re.FindStringSubmatch(req.URL.Path)

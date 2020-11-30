@@ -87,9 +87,11 @@ func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func main() {
+
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
 	// router.Get("/asdf/{name}", all)
+	router.All("{all:path}", all)
 	router.Post("/home", home)
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))

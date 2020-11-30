@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hyahm/golog"
 	"github.com/ouqiang/goproxy/cert"
 )
 
@@ -65,19 +67,21 @@ func NewProxy() *Proxy {
 
 // ServeHTTP 实现了http.Handler接口
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	golog.Info("----------------------------")
 	if r.URL.Host == "" {
 		r.URL.Host = r.Host
 	}
+	golog.Info(p.clientConnNum)
 	atomic.AddInt32(&p.clientConnNum, 1)
 	defer func() {
 		atomic.AddInt32(&p.clientConnNum, -1)
 	}()
-
+	golog.Info(r.Method)
 	switch {
 	case r.Method == http.MethodConnect:
-		forwardTunnel(w, r)
+		p.forwardTunnel(w, r)
 	default:
-		proxy(w, r)
+		p.proxy(w, r)
 	}
 }
 
@@ -132,15 +136,20 @@ var hopHeaders = []string{
 	"Upgrade",
 }
 
-func forwardTunnel(w http.ResponseWriter, r *http.Request) {
+func (p *Proxy) forwardTunnel(w http.ResponseWriter, r *http.Request) {
+	for k, v := range r.Header {
+		golog.Info(k, ": ", v)
+	}
 	clientConn, err := hijacker(w)
 	if err != nil {
+		golog.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
 	defer clientConn.Close()
 	parentProxyURL, err := http.ProxyFromEnvironment(r)
 	if err != nil {
+		golog.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
@@ -148,9 +157,11 @@ func forwardTunnel(w http.ResponseWriter, r *http.Request) {
 	if parentProxyURL != nil {
 		targetAddr = parentProxyURL.Host
 	}
-
-	targetConn, err := net.DialTimeout("tcp", targetAddr, defaultTargetConnectTimeout)
+	golog.Info(targetAddr)
+	golog.Info(net.DefaultResolver.LookupNS(context.Background(), strings.Split(targetAddr, ":")[0]))
+	targetConn, err := net.Dial("tcp", targetAddr)
 	if err != nil {
+		golog.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
@@ -158,6 +169,7 @@ func forwardTunnel(w http.ResponseWriter, r *http.Request) {
 	if parentProxyURL == nil {
 		_, err = clientConn.Write(tunnelEstablishedResponseLine)
 		if err != nil {
+			golog.Error(err)
 			return
 		}
 	} else {
@@ -165,25 +177,36 @@ func forwardTunnel(w http.ResponseWriter, r *http.Request) {
 		targetConn.Write([]byte(tunnelRequestLine))
 	}
 
-	transfer(clientConn, targetConn)
+	p.transfer(clientConn, targetConn)
 }
 
 func makeTunnelRequestLine(addr string) string {
 	return fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", addr)
 }
 
-func transfer(src net.Conn, dst net.Conn) {
+func (p *Proxy) transfer(src net.Conn, dst net.Conn) {
 	go func() {
-		io.Copy(src, dst)
-		src.Close()
-		dst.Close()
-	}()
+		for {
+			_, err := io.Copy(src, dst)
+			if err != nil {
+				break
+			}
+			src.Close()
+			dst.Close()
+		}
 
-	io.Copy(dst, src)
-	dst.Close()
-	src.Close()
+	}()
+	for {
+		_, err := io.Copy(dst, src)
+		if err != nil {
+			break
+		}
+		dst.Close()
+		src.Close()
+	}
+
 }
-func proxy(w http.ResponseWriter, r *http.Request) {
+func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	newReq := &http.Request{}
 	*newReq = *r
 	newReq.Header = CloneHeader(newReq.Header)

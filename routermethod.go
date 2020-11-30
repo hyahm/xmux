@@ -16,6 +16,10 @@ func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Re
 	return r.method(pattern, handler, http.MethodPost)
 }
 
+func (r *Router) All(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+	return r.method(pattern, handler, "*")
+}
+
 func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.method(pattern, handler, http.MethodGet)
 }
