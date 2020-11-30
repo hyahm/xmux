@@ -54,7 +54,8 @@ func tttt(w http.ResponseWriter, r *http.Request) {
 		golog.Error(err)
 		return
 	}
-	golog.Info(r.URL.RequestURI())
+
+	golog.Info(r.URL.String())
 	for k, v := range r.Header {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
