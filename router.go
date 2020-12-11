@@ -9,6 +9,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hyahm/golog"
 )
 
 var connections int32
@@ -292,7 +294,13 @@ endloop:
 	if thisRoute.midware != nil {
 		thisRoute.midware(thisRoute.handle.ServeHTTP, w, req)
 	} else {
-		thisRoute.handle.ServeHTTP(w, req)
+		golog.Info(*thisRoute)
+		golog.Info(thisRoute.handle)
+		// golog.Info(thisRoute.handle.(http.HandlerFunc) != nil)
+		if thisRoute.handle.(http.HandlerFunc) != nil {
+			thisRoute.handle.ServeHTTP(w, req)
+		}
+
 	}
 	// thisRoute.handle.ServeHTTP(w, req)
 

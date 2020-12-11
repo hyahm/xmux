@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -47,10 +48,6 @@ func Start(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-type aaa struct {
-	Age int
-}
-
 type bbb struct {
 	Name string
 }
@@ -81,13 +78,24 @@ func api(w http.ResponseWriter, r *http.Request) {
 	w.Write(c.Marshal())
 }
 
+type aaa struct {
+	A int
+	B int
+}
+
 func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
-	w.Write([]byte("hello world"))
-	return false
+	a := &aaa{
+		A: 10,
+		B: 20,
+	}
+	if err := xmux.HTML(w, `<html><head><title>{{ .A }}</title></head><body><h1>{{ .B }}</h1></body></html>`, a); err != nil {
+		log.Fatal(err)
+	}
+	// w.Write([]byte("hello world"))
+	return true
 }
 
 func main() {
-
 	router := xmux.NewRouter()
 	router.SetHeader("Content-Type", "aaa")
 	// router.Get("/asdf/{name}", all)
@@ -129,7 +137,7 @@ func main() {
 	doc := router.ShowApi("/docs")
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	fmt.Println("-----------------------")
-	router.DebugRoute()
+	// router.DebugRoute()
 	router.Run()
 
 }
