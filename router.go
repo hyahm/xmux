@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -265,7 +266,7 @@ endloop:
 	for _, v := range thisRoute.delmodule {
 		tmp := make([]func(http.ResponseWriter, *http.Request) bool, len(tmpModule)-1)
 		for i, tmd := range tmpModule {
-			if CompareFunc(v, tmd) {
+			if compareFunc(v, tmd) {
 				copy(tmp[i:], tmpModule[i+1:])
 				break
 			}
@@ -311,6 +312,7 @@ func (r *Router) Run(opt ...string) error {
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
+	fmt.Println("listen on http://0.0.0.0:8080")
 	return srv.ListenAndServe()
 }
 

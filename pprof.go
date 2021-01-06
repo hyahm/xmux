@@ -19,20 +19,20 @@ import (
 )
 
 func (r *Router) Pprof() *GroupRoute {
-	debug := NewGroupRoute()
-	debug.Get("/debug/pprof/", Index)
-	debug.Get("/debug/pprof/{name}", Debug)
-	debug.Get("/debug/pprof/cmdline", Cmdline)
-	debug.Get("/debug/pprof/profile", Profile)
-	debug.Get("/debug/pprof/symbol", Symbol)
-	debug.Get("/debug/pprof/trace", Trace)
-	return debug
+	pprof := NewGroupRoute()
+	pprof.Get("/debug/pprof/", index)
+	pprof.Get("/debug/pprof/{name}", debug)
+	pprof.Get("/debug/pprof/cmdline", cmdline)
+	pprof.Get("/debug/pprof/profile", profile)
+	pprof.Get("/debug/pprof/symbol", symbol)
+	pprof.Get("/debug/pprof/trace", tra)
+	return pprof
 }
 
 // Cmdline responds with the running program's
 // command line, with arguments separated by NUL bytes.
 // The package initialization registers it as /debug/pprof/cmdline.
-func Cmdline(w http.ResponseWriter, r *http.Request) {
+func cmdline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	fmt.Fprintf(w, strings.Join(os.Args, "\x00"))
@@ -65,7 +65,7 @@ func serveError(w http.ResponseWriter, status int, txt string) {
 // Profile responds with the pprof-formatted cpu profile.
 // Profiling lasts for duration specified in seconds GET parameter, or for 30 seconds if not specified.
 // The package initialization registers it as /debug/pprof/profile.
-func Profile(w http.ResponseWriter, r *http.Request) {
+func profile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	sec, err := strconv.ParseInt(r.FormValue("seconds"), 10, 64)
 	if sec <= 0 || err != nil {
@@ -94,7 +94,7 @@ func Profile(w http.ResponseWriter, r *http.Request) {
 // Trace responds with the execution trace in binary form.
 // Tracing lasts for duration specified in seconds GET parameter, or for 1 second if not specified.
 // The package initialization registers it as /debug/pprof/trace.
-func Trace(w http.ResponseWriter, r *http.Request) {
+func tra(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	sec, err := strconv.ParseFloat(r.FormValue("seconds"), 64)
 	if sec <= 0 || err != nil {
@@ -123,7 +123,7 @@ func Trace(w http.ResponseWriter, r *http.Request) {
 // Symbol looks up the program counters listed in the request,
 // responding with a table mapping program counters to function names.
 // The package initialization registers it as /debug/pprof/symbol.
-func Symbol(w http.ResponseWriter, r *http.Request) {
+func symbol(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
@@ -176,7 +176,7 @@ func Symbol(w http.ResponseWriter, r *http.Request) {
 
 // type handler string
 
-func Debug(w http.ResponseWriter, r *http.Request) {
+func debug(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	name := Var(r)["name"]
 	p := pprof.Lookup(name)
@@ -214,7 +214,7 @@ var profileDescriptions = map[string]string{
 // For example, "/debug/pprof/heap" serves the "heap" profile.
 // Index responds to a request for "/debug/pprof/" with an HTML page
 // listing the available profiles.
-func Index(w http.ResponseWriter, r *http.Request) {
+func index(w http.ResponseWriter, r *http.Request) {
 	// if strings.HasPrefix(r.URL.Path, "/debug/pprof/") {
 	// 	name := Var(r)["name"]
 	// 	if name != "" {

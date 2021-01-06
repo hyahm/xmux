@@ -5,14 +5,12 @@ import (
 )
 
 const (
-	STRING = "([^\\/]+)"
-	WORD   = "(\\w+)"
-	INT    = "(\\d+)"
-	ALL    = "(.*?)"
-	SEP    = ","
+	str      = "([^\\/]+)"
+	word     = "(\\w+)"
+	interger = "(\\d+)"
+	all      = "(.*?)"
+	sep      = ","
 )
-
-var DEFALT = STRING
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
@@ -101,7 +99,7 @@ func macheOne(path string) (string, []string) {
 			// 没有:
 			opt := strings.Trim(ts[0], " ")
 			varlist = append(varlist, opt)
-			return head + DEFALT + tail, varlist
+			return head + str + tail, varlist
 		case 2:
 			// 一个:
 			// 判断类型
@@ -111,16 +109,16 @@ func macheOne(path string) (string, []string) {
 			varlist = append(varlist, opt)
 			switch typ {
 			case "int":
-				return head + INT + tail, varlist
+				return head + interger + tail, varlist
 			case "word":
-				return head + WORD + tail, varlist
+				return head + word + tail, varlist
 			case "all":
-				return head + ALL + tail, varlist
+				return head + all + tail, varlist
 			case "string":
-				return head + STRING + tail, varlist
+				return head + str + tail, varlist
 			default:
 				// 默认使用path匹配
-				return head + DEFALT + tail, varlist
+				return head + str + tail, varlist
 			}
 
 		case 3:
@@ -128,7 +126,7 @@ func macheOne(path string) (string, []string) {
 			// 参数必须是re， 如果不是。 默认改成re
 			typ := strings.Trim(ts[0], " ")
 			typ = strings.ToLower(typ)
-			opts := strings.Split(ts[2], SEP)
+			opts := strings.Split(ts[2], sep)
 			for _, opt := range opts {
 				opt = strings.Trim(opt, " ")
 				varlist = append(varlist, opt)

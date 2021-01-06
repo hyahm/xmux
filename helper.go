@@ -5,7 +5,7 @@ import (
 	"runtime"
 )
 
-func CompareFunc(f1 interface{}, f2 interface{}) bool {
+func compareFunc(f1 interface{}, f2 interface{}) bool {
 	if reflect.TypeOf(f1).Kind() != reflect.Func {
 		return false
 	}

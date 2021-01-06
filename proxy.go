@@ -114,7 +114,7 @@ func removeConnectionHeaders(h http.Header) {
 }
 
 // CloneHeader 深拷贝Header
-func CloneHeader(h http.Header) http.Header {
+func cloneHeader(h http.Header) http.Header {
 	h2 := make(http.Header, len(h))
 	for k, vv := range h {
 		vv2 := make([]string, len(vv))
@@ -209,7 +209,7 @@ func (p *Proxy) transfer(src net.Conn, dst net.Conn) {
 func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	newReq := &http.Request{}
 	*newReq = *r
-	newReq.Header = CloneHeader(newReq.Header)
+	newReq.Header = cloneHeader(newReq.Header)
 	removeConnectionHeaders(newReq.Header)
 	for _, item := range hopHeaders {
 		if newReq.Header.Get(item) != "" {
@@ -229,13 +229,13 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	CopyHeader(w.Header(), resp.Header)
+	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
 // CopyHeader 浅拷贝Header
-func CopyHeader(dst, src http.Header) {
+func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
 		for _, v := range vv {
 			dst.Add(k, v)

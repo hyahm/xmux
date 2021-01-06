@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
@@ -83,20 +82,21 @@ type aaa struct {
 	B int
 }
 
-func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
-	a := &aaa{
-		A: 10,
-		B: 20,
-	}
-	if err := xmux.HTML(w, `<html><head><title>{{ .A }}</title></head><body><h1>{{ .B }}</h1></body></html>`, a); err != nil {
-		log.Fatal(err)
-	}
-	// w.Write([]byte("hello world"))
-	return true
-}
+// func NoHandleModule(w http.ResponseWriter, r *http.Request) bool {
+// 	a := &aaa{
+// 		A: 10,
+// 		B: 20,
+// 	}
+// 	if err := xmux.HTML(w, `<html><head><title>{{ .A }}</title></head><body><h1>{{ .B }}</h1></body></html>`, a); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// w.Write([]byte("hello world"))
+// 	return true
+// }
 
 func main() {
 	router := xmux.NewRouter()
+
 	router.SetHeader("Content-Type", "aaa")
 	// router.Get("/asdf/{name}", all)
 	router.All("{all:path}", all)
@@ -129,7 +129,6 @@ func main() {
 	user.ApiCodeMsg("78", "你是78")
 	user.ApiCodeMsg("0", "成功")
 	user.Post("/api", api)
-	user.Get("/no/handle", nil).AddModule(NoHandleModule)
 	user.Get("/bbb/ccc/{int:oid}/{string:all}", all)
 
 	router.AddGroup(user)
