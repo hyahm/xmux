@@ -181,6 +181,21 @@ func GetExecTime(handle func(http.ResponseWriter, *http.Request), w http.Respons
 
 ```
 
+### 跨域处理
+跨域主要是添加请求头的问题, 其余框架一般都是借助中间件来设置   
+但是本路由借助上面请求头设置 大大简化跨域配置  
+
+```
+func main() {
+	router := xmux.NewRouter()
+	router.Slash = true
+	router.SetHeader("Access-Control-Allow-Origin", "*")  // 主要的解决跨域, 因为是全局的请求头， 所以后面增加的路由全部支持跨域
+	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,Access-Token,X-Token,Origin,smail,authorization")  // 新增加的请求头
+	router.Get("/", index)
+	router.Run()
+}
+
+```
 
 ### 适合在当前handle 的 module， 中间件， handle 传递值   
 > 生命周期从定义开始， 到此handle执行完毕将被释放
