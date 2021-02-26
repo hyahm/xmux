@@ -235,7 +235,9 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 endloop:
 	if thisRoute.dataSource != nil {
+		dataLock.RLock()
 		allconn[req].Data = thisRoute.dataSource
+		dataLock.RUnlock()
 	}
 
 	// 全局的请求头
