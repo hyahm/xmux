@@ -117,7 +117,9 @@ func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool)
 func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
 
 	if route.dataSource != nil {
+		dataLock.RLock()
 		allconn[req].Data = route.dataSource
+		dataLock.RUnlock()
 	}
 
 	for k, v := range route.Header {
