@@ -316,7 +316,7 @@ func (r *Router) Run(opt ...string) error {
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
-	fmt.Println("listen on http://0.0.0.0:8080")
+	fmt.Printf("listen on %s\n", addr)
 	return srv.ListenAndServe()
 }
 
