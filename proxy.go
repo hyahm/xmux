@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net"
@@ -10,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hyahm/golog"
 	"github.com/ouqiang/goproxy/cert"
 )
 
@@ -67,16 +65,13 @@ func NewProxy() *Proxy {
 
 // ServeHTTP 实现了http.Handler接口
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	golog.Info("----------------------------")
 	if r.URL.Host == "" {
 		r.URL.Host = r.Host
 	}
-	golog.Info(p.clientConnNum)
 	atomic.AddInt32(&p.clientConnNum, 1)
 	defer func() {
 		atomic.AddInt32(&p.clientConnNum, -1)
 	}()
-	golog.Info(r.Method)
 	switch {
 	case r.Method == http.MethodConnect:
 		p.forwardTunnel(w, r)
@@ -137,19 +132,15 @@ var hopHeaders = []string{
 }
 
 func (p *Proxy) forwardTunnel(w http.ResponseWriter, r *http.Request) {
-	for k, v := range r.Header {
-		golog.Info(k, ": ", v)
-	}
+
 	clientConn, err := hijacker(w)
 	if err != nil {
-		golog.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
 	defer clientConn.Close()
 	parentProxyURL, err := http.ProxyFromEnvironment(r)
 	if err != nil {
-		golog.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
@@ -157,11 +148,8 @@ func (p *Proxy) forwardTunnel(w http.ResponseWriter, r *http.Request) {
 	if parentProxyURL != nil {
 		targetAddr = parentProxyURL.Host
 	}
-	golog.Info(targetAddr)
-	golog.Info(net.DefaultResolver.LookupNS(context.Background(), strings.Split(targetAddr, ":")[0]))
 	targetConn, err := net.Dial("tcp", targetAddr)
 	if err != nil {
-		golog.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
@@ -169,7 +157,6 @@ func (p *Proxy) forwardTunnel(w http.ResponseWriter, r *http.Request) {
 	if parentProxyURL == nil {
 		_, err = clientConn.Write(tunnelEstablishedResponseLine)
 		if err != nil {
-			golog.Error(err)
 			return
 		}
 	} else {

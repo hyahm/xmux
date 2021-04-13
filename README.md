@@ -237,21 +237,17 @@ func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
 	if goconfig.ReadBool("debug", false) {
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			golog.Error(err)
 			w.Write(resp.ErrorE(err))
 			return true
 		}
-		golog.Info(string(b))
 		err = json.Unmarshal(b, xmux.GetData(r).Data)
 		if err != nil {
-			golog.Error(err)
 			w.Write(resp.ErrorE(err))
 			return true
 		}
 	} else {
 		err := json.NewDecoder(r.Body).Decode(xmux.GetData(r).Data)
 		if err != nil {
-			golog.Error(err)
 			w.Write(resp.ErrorE(err))
 			return true
 		}

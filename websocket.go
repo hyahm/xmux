@@ -187,11 +187,6 @@ func UpgradeWebSocket(w http.ResponseWriter, r *http.Request) (*BaseWs, error) {
 	xws.Conn = netConn
 	xws.RemoteAddr = r.RemoteAddr
 
-	// err = xws.HandleWsFunc()
-	// if err != nil {
-	// 	golog.Info(11111111)
-	// 	return nil, err
-	// }
 	return xws, nil
 }
 

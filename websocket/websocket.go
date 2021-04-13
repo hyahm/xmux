@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -28,7 +27,7 @@ func sendMsg() {
 				// 不发给自己
 				continue
 			}
-			golog.Info(c.msg)
+			fmt.Println(c.msg)
 			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
 			p.SendMessage([]byte(c.msg), ps[p])
 		}
