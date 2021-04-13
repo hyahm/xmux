@@ -27,8 +27,8 @@ func me(w http.ResponseWriter, r *http.Request) {
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
+	time.Sleep(2 * time.Second)
 	w.Write([]byte("hello world all"))
-	return
 }
 
 func login(w http.ResponseWriter, r *http.Request) bool {
@@ -99,11 +99,10 @@ func main() {
 
 	router.SetHeader("Content-Type", "aaa")
 	// router.Get("/asdf/{name}", all)
-	router.All("{all:path}", all)
+	router.All("{all:path}", all).MiddleWare(xmux.GetExecTime)
 	router.Post("/home", home)
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
-		return
 	})
 	router.Get("/home", home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
@@ -114,15 +113,6 @@ func main() {
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
 		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "").MiddleWare(xmux.GetExecTime)
-
-	// router.Post("/cut", func(w http.ResponseWriter, r *http.Request) {
-	// 	a := struct {
-	// 		Code int    `json:"code"`
-	// 		Msg  string `json:"msg"`
-	// 	}{}
-	// 	send, _ := json.Marshal(a)
-	// 	w.Write(send)
-	// })
 
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
 	user.ApiCodeMsg("98", "你是98")
@@ -137,6 +127,6 @@ func main() {
 	router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	fmt.Println("-----------------------")
 	// router.DebugRoute()
-	router.Run()
+	router.Run(":8888")
 
 }
