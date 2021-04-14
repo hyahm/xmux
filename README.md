@@ -19,7 +19,27 @@
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
 - [x] 支持代理（参考于:  https://github.com/ouqiang/goproxy）
 
+### 最简单的运行
+```
+package main
 
+import (
+	"net/http"
+
+	"github.com/hyahm/xmux"
+)
+
+func main() {
+	router := xmux.NewRouter()
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("<h1>hello world!<h1>"))
+	})
+	router.Run()
+}
+
+```
+
+打开 localhost:8080 就能看到 hello world!
 
 ### 添加了组的概念
 
