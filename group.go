@@ -1,7 +1,9 @@
 package xmux
 
 import (
+	"log"
 	"net/http"
+	"reflect"
 )
 
 //
@@ -189,4 +191,55 @@ func (g *GroupRoute) appendVarToRoute() {
 		}
 	}
 
+}
+
+// 组路由添加到组路由
+func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
+	// 将路由的所有变量全部移交到route
+	if group.pattern == nil && group.route == nil {
+		return nil
+	}
+	if g.header == nil {
+		g.header = make(map[string]string)
+	}
+	if g.pattern == nil {
+		g.pattern = make(map[string][]string)
+	}
+	if g.route == nil {
+		g.route = make(map[string]MethodsRoute)
+	}
+	if g.tpl == nil {
+		g.tpl = make(map[string]MethodsRoute)
+	}
+	if g.midware != nil && !reflect.DeepEqual(group.delmidware, g.midware) && group.midware == nil {
+		group.midware = g.midware
+	}
+	for url, args := range group.pattern {
+		g.pattern[url] = args
+
+		if len(args) == 0 {
+			for m := range group.route[url] {
+				if _, ok := g.route[url][m]; ok {
+					log.Fatalf("%s %s is Duplication", url, m)
+				}
+				merge(group, group.route[url][m])
+			}
+			g.route[url] = group.route[url]
+
+		} else {
+			for m := range group.tpl[url] {
+				if _, ok := g.tpl[url][m]; ok {
+					log.Fatalf("%s %s is Duplication", url, m)
+				}
+
+				merge(group, group.tpl[url][m])
+
+			}
+
+			g.tpl[url] = group.tpl[url]
+
+		}
+
+	}
+	return g
 }

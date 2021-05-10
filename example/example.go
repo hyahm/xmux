@@ -51,11 +51,6 @@ type bbb struct {
 	Name string
 }
 
-type Home struct {
-	Addr   string `json:"addr" type:"string" need:"是" default:"深圳" information:"家庭住址"`
-	People int    `json:"people" type:"int" need:"是" default:"1" information:"有多少个人"`
-}
-
 type Call struct {
 	Code int    `json:"code" type:"int" need:"是" information:"错误返回码"`
 	Msg  string `json:"msg" type:"string" need:"是" information:"错误信息"`
@@ -107,7 +102,6 @@ func main() {
 	router.Get("/home", home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
-		ApiReqStruct(&Home{}).
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
