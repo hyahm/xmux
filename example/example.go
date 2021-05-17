@@ -88,24 +88,27 @@ type aaa struct {
 // 	// w.Write([]byte("hello world"))
 // 	return true
 // }
+// func HandleNotFound() http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Add("Access-Control-Allow-Origin", "*")
+// 		w.WriteHeader(http.StatusNotFound)
+// 	})
+// }
 
 func main() {
 	router := xmux.NewRouter()
-
+	// router.HandleNotFound = HandleNotFound()
 	router.SetHeader("Content-Type", "aaa")
-	// router.Get("/asdf/{name}", all)
-	router.All("{all:path}", all).MiddleWare(xmux.GetExecTime)
 	router.Post("/home", home)
-	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("not found this url in server, url: " + r.URL.Path))
-	})
+	// router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("not found this url in server, url: " + r.URL.Path))
+	// })
 	router.Get("/home", home).ApiCreateGroup("home", "showthis home", "hometest").SetHeader("Content-Type", "bbbb").
 		ApiDescribe("这是home接口的测试").
 		ApiReqHeader("content-type", "application/json").
 		ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).
 		ApiResStruct(Call{}).
 		ApiResponseTemplate(`{"code": 0, "msg": ""}`).
-		ApiSupplement("这个是接口的说明补充， 没补充就不填").Bind(&Home{}).AddModule(login).
 		ApiCodeField("133").ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl").ApiDelReqHeader("aaaa").ApiCodeMsg("78", "").MiddleWare(xmux.GetExecTime)
 
 	user := xmux.NewGroupRoute().ApiReqHeader("aaaa", "bbbb")
