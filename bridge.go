@@ -22,21 +22,21 @@ func init() {
 }
 
 func GetData(r *http.Request) *Data {
-
 	if r == nil {
 		return nil
 	}
-	dataLock.Lock()
-	defer dataLock.Unlock()
-	return allconn[r]
+	dataLock.RLock()
+	defer dataLock.RUnlock()
+	if v, ok := allconn[r]; ok {
+		return v
+	}
+	return nil
 }
 
 func (data *Data) Set(k string, v interface{}) {
 	if data.ctx == nil {
-		data.mu = &sync.RWMutex{}
-	}
-	if data.ctx == nil {
 		data.ctx = make(map[string]interface{})
+		data.mu = &sync.RWMutex{}
 	}
 
 	data.mu.Lock()

@@ -227,9 +227,14 @@ func filter(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func name(w http.ResponseWriter, r *http.Request) {\
-	name := xmux.GetData(r).Get("name").(string)
-	w.Write([]byte("hello world " + value))
+func name(w http.ResponseWriter, r *http.Request) {
+	var name string
+	gd := xmux.GetData(r)
+	if gd != nil {
+		name= gd.Get("name").(string)
+	}
+	 
+	w.Write([]byte("hello world " + name))
 	return
 }
 router.Pattern("/aaa/{name}").Get(name).AddModule(filter).AddModule(login)
