@@ -72,8 +72,7 @@ func homeDoc(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Write([]byte(err.Error()))
 	}
-	return
-
+	w.WriteHeader(http.StatusOK)
 }
 
 func testdoc(w http.ResponseWriter, r *http.Request) {
@@ -83,10 +82,12 @@ func testdoc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(send)
-	return
 }
 
 func (r *Router) ShowApi(pattern string) *GroupRoute {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	api := NewGroupRoute()
 	NewDocs(r)
 	api.Get("/-/js/{name}.js", js).SetHeader("Content-Type", "application/javascript; charset=utf8")

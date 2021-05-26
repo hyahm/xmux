@@ -6,6 +6,7 @@ import (
 
 // 这是 pattern 对应的
 // 这是路径对应的各种方法
+// api文档的操作
 type PatternMR map[string]MethodsRoute
 
 func (ptn PatternMR) Add(url string, rt MethodsRoute) {

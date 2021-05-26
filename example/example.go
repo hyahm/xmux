@@ -37,13 +37,13 @@ func login(w http.ResponseWriter, r *http.Request) bool {
 		w.Write([]byte("not found data"))
 		return true
 	}
-	err = json.Unmarshal(b, xmux.GetData(r).Data)
+	err = json.Unmarshal(b, xmux.GetInstance(r).Data)
 	return false
 }
 
 func Start(w http.ResponseWriter, r *http.Request) bool {
 	r.Header.Set("bbb", "ccc")
-	xmux.GetData(r).Set("start", time.Now())
+	xmux.GetInstance(r).Set("start", time.Now())
 	return false
 }
 

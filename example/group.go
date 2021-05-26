@@ -14,7 +14,7 @@ func test(w http.ResponseWriter, r *http.Request) bool {
 
 func Admin() *xmux.GroupRoute {
 	admin := xmux.NewGroupRoute()
-	xmux.GetData()
+
 	admin.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("admin"))
 	})

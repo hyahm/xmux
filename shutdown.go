@@ -5,8 +5,9 @@ import (
 	"time"
 )
 
+// 平滑停止http
 func ShutDown() {
-	Stop = true
+	stop = true
 	for GetConnents() > 0 {
 		time.Sleep(time.Millisecond * 10)
 	}

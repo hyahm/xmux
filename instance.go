@@ -5,23 +5,23 @@ import (
 	"sync"
 )
 
-// bridge  数据二次封装
+// instance  数据二次封装, 用户各模块之间的数据传递
 
-type Data struct {
+type FlowData struct {
 	Data interface{}            // 处理后的数据
 	ctx  map[string]interface{} // 用来传递自定义值
 	mu   *sync.RWMutex
 }
 
-var allconn map[*http.Request]*Data
+var allconn map[*http.Request]*FlowData
 var dataLock *sync.RWMutex
 
 func init() {
-	allconn = make(map[*http.Request]*Data)
+	allconn = make(map[*http.Request]*FlowData)
 	dataLock = &sync.RWMutex{}
 }
 
-func GetData(r *http.Request) *Data {
+func GetInstance(r *http.Request) *FlowData {
 	if r == nil {
 		return nil
 	}
@@ -33,10 +33,9 @@ func GetData(r *http.Request) *Data {
 	return nil
 }
 
-func (data *Data) Set(k string, v interface{}) {
+func (data *FlowData) Set(k string, v interface{}) {
 	if data.ctx == nil {
 		data.ctx = make(map[string]interface{})
-		data.mu = &sync.RWMutex{}
 	}
 
 	data.mu.Lock()
@@ -44,19 +43,19 @@ func (data *Data) Set(k string, v interface{}) {
 	data.mu.Unlock()
 }
 
-func (data *Data) Get(k string) interface{} {
+func (data *FlowData) Get(k string) interface{} {
 	if data.ctx == nil {
 		return nil
 	}
 	data.mu.RLock()
 	defer data.mu.RUnlock()
-	return data.ctx[k]
+	if v, ok := data.ctx[k]; ok {
+		return v
+	}
+	return nil
 }
 
-func (data *Data) Del(k string) {
-	if data.ctx == nil {
-		return
-	}
+func (data *FlowData) Del(k string) {
 	data.mu.Lock()
 	delete(data.ctx, k)
 	data.mu.Unlock()

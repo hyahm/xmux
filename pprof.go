@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
@@ -19,6 +18,9 @@ import (
 )
 
 func (r *Router) Pprof() *GroupRoute {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	pprof := NewGroupRoute()
 	pprof.Get("/debug/pprof/", index)
 	pprof.Get("/debug/pprof/{name}", debug)
@@ -35,7 +37,6 @@ func (r *Router) Pprof() *GroupRoute {
 func cmdline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, strings.Join(os.Args, "\x00"))
 }
 
 func sleep(w http.ResponseWriter, d time.Duration) {

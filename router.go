@@ -10,22 +10,14 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/hyahm/golog"
 )
 
 var connections int32
 
-var Stop bool
+var stop bool
 
 func GetConnents() int32 {
 	return connections
-}
-
-type reroute struct {
-	R      *Route
-	name   []string // 保存的变量名
-	header map[string]string
 }
 
 type rt struct {
@@ -37,23 +29,27 @@ type rt struct {
 }
 
 type Router struct {
+	new            bool // 判断是否是通过newRouter 来初始化的
 	ReadTimeout    time.Duration
 	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
 	HanleFavicon   http.Handler
 	DisableOption  bool         // 禁止全局option
 	HandleOptions  http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound http.Handler
-	Slash          bool
+	Slash          bool                                            // 忽略地址多个斜杠， 默认不忽略
 	route          PatternMR                                       // 单实例路由， 组路由最后也会合并过来
 	tpl            PatternMR                                       // 正则路由， 组路由最后也会合并过来
 	pattern        map[string][]string                             // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string                               // 全局路由头
 	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
-	routeTable     cacheTable                                      // 路由表
+	routeTable     *cacheTable                                     // 路由表
 	midware        func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
 
 func (r *Router) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Router {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	r.midware = midware
 	return r
 }
@@ -62,15 +58,8 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
 
-	if r.routeTable == nil {
-		r.routeTable = make(map[string]*rt)
-	}
 	if r.Slash {
 		pattern = slash(pattern)
-	}
-
-	if r.pattern == nil {
-		r.pattern = make(map[string][]string)
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
@@ -101,14 +90,17 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
-	if r.header == nil {
-		r.header = map[string]string{}
+	if !r.new {
+		panic("must be use get router by NewRouter()")
 	}
 	r.header[k] = v
 	return r
 }
 
 func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool) *Router {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	if r.module == nil {
 		r.module = make([]func(http.ResponseWriter, *http.Request) bool, 0)
 	}
@@ -144,12 +136,15 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if Stop {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	if stop {
 		return
 	}
 	atomic.AddInt32(&connections, 1)
 	dataLock.Lock()
-	allconn[req] = &Data{
+	allconn[req] = &FlowData{
 		mu: &sync.RWMutex{},
 	}
 	dataLock.Unlock()
@@ -198,7 +193,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
-	golog.Info(111)
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute, ok = r.route[req.URL.Path][req.Method]
 		if !ok {
@@ -209,7 +203,6 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	} else {
-		golog.Info(111)
 		for reUrl := range r.tpl {
 
 			re := regexp.MustCompile(reUrl)
@@ -233,7 +226,6 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 				goto endloop
 			}
 		}
-		golog.Info(111)
 		r.HandleNotFound.ServeHTTP(w, req)
 		return
 	}
@@ -300,12 +292,13 @@ endloop:
 		if thisRoute.handle.(http.HandlerFunc) != nil {
 			thisRoute.handle.ServeHTTP(w, req)
 		}
-
 	}
-
 }
 
 func (r *Router) Run(opt ...string) error {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	addr := ":8080"
 	if len(opt) > 0 {
 		addr = opt[0]
@@ -320,6 +313,9 @@ func (r *Router) Run(opt ...string) error {
 }
 
 func (r *Router) RunTLS(crt, key string, opt ...string) error {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	addr := ":443"
 	if len(opt) > 0 {
 		addr = opt[0]
@@ -334,8 +330,12 @@ func (r *Router) RunTLS(crt, key string, opt ...string) error {
 
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco:      true,
-		routeTable:     make(map[string]*rt),
+		new:       true,
+		IgnoreIco: true,
+		routeTable: &cacheTable{
+			cache: make(map[string]*rt),
+			mu:    &sync.RWMutex{},
+		},
 		header:         map[string]string{},
 		pattern:        make(map[string][]string),
 		HanleFavicon:   handleFavicon(),
@@ -353,7 +353,6 @@ func handleNotFound() http.Handler {
 
 func handleOptions() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		w.WriteHeader(http.StatusOK)
 	})
 }
@@ -367,16 +366,14 @@ func handleFavicon() http.Handler {
 
 // 组路由添加到router
 func (r *Router) AddGroup(group *GroupRoute) *Router {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	// 将路由的所有变量全部移交到route
 	if group.pattern == nil && group.route == nil {
 		return nil
 	}
-	if r.header == nil {
-		r.header = make(map[string]string)
-	}
-	if r.pattern == nil {
-		r.pattern = make(map[string][]string)
-	}
+
 	if r.route == nil {
 		r.route = make(map[string]MethodsRoute)
 	}
@@ -531,6 +528,9 @@ func merge(group *GroupRoute, route *Route) {
 }
 
 func (r *Router) DebugRoute() {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	for url, mr := range r.route {
 		for k, v := range mr {
 			log.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)
@@ -540,6 +540,9 @@ func (r *Router) DebugRoute() {
 }
 
 func (r *Router) DebugTpl() {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
 	for url, mr := range r.tpl {
 		for k, v := range mr {
 			log.Printf("url: %s, method: %s, header: %+v\n", url, k, v.header)

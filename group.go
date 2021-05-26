@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-//
+// 服务启动前的操作， 所以里面的map 都是单线程不需要加锁的
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
 	route      PatternMR // 路由对应的methodsroute
@@ -26,8 +26,6 @@ type GroupRoute struct {
 	midware    func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 	delmidware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
-
-var reUrl map[string]*reroute
 
 func NewGroupRoute() *GroupRoute {
 	return &GroupRoute{
