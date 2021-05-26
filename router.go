@@ -10,6 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hyahm/golog"
 )
 
 var connections int32
@@ -196,7 +198,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // url 是匹配的路径， 可能不是规则的路径
 func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
-
+	golog.Info(111)
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute, ok = r.route[req.URL.Path][req.Method]
 		if !ok {
@@ -207,6 +209,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	} else {
+		golog.Info(111)
 		for reUrl := range r.tpl {
 
 			re := regexp.MustCompile(reUrl)
@@ -230,6 +233,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 				goto endloop
 			}
 		}
+		golog.Info(111)
 		r.HandleNotFound.ServeHTTP(w, req)
 		return
 	}
@@ -250,14 +254,10 @@ endloop:
 	// 全局的模块
 	tmpModule := make([]func(http.ResponseWriter, *http.Request) bool, 0)
 
-	for _, v := range r.module {
-		tmpModule = append(tmpModule, v)
-	}
+	tmpModule = append(tmpModule, r.module...)
 
 	// 增加单路由的请求头和模块
-	for _, v := range thisRoute.module {
-		tmpModule = append(tmpModule, v)
-	}
+	tmpModule = append(tmpModule, thisRoute.module...)
 	for k, v := range thisRoute.header {
 		tmpHeader[k] = v
 		w.Header().Set(k, v)
@@ -302,7 +302,6 @@ endloop:
 		}
 
 	}
-	// thisRoute.handle.ServeHTTP(w, req)
 
 }
 
@@ -335,10 +334,9 @@ func (r *Router) RunTLS(crt, key string, opt ...string) error {
 
 func NewRouter() *Router {
 	return &Router{
-		IgnoreIco:  true,
-		routeTable: make(map[string]*rt),
-		header:     map[string]string{},
-
+		IgnoreIco:      true,
+		routeTable:     make(map[string]*rt),
+		header:         map[string]string{},
 		pattern:        make(map[string][]string),
 		HanleFavicon:   handleFavicon(),
 		HandleOptions:  handleOptions(),
@@ -348,29 +346,22 @@ func NewRouter() *Router {
 
 func handleNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusNotFound)
-		return
 	})
 }
 
 func handleOptions() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		return
-	})
-}
 
-func methodNotAllowed() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		w.WriteHeader(http.StatusOK)
 	})
 }
 
 func handleFavicon() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusOK)
-		return
 	})
 }
 
