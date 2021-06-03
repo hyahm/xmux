@@ -111,9 +111,11 @@ func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool)
 func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
 
 	if route.dataSource != nil {
-		dataLock.RLock()
-		allconn[req].Data = route.dataSource
-		dataLock.RUnlock()
+		allconn.Get(req)
+		fd := allconn.Get(req)
+		if fd != nil {
+			fd.Data = route.dataSource
+		}
 	}
 
 	for k, v := range route.Header {
@@ -143,17 +145,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	atomic.AddInt32(&connections, 1)
-	dataLock.Lock()
-	allconn[req] = &FlowData{
-		mu: &sync.RWMutex{},
-	}
-	dataLock.Unlock()
-	defer func() {
-		dataLock.Lock()
-		delete(allconn, req)
-		dataLock.Unlock()
-		atomic.AddInt32(&connections, -1)
-	}()
+
 	if r.Slash {
 		req.URL.Path = slash(req.URL.Path)
 	}
@@ -179,7 +171,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.HandleOptions.ServeHTTP(w, req)
 		return
 	}
-
+	fd := &FlowData{
+		mu: &sync.RWMutex{},
+	}
+	allconn.Set(req, fd)
+	defer func() {
+		allconn.Del(req)
+		atomic.AddInt32(&connections, -1)
+	}()
 	// 先进行路由表缓存寻找
 	route, ok := r.routeTable.Get(req.URL.Path + req.Method)
 	if ok {
@@ -217,7 +216,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 					}
 
 				}
-				ap := make(map[string]string, 0)
+				ap := make(map[string]string)
 				vl := re.FindStringSubmatch(req.URL.Path)
 				for i, v := range r.pattern[reUrl] {
 					ap[v] = vl[i+1]
@@ -231,9 +230,12 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 endloop:
 	if thisRoute.dataSource != nil {
-		dataLock.RLock()
-		allconn[req].Data = thisRoute.dataSource
-		dataLock.RUnlock()
+		allconn.Get(req)
+		fd := allconn.Get(req)
+		if fd != nil {
+			fd.Data = thisRoute.dataSource
+		}
+
 	}
 
 	// 全局的请求头

@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-var ConnectClosed = errors.New("connect closed")
+var ErrConnectClosed = errors.New("connect closed")
 var ErrorType = errors.New("type error")
 var ErrorGetLenth = errors.New("get length error")
 var ErrorGetMsg = errors.New("read data error")
@@ -51,7 +51,7 @@ const (
 func (xws *BaseWs) ReadMessage() (byte, string, error) {
 	//解包
 	if xws.Conn == nil {
-		return byte(0), "", ConnectClosed
+		return byte(0), "", ErrConnectClosed
 	}
 	lpack := make([]byte, 2)
 	_, err := io.ReadFull(xws.Conn, lpack)
@@ -67,7 +67,7 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 		xws.SendMessage([]byte(""), TypePong)
 		xws.Conn.Close()
 		xws.Conn = nil
-		return TypeClose, "", ConnectClosed
+		return TypeClose, "", ErrConnectClosed
 	}
 	// start := uint64(lpack[0] << 1)
 	// if start != 1 && start != 2 {
@@ -120,7 +120,7 @@ func (xws *BaseWs) ReadMessage() (byte, string, error) {
 
 func (xws *BaseWs) SendMessage(msg []byte, typ byte) error {
 	if xws.Conn == nil {
-		return ConnectClosed
+		return ErrConnectClosed
 	}
 	var send []byte
 
