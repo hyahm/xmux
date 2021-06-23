@@ -22,12 +22,15 @@ func (r *Router) Pprof() *GroupRoute {
 		panic("must be use get router by NewRouter()")
 	}
 	pprof := NewGroupRoute()
-	pprof.Get("/debug/pprof/", index)
-	pprof.Get("/debug/pprof/{name}", debug)
-	pprof.Get("/debug/pprof/cmdline", cmdline)
-	pprof.Get("/debug/pprof/profile", profile)
-	pprof.Get("/debug/pprof/symbol", symbol)
-	pprof.Get("/debug/pprof/trace", tra)
+	pprof.Get("/debug/pprof", index).SetHeader("Content-Type", "text/html; charset=utf-8")
+	pprof.Get("/debug/pprof/", index).SetHeader("Content-Type", "text/html; charset=utf-8")
+	pprof.Get("/debug/pprof/{name}", debug).SetHeader("Content-Type", "text/plain; charset=utf-8")
+	pprof.Get("/debug/pprof/cmdline", cmdline).SetHeader("Content-Type", "text/plain; charset=utf-8")
+	pprof.Get("/debug/pprof/profile", profile).SetHeader("Content-Type", "application/octet-stream").
+		SetHeader("Content-Disposition", `attachment; filename="profile"`)
+	pprof.Get("/debug/pprof/symbol", symbol).SetHeader("Content-Type", "text/plain; charset=utf-8")
+	pprof.Get("/debug/pprof/trace", tra).SetHeader("Content-Type", "application/octet-stream").
+		SetHeader("Content-Disposition", `attachment; filename="trace"`)
 	return pprof
 }
 
