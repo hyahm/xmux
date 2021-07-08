@@ -42,8 +42,8 @@ type Router struct {
 	pattern        map[string][]string                             // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string                               // 全局路由头
 	module         []func(http.ResponseWriter, *http.Request) bool // 全局模块
-	routeTable     *cacheTable                                     // 路由表
-	midware        func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
+	// routeTable     *cacheTable                                     // 路由表
+	midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
 
 func (r *Router) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Router {
@@ -176,13 +176,13 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		atomic.AddInt32(&connections, -1)
 	}()
 	// 先进行路由表缓存寻找
-	route, ok := r.routeTable.Get(req.URL.Path + req.Method)
-	if ok {
-		r.readFromCache(route, w, req)
-	} else {
-		// 获取handler
-		r.serveHTTP(w, req)
-	}
+	// route, ok := r.routeTable.Get(req.URL.Path + req.Method)
+	// if ok {
+	// 	r.readFromCache(route, w, req)
+	// } else {
+	// 获取handler
+	r.serveHTTP(w, req)
+	// }
 }
 
 // url 是匹配的路径， 可能不是规则的路径
@@ -277,7 +277,7 @@ endloop:
 		dataSource: thisRoute.dataSource,
 		midware:    thisRoute.midware,
 	}
-	r.routeTable.Set(req.URL.Path+req.Method, thisRouter)
+	// r.routeTable.Set(req.URL.Path+req.Method, thisRouter)
 	r.readFromCache(thisRouter, w, req)
 }
 
@@ -318,10 +318,10 @@ func NewRouter() *Router {
 	return &Router{
 		new:       true,
 		IgnoreIco: true,
-		routeTable: &cacheTable{
-			cache: make(map[string]*rt),
-			mu:    &sync.RWMutex{},
-		},
+		// routeTable: &cacheTable{
+		// 	cache: make(map[string]*rt),
+		// 	mu:    &sync.RWMutex{},
+		// },
 		header:         map[string]string{},
 		pattern:        make(map[string][]string),
 		HanleFavicon:   handleFavicon(),
