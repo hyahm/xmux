@@ -110,8 +110,8 @@ func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool)
 	return r
 }
 
-func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
-
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request, sign string) {
+	golog.Info(sign + "---8")
 	if route.dataSource != nil {
 		allconn.Get(req)
 		fd := allconn.Get(req)
@@ -124,16 +124,18 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		w.Header().Set(k, v)
 	}
 	// 请求模块
-	var ok bool
 	for _, v := range route.Module {
-		ok = v(w, req)
+		ok := v(w, req)
 		if ok {
 			return
 		}
 	}
+	golog.Info(sign + "---9")
 	if route.midware != nil {
+		golog.Info(sign + "---10")
 		route.midware(route.Handle.ServeHTTP, w, req)
 	} else {
+		golog.Info(sign + "---11")
 		route.Handle.ServeHTTP(w, req)
 	}
 
