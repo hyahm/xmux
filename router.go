@@ -10,8 +10,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/hyahm/golog"
 )
 
 var connections int32
@@ -110,8 +108,7 @@ func (r *Router) AddModule(handle func(http.ResponseWriter, *http.Request) bool)
 	return r
 }
 
-func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request, sign string) {
-	golog.Info(sign + "---8")
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
 	if route.dataSource != nil {
 		allconn.Get(req)
 		fd := allconn.Get(req)
@@ -130,32 +127,26 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 			return
 		}
 	}
-	golog.Info(sign + "---9")
 	if route.midware != nil {
-		golog.Info(sign + "---10")
 		route.midware(route.Handle.ServeHTTP, w, req)
 	} else {
-		golog.Info(sign + "---11")
 		route.Handle.ServeHTTP(w, req)
 	}
 
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	sign := fmt.Sprintf("%d", time.Now().UnixNano())
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
 	if stop {
 		return
 	}
-	golog.Info(sign + "---1")
 	atomic.AddInt32(&connections, 1)
 
 	if r.Slash {
 		req.URL.Path = slash(req.URL.Path)
 	}
-	golog.Info(sign + "---2")
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和模块
 	if req.URL.Path == "/favicon.ico" {
 		if r.IgnoreIco {
@@ -168,7 +159,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	golog.Info(sign + "---3")
 	// option 请求处理
 	if !r.DisableOption && req.Method == http.MethodOptions {
 		for k, v := range r.header {
@@ -180,20 +170,16 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	fd := &FlowData{
 		mu: &sync.RWMutex{},
 	}
-	golog.Info(sign + "---4")
 	allconn.Set(req, fd)
 	defer func() {
 		allconn.Del(req)
 		atomic.AddInt32(&connections, -1)
 	}()
-	golog.Info(sign + "---5")
 	// 先进行路由表缓存寻找
 	route, ok := r.routeTable.Get(req.URL.Path + req.Method)
 	if ok {
-		golog.Info(sign + "---6")
 		r.readFromCache(route, w, req)
 	} else {
-		golog.Info(sign + "---7")
 		// 获取handler
 		r.serveHTTP(w, req)
 	}
