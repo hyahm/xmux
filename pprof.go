@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
@@ -15,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hyahm/golog"
 )
 
 func (r *Router) Pprof() *GroupRoute {
@@ -24,12 +27,12 @@ func (r *Router) Pprof() *GroupRoute {
 	pprof := NewGroupRoute()
 	pprof.Get("/debug/pprof", index).SetHeader("Content-Type", "text/html; charset=utf-8")
 	pprof.Get("/debug/pprof/", index).SetHeader("Content-Type", "text/html; charset=utf-8")
-	pprof.Get("/debug/pprof/{name}", debug).SetHeader("Content-Type", "text/plain; charset=utf-8")
+	pprof.Get("/debug/{name}", debug).SetHeader("Content-Type", "text/plain; charset=utf-8")
 	pprof.Get("/debug/pprof/cmdline", cmdline).SetHeader("Content-Type", "text/plain; charset=utf-8")
-	pprof.Get("/debug/pprof/profile", profile).SetHeader("Content-Type", "application/octet-stream").
+	pprof.Get("/debug/profile", profile).SetHeader("Content-Type", "application/octet-stream").
 		SetHeader("Content-Disposition", `attachment; filename="profile"`)
 	pprof.Get("/debug/pprof/symbol", symbol).SetHeader("Content-Type", "text/plain; charset=utf-8")
-	pprof.Get("/debug/pprof/trace", tra).SetHeader("Content-Type", "application/octet-stream").
+	pprof.Get("/debug/trace", tra).SetHeader("Content-Type", "application/octet-stream").
 		SetHeader("Content-Disposition", `attachment; filename="trace"`)
 	return pprof
 }
@@ -40,6 +43,7 @@ func (r *Router) Pprof() *GroupRoute {
 func cmdline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	fmt.Fprint(w, strings.Join(os.Args, "\x00"))
 }
 
 func sleep(w http.ResponseWriter, d time.Duration) {
@@ -70,6 +74,7 @@ func serveError(w http.ResponseWriter, status int, txt string) {
 // Profiling lasts for duration specified in seconds GET parameter, or for 30 seconds if not specified.
 // The package initialization registers it as /debug/pprof/profile.
 func profile(w http.ResponseWriter, r *http.Request) {
+	golog.Info(11111)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	sec, err := strconv.ParseInt(r.FormValue("seconds"), 10, 64)
 	if sec <= 0 || err != nil {
