@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -95,8 +96,13 @@ type aaa struct {
 // 	})
 // }
 
+func hook(start time.Time, w http.ResponseWriter, r *http.Request) {
+	golog.Info(time.Since(start).Seconds(), r.URL.Path)
+}
+
 func main() {
 	router := xmux.NewRouter()
+	router.Hook = hook
 	// router.HandleNotFound = HandleNotFound()
 	router.SetHeader("Content-Type", "aaa")
 	router.Post("/home", home)

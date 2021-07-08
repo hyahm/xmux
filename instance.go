@@ -20,6 +20,15 @@ type conns struct {
 
 var allconn *conns
 
+// var dataLock *sync.RWMutex
+
+func init() {
+	allconn = &conns{
+		conn: make(map[*http.Request]*FlowData),
+		mu:   &sync.RWMutex{},
+	}
+}
+
 func (conns *conns) Set(r *http.Request, fd *FlowData) {
 	conns.mu.Lock()
 	defer conns.mu.Unlock()
@@ -39,15 +48,6 @@ func (conns *conns) Get(r *http.Request) *FlowData {
 		return v
 	}
 	return nil
-}
-
-// var dataLock *sync.RWMutex
-
-func init() {
-	allconn = &conns{
-		conn: make(map[*http.Request]*FlowData),
-		mu:   &sync.RWMutex{},
-	}
 }
 
 func GetInstance(r *http.Request) *FlowData {
