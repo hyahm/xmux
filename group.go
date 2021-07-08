@@ -17,6 +17,7 @@ type GroupRoute struct {
 	delmodule  []func(http.ResponseWriter, *http.Request) bool
 	pattern    map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
 	delheader  []string
+	pagekeys   map[int]struct{} // 页面权限
 	groupKey   string
 	groupTitle string
 	groupLable string
@@ -32,6 +33,18 @@ func NewGroupRoute() *GroupRoute {
 		header: make(map[string]string),
 		module: make([]func(http.ResponseWriter, *http.Request) bool, 0),
 	}
+}
+
+func (g *GroupRoute) SetPageKeys(pagekeys []int) *GroupRoute {
+	// 接口的请求头
+	if g.pagekeys == nil {
+		g.pagekeys = make(map[int]struct{})
+	}
+	for _, v := range pagekeys {
+		g.pagekeys[v] = struct{}{}
+	}
+
+	return g
 }
 
 func (g *GroupRoute) ApiReqHeader(k, v string) *GroupRoute {
@@ -194,6 +207,9 @@ func (g *GroupRoute) appendVarToRoute() {
 // 组路由添加到组路由
 func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 	// 将路由的所有变量全部移交到route
+	for k := range group.pagekeys {
+		g.pagekeys[k] = struct{}{}
+	}
 	if group.pattern == nil && group.route == nil {
 		return nil
 	}

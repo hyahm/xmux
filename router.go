@@ -10,6 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hyahm/golog"
 )
 
 var connections int32
@@ -172,6 +174,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	allconn.Set(req, fd)
 	defer func() {
+		golog.Info("delete ", req.URL.Path)
 		allconn.Del(req)
 		atomic.AddInt32(&connections, -1)
 	}()

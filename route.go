@@ -8,16 +8,16 @@ import (
 // 初始化临时使用， 最后会合并到 router
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	handle    http.Handler
-	header    map[string]string
-	args      []string // 保存正则的变量名
-	module    []func(http.ResponseWriter, *http.Request) bool
-	delmodule []func(http.ResponseWriter, *http.Request) bool
-
-	describe                         string      // 接口描述
-	request                          string      // 请求的请求示例
-	dataSource                       interface{} // 数据源
-	response                         string      // 接口返回示例
+	handle                           http.Handler
+	header                           map[string]string
+	args                             []string // 保存正则的变量名
+	module                           []func(http.ResponseWriter, *http.Request) bool
+	delmodule                        []func(http.ResponseWriter, *http.Request) bool
+	pagekeys                         map[int]struct{} // 页面权限
+	describe                         string           // 接口描述
+	request                          string           // 请求的请求示例
+	dataSource                       interface{}      // 数据源
+	response                         string           // 接口返回示例
 	st_request                       interface{}
 	params_request                   map[string]string
 	st_response                      interface{}
@@ -35,6 +35,18 @@ type Route struct {
 func (rt *Route) ApiExitGroup() *Route {
 	// 退出文档的组
 	rt.codeField = ""
+	return rt
+}
+
+func (rt *Route) SetPageKey(pagekeys []int) *Route {
+	// 退出文档的组
+	if rt.pagekeys == nil {
+		rt.pagekeys = make(map[int]struct{})
+	}
+	for _, v := range pagekeys {
+		rt.pagekeys[v] = struct{}{}
+	}
+
 	return rt
 }
 
