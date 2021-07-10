@@ -130,7 +130,6 @@ func (g *GroupRoute) DelModule(handle func(http.ResponseWriter, *http.Request) b
 
 // 组里面也包括路由 后面的其实还是patter和handle, 是否是正则表达式
 func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
-
 	// 格式路径
 	if g.slash {
 		pattern = slash(pattern)

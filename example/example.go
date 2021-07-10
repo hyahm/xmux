@@ -28,7 +28,6 @@ func me(w http.ResponseWriter, r *http.Request) {
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(2 * time.Second)
 	w.Write([]byte("hello world all"))
 }
 

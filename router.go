@@ -209,7 +209,6 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		for reUrl := range r.tpl {
-
 			re := regexp.MustCompile(reUrl)
 			req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
