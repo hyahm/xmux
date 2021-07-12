@@ -29,9 +29,3 @@ func Home() *xmux.GroupRoute {
 	home.AddGroup(Admin())
 	return home
 }
-
-func main() {
-	app := xmux.NewRouter()
-	app.AddGroup(Home())
-	app.Run()
-}

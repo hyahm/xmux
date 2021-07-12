@@ -2,8 +2,6 @@ package xmux
 
 import (
 	"strings"
-
-	"github.com/hyahm/golog"
 )
 
 const (
@@ -35,7 +33,6 @@ func match(path string) (string, []string) {
 	}
 	// 返回三个参数，  （正则）路径， 正则的参数， 是否是正则
 	// 分段
-	golog.Info(path)
 	pl := strings.Split(path, "/")
 	pathlist := make([]string, 0)
 	varlist := make([]string, 0)
@@ -53,7 +50,6 @@ func match(path string) (string, []string) {
 		// 正则匹配
 		newpath = "^" + strings.Join(pathlist, "/") + "$"
 	}
-	golog.Info(newpath)
 	return newpath, varlist
 }
 
@@ -119,7 +115,6 @@ func macheOne(path string) (string, []string) {
 			case "string":
 				return head + str + tail, varlist
 			default:
-				golog.Info(head + word + tail)
 				// 默认使用path匹配
 				return head + word + tail, varlist
 			}

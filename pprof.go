@@ -16,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/hyahm/golog"
 )
 
 func (r *Router) Pprof() *GroupRoute {
@@ -74,7 +72,6 @@ func serveError(w http.ResponseWriter, status int, txt string) {
 // Profiling lasts for duration specified in seconds GET parameter, or for 30 seconds if not specified.
 // The package initialization registers it as /debug/pprof/profile.
 func profile(w http.ResponseWriter, r *http.Request) {
-	golog.Info(11111)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	sec, err := strconv.ParseInt(r.FormValue("seconds"), 10, 64)
 	if sec <= 0 || err != nil {
