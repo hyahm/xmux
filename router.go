@@ -20,6 +20,14 @@ func GetConnents() int32 {
 	return connections
 }
 
+func StopService() {
+	stop = true
+}
+
+func StartService() {
+	stop = false
+}
+
 type rt struct {
 	Handle     http.Handler
 	Header     map[string]string
