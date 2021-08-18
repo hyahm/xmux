@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>go websocket</title>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <script type="text/javascript">
+        var wsUri = "ws://localhost:8080/3";
+        var output;
+        var connect = false;
+
+        function init() {
+            output = document.getElementById("output");
+            testWebSocket();
+        }
+
+        function testWebSocket() {
+            websocket = new WebSocket(wsUri, WebSocket.binaryType);
+            websocket.onopen = function(evt) {
+                onOpen(evt)
+            };
+            websocket.onclose = function(evt) {
+                onClose(evt)
+            };
+            websocket.onmessage = function(evt) {
+                onMessage(evt)
+            };
+            websocket.onerror = function(evt) {
+                onError(evt)
+            };
+        }
+
+        function onOpen(evt) {
+            writeToScreen("CONNECTED");
+            connect = true
+                // doSend("WebSocket rocks");
+        }
+
+        function onClose(evt) {
+            connect = false
+            writeToScreen("DISCONNECTED");
+        }
+
+        function onMessage(evt) {
+
+            msg = String.fromCharCode(evt.data)
+            console.log(msg)
+            writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
+            // websocket.close();
+        }
+
+        function onError(evt) {
+            writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+        }
+
+        function doSend(message) {
+            if (!connect) {
+                console.log("connect error")
+                return
+            }
+            writeToScreen("SENT: " + message);
+            websocket.send(message);
+        }
+
+        function writeToScreen(message) {
+            var pre = document.createElement("p");
+            pre.style.wordWrap = "break-word";
+
+            pre.innerHTML = message;
+            output.appendChild(pre);
+        }
+
+        window.addEventListener("load", init, false);
+
+        function sendBtnClick() {
+            var msg = document.getElementById("input").value;
+            doSend(msg);
+            document.getElementById("input").value = '';
+        }
+
+        function closeBtnClick() {
+            websocket.close();
+        }
+    </script>
+    <h2>WebSocket Test</h2>
+    <input type="text" id="input"></input>
+    <button onclick="sendBtnClick()">send</button>
+    <button onclick="closeBtnClick()">close</button>
+    <div id="output"></div>
+
+</body>
+
+</html>
