@@ -63,7 +63,7 @@ func (g *GroupRoute) MiddleWare(midware func(handle func(http.ResponseWriter, *h
 
 func (g *GroupRoute) DelMiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *GroupRoute {
 	// 接口的请求头
-	g.midware = midware
+	g.delmidware = midware
 	return g
 }
 
@@ -168,45 +168,45 @@ func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 	}
 }
 
-func (g *GroupRoute) appendVarToRoute() {
-	// for _, mr := range g.route {
-	// mr 是methodsRoute
+func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
+	// 合并head
+	tempHeader := make(map[string]string)
+	for k, v := range g.header {
+		tempHeader[k] = v
+	}
+	for k, v := range route.header {
+		tempHeader[k] = v
+	}
+	route.header = tempHeader
+	// 合并中间件
+	if group.midware == nil {
+		route.midware = g.midware
+	}
 
-	// mt 是 method
-	// for _, rt := range mr {
-	// 	if g.groupKey != "" && rt.groupKey == "" {
-	// 		rt.groupKey = g.groupKey
-	// 	}
+	// 合并 delheader
+	route.delheader = append(g.delheader, route.delheader...)
 
-	// 	if g.reqHeader != nil {
-	// 		if rt.reqHeader == nil {
-	// 			rt.reqHeader = make(map[string]string)
-	// 		}
-	// 		for k, v := range g.reqHeader {
-	// 			rt.reqHeader[k] = v
-	// 		}
-	// 	}
-	// }
+	// 合并 pagekeys
+	tempPages := make(map[string]struct{})
+	for k := range g.pagekeys {
+		tempPages[k] = struct{}{}
+	}
 
-	// }
+	for k := range route.pagekeys {
+		tempPages[k] = struct{}{}
+	}
+	route.pagekeys = tempPages
+	// 合并 delPageKeys
+	route.delPageKeys = append(g.delPageKeys, route.delPageKeys...)
 
-	// for _, mr := range g.tpl {
-	// 	for _, rt := range mr {
-	// 		if g.groupKey != "" && rt.groupKey == "" {
-	// 			rt.groupKey = g.groupKey
-	// 		}
+	// delete midware
+	if route.delmidware != nil && GetFuncName(route.delmidware) == GetFuncName(g.midware) {
+		route.midware = nil
+	}
+	// 模块合并
+	route.module = g.module.addModule(route.module)
 
-	// 		if g.reqHeader != nil {
-	// 			for k, v := range g.reqHeader {
-	// 				if rt.reqHeader == nil {
-	// 					rt.reqHeader = make(map[string]string)
-	// 				}
-	// 				rt.reqHeader[k] = v
-	// 			}
-	// 		}
-	// 	}
-	// }
-
+	merge(group, route)
 }
 
 // 组路由添加到组路由
@@ -229,50 +229,13 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 	}
 
 	for url, args := range group.params {
-
 		g.params[url] = args
 		if len(args) == 0 {
 			for method := range group.route[url] {
-
 				if _, ok := g.route[url][method]; ok {
 					log.Fatalf("%s %s is Duplication", url, method)
 				}
-				mergeDoc(group, group.route[url][method])
-				if group.midware == nil {
-					group.route[url][method].midware = g.midware
-				}
-				// 合并head
-				tempHeader := make(map[string]string)
-				for k, v := range g.header {
-					tempHeader[k] = v
-				}
-				for k, v := range group.route[url][method].header {
-					tempHeader[k] = v
-				}
-				group.route[url][method].header = tempHeader
-
-				// 合并 delheader
-				group.route[url][method].delheader = append(g.delheader, group.route[url][method].delheader...)
-
-				// 合并 pagekeys
-				tempPages := make(map[string]struct{})
-				for k := range g.pagekeys {
-					tempPages[k] = struct{}{}
-				}
-
-				for k := range group.route[url][method].pagekeys {
-					tempPages[k] = struct{}{}
-				}
-				group.route[url][method].pagekeys = tempPages
-				// 合并delpagekeys
-
-				group.route[url][method].delPageKeys = append(g.delPageKeys, group.route[url][method].delPageKeys...)
-				// delete midware
-				if group.route[url][method].delmidware != nil && GetFuncName(group.route[url][method].delmidware) == GetFuncName(g.midware) {
-					group.route[url][method].midware = nil
-				}
-
-				group.route[url][method].module = g.module.addModule(group.route[url][method].module)
+				g.merge(group, group.route[url][method])
 			}
 			g.route[url] = group.route[url]
 
@@ -281,47 +244,10 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 				if _, ok := g.tpl[url][method]; ok {
 					log.Fatalf("%s %s is Duplication", url, method)
 				}
-				if group.midware == nil {
-					group.tpl[url][method].midware = g.midware
-				}
-				mergeDoc(group, group.tpl[url][method])
-				// 合并header
-				tempHeader := make(map[string]string)
-				for k, v := range g.header {
-					tempHeader[k] = v
-				}
-				for k, v := range group.tpl[url][method].header {
-					tempHeader[k] = v
-				}
-				group.tpl[url][method].header = tempHeader
-
-				// 合并delheader
-				group.tpl[url][method].delheader = append(g.delheader, group.tpl[url][method].delheader...)
-
-				// 合并 pagekeys
-				tempPages := make(map[string]struct{})
-				for k := range g.pagekeys {
-					tempPages[k] = struct{}{}
-				}
-
-				for k := range group.tpl[url][method].pagekeys {
-					tempPages[k] = struct{}{}
-				}
-				group.tpl[url][method].pagekeys = tempPages
-				// delete midware
-				if group.tpl[url][method].delmidware != nil && GetFuncName(group.tpl[url][method].delmidware) == GetFuncName(g.midware) {
-					group.tpl[url][method].midware = nil
-				}
-
-				group.tpl[url][method].delPageKeys = append(g.delPageKeys, group.tpl[url][method].delPageKeys...)
-
-				group.tpl[url][method].module = g.module.addModule(group.tpl[url][method].module)
+				g.merge(group, group.route[url][method])
 			}
-
 			g.tpl[url] = group.tpl[url]
-
 		}
-
 	}
 	return g
 }

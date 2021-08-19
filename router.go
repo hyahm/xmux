@@ -401,6 +401,58 @@ func handleFavicon() http.Handler {
 	})
 }
 
+func (r *Router) merge(group *GroupRoute, route *Route) {
+	// 合并head
+	tempHeader := make(map[string]string)
+	for k, v := range r.header {
+		tempHeader[k] = v
+	}
+	for k, v := range route.header {
+		tempHeader[k] = v
+	}
+	route.header = tempHeader
+	// 合并中间件
+	if group.midware == nil {
+		route.midware = r.midware
+	}
+
+	// // 合并 delheader
+	// route.delheader = append(r.delheader, route.delheader...)
+
+	// 合并 pagekeys
+	tempPages := make(map[string]struct{})
+	for k := range r.pagekeys {
+		tempPages[k] = struct{}{}
+	}
+
+	for k := range route.pagekeys {
+		tempPages[k] = struct{}{}
+	}
+	route.pagekeys = tempPages
+
+	// delete midware
+	if route.delmidware != nil && GetFuncName(route.delmidware) == GetFuncName(r.midware) {
+		route.midware = nil
+	}
+	// 模块合并
+	route.module = r.module.addModule(route.module)
+	// 与组的区别， 组里面这里是合并， 这里是删除
+	// 删除模块
+	for key := range route.delmodule.modules {
+		route.module = route.module.deleteKey(key)
+	}
+	// 删除 delheader
+	for _, k := range route.delheader {
+		delete(route.header, k)
+	}
+
+	// 删除 pagekeys
+	for _, k := range route.delPageKeys {
+		delete(route.pagekeys, k)
+	}
+	merge(group, route)
+}
+
 // 组路由添加到router里面,
 // 挂载到group之前， 全局的变量已经挂载到route 里面了， 所以不用再管组变量了
 func (r *Router) AddGroup(group *GroupRoute) *Router {
@@ -414,53 +466,12 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 
 	for url, args := range group.params {
 		r.params[url] = args
-
 		if len(args) == 0 {
 			for method := range group.route[url] {
 				if _, ok := r.route[url][method]; ok {
 					log.Fatalf("%s %s is Duplication", url, method)
 				}
-				mergeDoc(group, group.route[url][method])
-				if group.route[url][method].midware == nil {
-					group.route[url][method].midware = r.midware
-				}
-				group.route[url][method].module = r.module.addModule(group.route[url][method].module)
-				for key := range group.route[url][method].delmodule.modules {
-					group.route[url][method].module = group.route[url][method].module.deleteKey(key)
-				}
-				// 合并head
-				tempHeader := make(map[string]string)
-				for k, v := range r.header {
-					tempHeader[k] = v
-				}
-				for k, v := range group.route[url][method].header {
-					tempHeader[k] = v
-				}
-				group.route[url][method].header = tempHeader
-				// 合并 delheader
-				for _, k := range group.route[url][method].delheader {
-					delete(group.route[url][method].header, k)
-				}
-
-				// 合并 pagekeys
-				tempPages := make(map[string]struct{})
-				for k := range r.pagekeys {
-					tempPages[k] = struct{}{}
-				}
-
-				for k := range group.route[url][method].pagekeys {
-					tempPages[k] = struct{}{}
-				}
-				group.route[url][method].pagekeys = tempPages
-				// 删除 pagekeys
-
-				for _, k := range group.route[url][method].delPageKeys {
-					delete(group.route[url][method].pagekeys, k)
-				}
-				// delete midware
-				if group.route[url][method].delmidware != nil && GetFuncName(group.route[url][method].delmidware) == GetFuncName(r.midware) {
-					group.route[url][method].midware = nil
-				}
+				r.merge(group, group.route[url][method])
 			}
 			r.route[url] = group.route[url]
 
@@ -469,54 +480,9 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				if _, ok := r.tpl[url][method]; ok {
 					log.Fatalf("%s %s is Duplication", url, method)
 				}
-
-				mergeDoc(group, group.tpl[url][method])
-				if group.tpl[url][method].midware == nil {
-					group.tpl[url][method].midware = r.midware
-				}
-
-				group.tpl[url][method].module = r.module.addModule(group.tpl[url][method].module)
-				for key := range group.tpl[url][method].delmodule.modules {
-					group.tpl[url][method].module = group.tpl[url][method].module.deleteKey(key)
-				}
-				// 合并head
-				tempHeader := make(map[string]string)
-				for k, v := range r.header {
-					tempHeader[k] = v
-				}
-				for k, v := range group.tpl[url][method].header {
-					tempHeader[k] = v
-				}
-				group.tpl[url][method].header = tempHeader
-
-				// 合并 delheader
-				for _, k := range group.tpl[url][method].delheader {
-					delete(group.tpl[url][method].header, k)
-				}
-
-				// 合并 pagekeys
-				tempPages := make(map[string]struct{})
-				for k := range r.pagekeys {
-					tempPages[k] = struct{}{}
-				}
-
-				for k := range group.tpl[url][method].pagekeys {
-					tempPages[k] = struct{}{}
-				}
-				group.tpl[url][method].pagekeys = tempPages
-
-				// 删除pagekey
-				for _, k := range group.tpl[url][method].delPageKeys {
-					delete(group.tpl[url][method].pagekeys, k)
-				}
-				// delete midware
-				if group.tpl[url][method].delmidware != nil && GetFuncName(group.tpl[url][method].delmidware) == GetFuncName(r.midware) {
-					group.tpl[url][method].midware = nil
-				}
+				r.merge(group, group.tpl[url][method])
 			}
-
 			r.tpl[url] = group.tpl[url]
-
 		}
 
 	}
@@ -525,7 +491,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 }
 
 // 将路由组的信息合并到路由
-func mergeDoc(group *GroupRoute, route *Route) {
+func merge(group *GroupRoute, route *Route) {
 
 	// 合并 groupKey
 	if route.groupKey == "" {
@@ -580,12 +546,7 @@ func mergeDoc(group *GroupRoute, route *Route) {
 	if route.codeField == "" {
 		route.codeField = group.codeField
 	}
-	if group.midware != nil && route.midware == nil {
-		route.midware = group.midware
-	}
-	if group.midware != nil && !reflect.DeepEqual(route.delmidware, group.midware) && route.midware == nil {
-		route.midware = group.midware
-	}
+
 }
 
 func debugPrint(url string, mr MethodsRoute) {
