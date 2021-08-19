@@ -429,6 +429,7 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				}
 				mergeDoc(group, group.route[url][method])
 				if group.route[url][method].midware == nil {
+					log.Println("2222222222222222222222")
 					group.route[url][method].midware = r.midware
 				}
 				group.route[url][method].module = r.module.addModule(group.route[url][method].module)
@@ -463,6 +464,10 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 
 				for _, k := range group.route[url][method].delPageKeys {
 					delete(group.route[url][method].pagekeys, k)
+				}
+				// delete midware
+				if group.route[url][method].delmidware != nil && GetFuncName(group.route[url][method].delmidware) == GetFuncName(r.midware) {
+					group.route[url][method].midware = nil
 				}
 			}
 			r.route[url] = group.route[url]
@@ -511,6 +516,10 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				// 删除pagekey
 				for _, k := range group.tpl[url][method].delPageKeys {
 					delete(group.tpl[url][method].pagekeys, k)
+				}
+				// delete midware
+				if group.tpl[url][method].delmidware != nil && GetFuncName(group.tpl[url][method].delmidware) == GetFuncName(r.midware) {
+					group.tpl[url][method].midware = nil
 				}
 			}
 
@@ -587,18 +596,20 @@ func mergeDoc(group *GroupRoute, route *Route) {
 	}
 }
 
+func debugPrint(url string, mr MethodsRoute) {
+	for k, v := range mr {
+		log.Printf("url: %s, method: %s, header: %+v, module: %#v, midware: %#v \n",
+			url, k, v.header, v.module.funcOrder, GetFuncName(v.midware))
+	}
+}
+
 func (r *Router) DebugRoute() {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
 	for url, mr := range r.route {
-		for k, v := range mr {
-			log.Printf("url: %s, method: %s, header: %+v, module: %+v, delModule: %+v \n",
-				url, k, v.header, v.module.funcOrder, v.delmodule.modules)
-		}
-
+		debugPrint(url, mr)
 	}
-
 }
 
 func (r *Router) DebugAssignRoute(thisurl string) {
@@ -607,10 +618,7 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	}
 	for url, mr := range r.route {
 		if thisurl == url {
-			for k, v := range mr {
-				log.Printf("url: %s, method: %s, header: %+v, module: %+v, delModule: %+v \n",
-					url, k, v.header, v.module.funcOrder, v.delmodule.modules)
-			}
+			debugPrint(url, mr)
 			return
 		}
 	}
@@ -621,10 +629,7 @@ func (r *Router) DebugTpl(pattern string) {
 		panic("must be use get router by NewRouter()")
 	}
 	for url, mr := range r.tpl {
-		for k, v := range mr {
-			log.Printf("url: %s, method: %s, header: %+v, module: %+v, delModule: %+v \n",
-				url, k, v.header, v.module.funcOrder, v.delmodule.modules)
-		}
+		debugPrint(url, mr)
 	}
 }
 
@@ -634,10 +639,7 @@ func (r *Router) DebugIncludeTpl(pattern string) {
 	}
 	for url, mr := range r.tpl {
 		if strings.Contains(url, pattern) {
-			for k, v := range mr {
-				log.Printf("url: %s, method: %s, header: %+v, module: %+v, delModule: %+v \n",
-					url, k, v.header, v.module.funcOrder, v.delmodule.modules)
-			}
+			debugPrint(url, mr)
 		}
 	}
 }

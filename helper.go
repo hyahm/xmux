@@ -1,25 +1,19 @@
 package xmux
 
 import (
+	"reflect"
+	"runtime"
 	"unsafe"
 )
 
-// func compareFunc(f1 interface{}, f2 interface{}) bool {
-// 	if reflect.TypeOf(f1).Kind() != reflect.Func {
-// 		return false
-// 	}
-// 	if reflect.TypeOf(f2).Kind() != reflect.Func {
-// 		return false
-// 	}
-
-// 	tm1 := reflect.ValueOf(f1).Pointer()
-
-// 	tm2 := reflect.ValueOf(f2).Pointer()
-
-// 	name1 := runtime.FuncForPC(tm1).Name()
-// 	name2 := runtime.FuncForPC(tm2).Name()
-// 	return name1 == name2
-// }
+// 获取函数名
+func GetFuncName(f interface{}) string {
+	rv := reflect.ValueOf(f)
+	if rv.Type().Kind() != reflect.Func {
+		panic("not a func")
+	}
+	return runtime.FuncForPC(rv.Pointer()).Name()
+}
 
 func BytesToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))

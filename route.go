@@ -96,7 +96,21 @@ func (rt *Route) MiddleWare(midware func(handle func(http.ResponseWriter, *http.
 
 func (rt *Route) DelMiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Route {
 	// 创建文档的组
-	rt.delmidware = midware
+	if rt.isRoot {
+		// 那么直接就删除
+		if rt.midware == nil {
+			return rt
+		}
+		if rt.midware != nil {
+			if midware != nil && GetFuncName(rt.midware) == GetFuncName(midware) {
+				rt.midware = nil
+			}
+		}
+		return rt
+	} else {
+		rt.delmidware = midware
+	}
+
 	return rt
 }
 

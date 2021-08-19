@@ -267,6 +267,10 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 				// 合并delpagekeys
 
 				group.route[url][method].delPageKeys = append(g.delPageKeys, group.route[url][method].delPageKeys...)
+				// delete midware
+				if group.route[url][method].delmidware != nil && GetFuncName(group.route[url][method].delmidware) == GetFuncName(g.midware) {
+					group.route[url][method].midware = nil
+				}
 
 				group.route[url][method].module = g.module.addModule(group.route[url][method].module)
 			}
@@ -304,6 +308,10 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 					tempPages[k] = struct{}{}
 				}
 				group.tpl[url][method].pagekeys = tempPages
+				// delete midware
+				if group.tpl[url][method].delmidware != nil && GetFuncName(group.tpl[url][method].delmidware) == GetFuncName(g.midware) {
+					group.tpl[url][method].midware = nil
+				}
 
 				group.tpl[url][method].delPageKeys = append(g.delPageKeys, group.tpl[url][method].delPageKeys...)
 

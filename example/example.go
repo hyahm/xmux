@@ -106,7 +106,7 @@ func initv1() *xmux.GroupRoute {
 	v1 := xmux.NewGroupRoute().DelModule(CheckToken).DelModule(CheckPage)
 	// 更新状态
 	// 由key的url 多出来的一个url
-	v1.Get("/json/key/{date}/{string:filename}", nil)
+	v1.Get("/json/key", nil)
 	// v1.Get("/iv/{string:filename}", nil)
 	// v1.Get("/mysource/{type}/{string:filename}", nil)
 	// v1.Post("/post/url/{int:id}", nil)
@@ -117,11 +117,7 @@ func initv1() *xmux.GroupRoute {
 func CheckToken(w http.ResponseWriter, r *http.Request) bool {
 	a := r.Header.Get("Authorization")
 	auths := strings.Split(a, " ")
-	if len(auths) <= 1 {
-		return true
-	}
-
-	return false
+	return len(auths) <= 1
 }
 
 func CheckPage(w http.ResponseWriter, r *http.Request) bool {
@@ -129,20 +125,22 @@ func CheckPage(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func main() {
-	router := xmux.NewRouter()
+	router := xmux.NewRouter().MiddleWare(xmux.DefaultMidwareTemplate)
+
 	router.SetHeader("Access-Control-Allow-Origin", "*")
 	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
 	// router.Slash = true
 	// router.MiddleWare(GetExecTime)
-	// router.AddModule(TestM)
-	router.Get("/user/info", func(rw http.ResponseWriter, r *http.Request) {
+	router.Get("/{user}/{info}", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("ok"))
-	})
-	// router.Get("/", func(rw http.ResponseWriter, r *http.Request) {
-	// 	rw.Write([]byte("ok"))
-	// }).DelModule(TestN)
+	}).MiddleWare(nil)
+	router.Get("/", func(rw http.ResponseWriter, r *http.Request) {
+		rw.Write([]byte("ok"))
+	}).DelMiddleWare(xmux.DefaultMidwareTemplate)
+
 	router.AddGroup(initv1())
+	router.DebugAssignRoute("/json/key")
 	// router.Get("/stop", func(rw http.ResponseWriter, r *http.Request) {
 	// 	xmux.StopService()
 	// 	r.BasicAuth()
