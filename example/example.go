@@ -18,6 +18,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// atomic.AddInt64(&count, 1)
 	// // time.Sleep(1 * time.Second)
 	// fmt.Fprintf(w, "hello home")
+	w.Write([]byte(r.Method))
 }
 
 func Start(w http.ResponseWriter, r *http.Request) bool {
@@ -25,8 +26,6 @@ func Start(w http.ResponseWriter, r *http.Request) bool {
 	xmux.GetInstance(r).Set("start", time.Now())
 	return false
 }
-
-var count int64
 
 func PermMudule(w http.ResponseWriter, r *http.Request) bool {
 

@@ -422,7 +422,6 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 				}
 				mergeDoc(group, group.route[url][method])
 				if group.route[url][method].midware == nil {
-					log.Println("2222222222222222222222")
 					group.route[url][method].midware = r.midware
 				}
 				group.route[url][method].module = r.module.addModule(group.route[url][method].module)

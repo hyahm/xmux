@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -10,5 +9,4 @@ func TestNil(t *testing.T) {
 	var b []string
 	b = nil
 	a = append(a, b...)
-	fmt.Println(a)
 }
