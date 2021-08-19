@@ -9,8 +9,8 @@
 - [x] 支持自定义method，
 - [x] 支持正则匹配和参数获取
 - [x] 完全匹配优先于正则匹配
-- [x] 正则匹配支持（int(\d+), word(\w+), re, all(.*?)，不写默认 string([^\/])）建议使用string
-- [x] 支持三大全局handle ,MethodnotFound(忘记写方法), MethodNotAllowed(method没定义), HandleNotFound(没有找到页面), Options请求）  
+- [x] 正则匹配支持（int(\d+), word(\w+), re, string, all(.*?)，不写默认 word
+- [x] 支持三大全局 HanleFavicon, HandleNotFound, HandleOptions）  
 - [x] 强大的模块让你的代码模块化变得非常简单 
 - [x] 中间件支持 
 - [x] 内嵌接口文档
@@ -19,6 +19,7 @@
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
 - [x] 支持代理（参考于:  https://github.com/ouqiang/goproxy ）
 - [x] 支持权限控制
+- [x] 进入时和处理完成时的钩子函数 
 
 ### 安装
 ```
@@ -45,6 +46,26 @@ func main() {
 ```
 
 打开 localhost:8080 就能看到 hello world!
+
+### 请求方式
+```
+package main
+
+import (
+	"net/http"
+
+	"github.com/hyahm/xmux"
+)
+
+func main() {
+	router := xmux.NewRouter()
+	router.Get("/",nil)  // get请求
+	router.Post("/",nil)  // post请求
+	router.Reqeust("/getpost",nil, "POST", "GET")  // 同时支持get，post请求
+	router.Any("/any",nil)  // 支持除了options 之外的所有请求
+	router.Run()
+}
+```
 
 ### 添加了组的概念
 
