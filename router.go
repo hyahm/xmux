@@ -282,12 +282,9 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute, ok = r.route[req.URL.Path][req.Method]
 		if !ok {
-			thisRoute, ok = r.route[req.URL.Path]["*"]
-			if !ok {
-				r.HandleNotFound.ServeHTTP(w, req)
-				atomic.AddInt32(&connections, -1)
-				return
-			}
+			r.HandleNotFound.ServeHTTP(w, req)
+			atomic.AddInt32(&connections, -1)
+			return
 		}
 	} else {
 		for reUrl := range r.tpl {
@@ -296,20 +293,16 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 			if re.MatchString(req.URL.Path) {
 				thisRoute, ok = r.tpl[reUrl][req.Method]
 				if !ok {
-					thisRoute, ok = r.tpl[reUrl]["*"]
-					if !ok {
-						r.HandleNotFound.ServeHTTP(w, req)
-						atomic.AddInt32(&connections, -1)
-						return
-					}
-
+					r.HandleNotFound.ServeHTTP(w, req)
+					atomic.AddInt32(&connections, -1)
+					return
 				}
 				ap := make(map[string]string)
 				vl := re.FindStringSubmatch(req.URL.Path)
 				for i, v := range r.params[reUrl] {
 					ap[v] = vl[i+1]
 				}
-				SetParams(req.URL.Path, ap)
+				setParams(req.URL.Path, ap)
 				goto endloop
 			}
 		}

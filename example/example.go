@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/hyahm/xmux"
@@ -14,9 +14,10 @@ import (
 func home(w http.ResponseWriter, r *http.Request) {
 	// pages := xmux.GetInstance(r).Data.(*AAA)
 	// fmt.Println(*pages)
-	atomic.AddInt64(&count, 1)
-	// time.Sleep(1 * time.Second)
-	fmt.Fprintf(w, "hello home")
+	fmt.Println(r.Method, r.URL.Path)
+	// atomic.AddInt64(&count, 1)
+	// // time.Sleep(1 * time.Second)
+	// fmt.Fprintf(w, "hello home")
 }
 
 func Start(w http.ResponseWriter, r *http.Request) bool {
@@ -148,8 +149,10 @@ func main() {
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
 	// router.Slash = true
 	// router.MiddleWare(GetExecTime)
+	router.Request("/aaaa", home, http.MethodGet, http.MethodPost)
 	router.Get("/{user}/{info}", func(rw http.ResponseWriter, r *http.Request) {
 		ws, err := xmux.UpgradeWebSocket(rw, r)
+		os.OpenFile("", os.O_APPEND, 0755)
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
@@ -169,7 +172,7 @@ func main() {
 			}
 			go printTime(ws, mt)
 		}
-	}).MiddleWare(nil)
+	})
 	router.Get("/", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("ok"))
 	}).DelMiddleWare(xmux.DefaultMidwareTemplate)

@@ -83,12 +83,27 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 	return nil
 }
 
+// get this route
+func (gr *GroupRoute) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
+	if len(methods) == 0 {
+		panic(pattern + " have not any methods")
+	}
+	mr := make(MethodsRoute)
+	for _, method := range methods {
+		mr[method] = gr.method(pattern, handler, method)
+	}
+	return mr
+}
+
 func (gr *GroupRoute) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return gr.method(pattern, handler, http.MethodPost)
 }
 
-func (gr *GroupRoute) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	return gr.method(pattern, handler, "*")
+func (gr *GroupRoute) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) MethodsRoute {
+	return gr.defindMethod(pattern, handler, http.MethodConnect,
+		http.MethodDelete, http.MethodGet, http.MethodHead,
+		http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace,
+	)
 }
 
 // func (gr *GroupRoute) Requests(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
@@ -97,6 +112,10 @@ func (gr *GroupRoute) Any(pattern string, handler func(http.ResponseWriter, *htt
 
 func (gr *GroupRoute) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return gr.method(pattern, handler, http.MethodGet)
+}
+
+func (gr *GroupRoute) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
+	return gr.defindMethod(pattern, handler, methods...)
 }
 
 func (gr *GroupRoute) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {

@@ -5,6 +5,18 @@ import (
 	"net/http"
 )
 
+// get this route
+func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
+	if len(methods) == 0 {
+		panic(pattern + " have not any methods")
+	}
+	mr := make(MethodsRoute)
+	for _, method := range methods {
+		mr[method] = r.method(pattern, handler, method)
+	}
+	return mr
+}
+
 func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
 	// 判断是否是正则
 	temphead := make(map[string]string)
@@ -80,11 +92,14 @@ func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Re
 	return r.method(pattern, handler, http.MethodPost)
 }
 
-func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) MethodsRoute {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, "*")
+	return r.defindMethod(pattern, handler, http.MethodConnect,
+		http.MethodDelete, http.MethodGet, http.MethodHead,
+		http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace,
+	)
 }
 
 func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
@@ -92,6 +107,13 @@ func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Req
 		panic("must be use get router by NewRouter()")
 	}
 	return r.method(pattern, handler, http.MethodGet)
+}
+
+func (r *Router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	return r.defindMethod(pattern, handler, methods...)
 }
 
 func (r *Router) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
