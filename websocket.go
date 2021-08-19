@@ -30,6 +30,10 @@ type BaseWs struct {
 	RemoteAddr string
 }
 
+func (bw *BaseWs) Close() error {
+	return bw.Conn.Close()
+}
+
 // 对应的 Type
 // x0表示连续消息片断  128
 // x1表示文本消息片断//表示传输文本型数据  129

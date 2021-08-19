@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -124,6 +125,21 @@ func CheckPage(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+func printTime(ws *xmux.BaseWs, mt byte) {
+	for {
+		if ws.Conn == nil {
+			return
+		}
+		err := ws.SendMessage([]byte(time.Now().String()), mt)
+		if err != nil {
+			log.Println("write:", err)
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+}
+
 func main() {
 	router := xmux.NewRouter().MiddleWare(xmux.DefaultMidwareTemplate)
 
@@ -133,7 +149,26 @@ func main() {
 	// router.Slash = true
 	// router.MiddleWare(GetExecTime)
 	router.Get("/{user}/{info}", func(rw http.ResponseWriter, r *http.Request) {
-		rw.Write([]byte("ok"))
+		ws, err := xmux.UpgradeWebSocket(rw, r)
+		if err != nil {
+			log.Print("upgrade:", err)
+			return
+		}
+		defer ws.Close()
+		for {
+			mt, message, err := ws.ReadMessage()
+			if err != nil {
+				log.Println("read:", err)
+				break
+			}
+			log.Printf("recv: %s", message)
+			err = ws.SendMessage([]byte(message), mt)
+			if err != nil {
+				log.Println("write:", err)
+				break
+			}
+			go printTime(ws, mt)
+		}
 	}).MiddleWare(nil)
 	router.Get("/", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("ok"))
