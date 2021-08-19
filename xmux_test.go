@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -22,6 +23,9 @@ func mw3(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter,
 
 var g1 *GroupRoute
 var g2 *GroupRoute
+var g3 *GroupRoute
+var g4 *GroupRoute
+var g5 *GroupRoute
 
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("home"))
@@ -29,7 +33,23 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func init() {
 	g2 = NewGroupRoute().MiddleWare(mw3)
-	g2.Get("/", home)
+	g2.Get("/g2", home)
+}
+
+func init() {
+	g3 = NewGroupRoute()
+	g3.Get("/g3", home).MiddleWare(mw1)
+}
+
+func init() {
+	g4 = NewGroupRoute()
+	g4.Get("/g4", home)
+	g4.AddGroup(g3)
+}
+
+func init() {
+	g5 = NewGroupRoute().MiddleWare(mw3)
+	g5.Get("/g5", home).MiddleWare(mw2)
 }
 
 func init() {
@@ -37,10 +57,28 @@ func init() {
 	g1.AddGroup(g2)
 }
 
-func Test_Module(t *testing.T) {
+func Test_Module1(t *testing.T) {
 	router := NewRouter().MiddleWare(mw1)
 	router.AddGroup(g1)
-	router.DebugAssignRoute("/")
+	if !strings.Contains(router.GetAssignRoute("/g2")["GET"].GetMidwareName(), "mw3") {
+		t.Fatal("get error midware")
+	}
+}
+
+func Test_Module2(t *testing.T) {
+	router := NewRouter().MiddleWare(mw1)
+	router.AddGroup(g4)
+	if !strings.Contains(router.GetAssignRoute("/g4")["GET"].GetMidwareName(), "mw1") {
+		t.Fatal("get error midware")
+	}
+}
+
+func Test_Module3(t *testing.T) {
+	router := NewRouter().MiddleWare(mw1)
+	router.AddGroup(g5)
+	if !strings.Contains(router.GetAssignRoute("/g5")["GET"].GetMidwareName(), "mw2") {
+		t.Fatal("get error midware")
+	}
 }
 
 // func TestHttp(t *testing.T) {

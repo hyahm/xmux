@@ -577,6 +577,18 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	}
 }
 
+func (r *Router) GetAssignRoute(thisurl string) MethodsRoute {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	for url, mr := range r.route {
+		if thisurl == url {
+			return mr
+		}
+	}
+	return nil
+}
+
 func (r *Router) DebugTpl(pattern string) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")

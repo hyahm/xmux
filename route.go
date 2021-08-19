@@ -43,6 +43,19 @@ type Route struct {
 	delmidware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
 }
 
+func (rt *Route) GetHeader() map[string]string {
+	return rt.header
+}
+
+func (rt *Route) GetMidwareName() string {
+	defer func() {
+		if err := recover(); err != nil {
+			return
+		}
+	}()
+	return GetFuncName(rt.midware)
+}
+
 func (rt *Route) ApiExitGroup() *Route {
 	// 退出文档的组
 	rt.codeField = ""
@@ -134,9 +147,7 @@ func (rt *Route) ApiCodeMsg(code string, msg string) *Route {
 
 // 数据绑定
 func (rt *Route) Bind(s interface{}) *Route {
-
 	rt.dataSource = s
-
 	return rt
 }
 
