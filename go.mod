@@ -1,6 +1,6 @@
 module github.com/hyahm/xmux
 
-go 1.13
+go 1.17
 
 require (
 	github.com/hyahm/lru v0.0.4
