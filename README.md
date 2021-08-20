@@ -217,8 +217,11 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 
-func enter( w http.ResponseWriter, r *http.Request) {
-	// 任何请求都会进入到这里
+// 与module一样的效果， return true 就是直接返回， return false 就是继续 但是不支持 xmux.GetInstence(r)传参  
+// 主要用来过滤请求和调试
+func enter( w http.ResponseWriter, r *http.Request) bool {
+	// 任何请求都会进入到这里，比如过滤ip， 域名
+	
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 

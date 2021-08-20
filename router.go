@@ -53,8 +53,8 @@ func DefaultExitTemplate(now time.Time, w http.ResponseWriter, r *http.Request) 
 
 type Router struct {
 	Exit           func(time.Time, http.ResponseWriter, *http.Request)
-	new            bool                                     // 判断是否是通过newRouter 来初始化的
-	Enter          func(http.ResponseWriter, *http.Request) // 当有请求进入时候的执行
+	new            bool                                          // 判断是否是通过newRouter 来初始化的
+	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
 	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
 	HanleFavicon   http.Handler
@@ -234,7 +234,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		panic("must be use get router by NewRouter()")
 	}
 	if r.Enter != nil {
-		r.Enter(w, req)
+		if r.Enter(w, req) {
+			return
+		}
 	}
 
 	if stop {
