@@ -31,6 +31,7 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 		handle:      http.HandlerFunc(handler),
 		midware:     gr.midware,
 		pagekeys:    tempPages,
+		delmidware:  gr.delmidware,
 		module:      gr.module,
 		delmodule:   gr.delmodule,
 		header:      temphead,
@@ -39,9 +40,9 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 	}
 	url, ok := gr.makeRoute(pattern)
 	if ok {
-		if _, urlok := gr.tpl[url]; urlok {
+		if _, urlOk := gr.tpl[url]; urlOk {
 			// 如果存在就判断是否存在method
-			if _, methodok := gr.tpl[url][method]; methodok {
+			if _, methodOk := gr.tpl[url][method]; methodOk {
 				// 如果也存在， 那么method重复了
 				log.Fatal(ErrMethodDuplicate)
 			} else {
@@ -61,9 +62,9 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 		// 判断是不是正则
 		// return gr.tpl[url].getRoute(url, method, handler, gr)
 	} else {
-		if _, urlok := gr.route[url]; urlok {
+		if _, urlOk := gr.route[url]; urlOk {
 			// 如果存在就判断是否存在method
-			if _, methodok := gr.route[url][method]; methodok {
+			if _, methodOk := gr.route[url][method]; methodOk {
 				// 如果也存在， 那么method重复了
 				log.Fatal(ErrMethodDuplicate)
 			} else {

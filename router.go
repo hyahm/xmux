@@ -428,10 +428,8 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	for k := range route.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-	route.pagekeys = tempPages
-
-	// delete midware
-	if route.delmidware != nil && GetFuncName(route.delmidware) == GetFuncName(r.midware) {
+	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
+	if route.midware != nil && GetFuncName(route.delmidware) == GetFuncName(route.midware) {
 		route.midware = nil
 	}
 	// 模块合并
