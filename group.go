@@ -244,7 +244,7 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 				if _, ok := g.tpl[url][method]; ok {
 					log.Fatalf("%s %s is Duplication", url, method)
 				}
-				g.merge(group, group.route[url][method])
+				g.merge(group, group.tpl[url][method])
 			}
 			g.tpl[url] = group.tpl[url]
 		}
