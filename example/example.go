@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -141,43 +140,45 @@ func printTime(ws *xmux.BaseWs, mt byte) {
 }
 
 func main() {
-	router := xmux.NewRouter().MiddleWare(xmux.DefaultMidwareTemplate)
-
-	router.SetHeader("Access-Control-Allow-Origin", "*")
-	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
-	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
-	// router.Slash = true
-	// router.MiddleWare(GetExecTime)
-	router.Request("/aaaa", home, http.MethodGet, http.MethodPost)
-	router.Get("/{user}/{info}", func(rw http.ResponseWriter, r *http.Request) {
-		ws, err := xmux.UpgradeWebSocket(rw, r)
-		os.OpenFile("", os.O_APPEND, 0755)
-		if err != nil {
-			log.Print("upgrade:", err)
-			return
-		}
-		defer ws.Close()
-		for {
-			mt, message, err := ws.ReadMessage()
-			if err != nil {
-				log.Println("read:", err)
-				break
-			}
-			log.Printf("recv: %s", message)
-			err = ws.SendMessage([]byte(message), mt)
-			if err != nil {
-				log.Println("write:", err)
-				break
-			}
-			go printTime(ws, mt)
-		}
+	router := xmux.NewRouter()
+	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
 	})
-	router.Get("/", func(rw http.ResponseWriter, r *http.Request) {
-		rw.Write([]byte("ok"))
-	}).DelMiddleWare(xmux.DefaultMidwareTemplate)
+	// router.SetHeader("Access-Control-Allow-Origin", "*")
+	// router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
+	// router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
+	// // router.Slash = true
+	// // router.MiddleWare(GetExecTime)
+	// router.Request("/aaaa", home, http.MethodGet, http.MethodPost)
+	// router.Get("/{user}/{info}", func(rw http.ResponseWriter, r *http.Request) {
+	// 	ws, err := xmux.UpgradeWebSocket(rw, r)
+	// 	os.OpenFile("", os.O_APPEND, 0755)
+	// 	if err != nil {
+	// 		log.Print("upgrade:", err)
+	// 		return
+	// 	}
+	// 	defer ws.Close()
+	// 	for {
+	// 		mt, message, err := ws.ReadMessage()
+	// 		if err != nil {
+	// 			log.Println("read:", err)
+	// 			break
+	// 		}
+	// 		log.Printf("recv: %s", message)
+	// 		err = ws.SendMessage([]byte(message), mt)
+	// 		if err != nil {
+	// 			log.Println("write:", err)
+	// 			break
+	// 		}
+	// 		go printTime(ws, mt)
+	// 	}
+	// })
+	// router.Get("/", func(rw http.ResponseWriter, r *http.Request) {
+	// 	rw.Write([]byte("ok"))
+	// }).DelMiddleWare(xmux.DefaultMidwareTemplate)
 
-	router.AddGroup(initv1())
-	router.DebugAssignRoute("/json/key")
+	// router.AddGroup(initv1())
+	// router.DebugAssignRoute("/json/key")
 	// router.Get("/stop", func(rw http.ResponseWriter, r *http.Request) {
 	// 	xmux.StopService()
 	// 	r.BasicAuth()

@@ -35,42 +35,44 @@ func sendMsg() {
 }
 
 func ws(w http.ResponseWriter, r *http.Request) {
-	p, err := xmux.UpgradeWebSocket(w, r)
+	websocket, err := xmux.UpgradeWebSocket(w, r)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	p.SendMessage([]byte("hello"), xmux.TypeMsg)
+	websocket.SendMessage([]byte("hello"), xmux.TypeMsg)
+	websocket.SendMessage([]byte("hello"), xmux.TypeMsg)
 	wsmu.Lock()
-	ps[p] = xmux.TypeMsg
+	ps[websocket] = xmux.TypeMsg
 	wsmu.Unlock()
 	tt := time.NewTicker(time.Second * 2)
 	go func() {
 		for {
 			<-tt.C
-			if err := p.SendMessage([]byte(time.Now().String()), xmux.TypeMsg); err != nil {
+			if err := websocket.SendMessage([]byte(time.Now().String()), xmux.TypeMsg); err != nil {
 				break
 			}
 		}
 	}()
 	for {
-		if p.Conn == nil {
+		if websocket.Conn == nil {
 			return
 		}
 		// 封包
-		msgType, msg, err := p.ReadMessage()
+		msgType, msg, err := websocket.ReadMessage()
 		if err != nil {
 			fmt.Println(err.Error())
 			// 连接断开
 			wsmu.Lock()
-			delete(ps, p)
+			delete(ps, websocket)
 			wsmu.Unlock()
 			break
 		}
-		ps[p] = msgType
+		websocket.SendMessage([]byte(msg+r.RemoteAddr), msgType)
+		ps[websocket] = msgType
 		c := client{
 			msg: msg,
-			c:   p,
+			c:   websocket,
 		}
 		msgchan <- c
 	}
@@ -85,7 +87,7 @@ func main() {
 	router.Get("/{int:uid}", ws)
 
 	go sendMsg()
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	if err := http.ListenAndServe(":8888", router); err != nil {
 		log.Fatal(err)
 	}
 

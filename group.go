@@ -191,14 +191,12 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	for k := range g.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-
 	for k := range route.pagekeys {
 		tempPages[k] = struct{}{}
 	}
 	route.pagekeys = tempPages
 	// 合并 delPageKeys
 	route.delPageKeys = append(g.delPageKeys, route.delPageKeys...)
-
 	// delete midware
 	if route.delmidware != nil && GetFuncName(route.delmidware) == GetFuncName(g.midware) {
 		route.midware = nil

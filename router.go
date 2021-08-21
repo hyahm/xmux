@@ -430,6 +430,8 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	for k := range route.pagekeys {
 		tempPages[k] = struct{}{}
 	}
+
+	route.pagekeys = tempPages
 	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
 	if route.midware != nil && GetFuncName(route.delmidware) == GetFuncName(route.midware) {
 		route.midware = nil
@@ -551,8 +553,8 @@ func merge(group *GroupRoute, route *Route) {
 
 func debugPrint(url string, mr MethodsRoute) {
 	for k, v := range mr {
-		log.Printf("url: %s, method: %s, header: %+v, module: %#v, midware: %#v \n",
-			url, k, v.header, v.module.funcOrder, GetFuncName(v.midware))
+		log.Printf("url: %s, method: %s, header: %+v, module: %#v, midware: %#v , pages: %#v\n",
+			url, k, v.header, v.module.funcOrder, GetFuncName(v.midware), v.pagekeys)
 	}
 }
 
@@ -589,7 +591,7 @@ func (r *Router) GetAssignRoute(thisurl string) MethodsRoute {
 	return nil
 }
 
-func (r *Router) DebugTpl(pattern string) {
+func (r *Router) DebugTpl() {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}

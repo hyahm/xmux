@@ -24,7 +24,6 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 	for k := range gr.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-
 	tempDelPageKeys := make([]string, 0)
 	tempDelPageKeys = append(tempDelPageKeys, gr.delPageKeys...)
 	newRoute := &Route{
