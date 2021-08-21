@@ -45,7 +45,7 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 			// 如果存在就判断是否存在method
 			if _, methodok := r.tpl[url][method]; methodok {
 				// 如果也存在， 那么method重复了
-				log.Fatal(ErrMethodDuplicate)
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
 				return nil
 			} else {
 				// 如果不存在就创建一个 route
@@ -67,7 +67,7 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 			// 如果存在就判断是否存在method
 			if _, methodok := r.route[url][method]; methodok {
 				// 如果也存在， 那么method重复了
-				log.Fatal(ErrMethodDuplicate)
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
 				return nil
 			} else {
 				// 如果不存在就创建一个 route

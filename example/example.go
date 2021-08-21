@@ -144,6 +144,9 @@ func main() {
 	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
+	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
+	})
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
 	// router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	// router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")

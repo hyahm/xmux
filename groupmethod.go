@@ -1,12 +1,9 @@
 package xmux
 
 import (
-	"errors"
 	"log"
 	"net/http"
 )
-
-var ErrMethodDuplicate = errors.New("method duplicate")
 
 // get this route
 func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
@@ -43,7 +40,7 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 			// 如果存在就判断是否存在method
 			if _, methodOk := gr.tpl[url][method]; methodOk {
 				// 如果也存在， 那么method重复了
-				log.Fatal(ErrMethodDuplicate)
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
 			} else {
 				// 如果不存在就创建一个 route
 
@@ -65,7 +62,7 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 			// 如果存在就判断是否存在method
 			if _, methodOk := gr.route[url][method]; methodOk {
 				// 如果也存在， 那么method重复了
-				log.Fatal(ErrMethodDuplicate)
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
 			} else {
 				// 如果不存在就创建一个 route
 				gr.route[url][method] = newRoute
