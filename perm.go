@@ -37,13 +37,6 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 		w.Write([]byte("没有页面权限"))
 		return true
 	}
-
-	// os.OpenFile("", os.O_APPEND|os.O_WRONLY, 0755)
-	if _, ok := perm[page]; !ok {
-		w.Write([]byte("没有权限"))
-		return true
-	}
-
 	// permMap := make(map[string]bool)
 	result := GetPerm(pl, perm[page])
 	handleName := GetInstance(r).Get(CURRFUNCNAME).(string)
