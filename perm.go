@@ -5,6 +5,11 @@ import (
 )
 
 func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
+	// 如果是管理员的，直接就过
+	// if uid == <adminId> {
+	// 	retrun false
+	// }
+
 	// roles := []string{"env", "important"}
 	var pl = []string{"Read", "Create", "Update", "Delete"}
 	var permissionMap = map[string]int{
@@ -20,6 +25,10 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 
 	//
 	pages := GetInstance(r).Get(PAGES).(map[string]struct{})
+	// 如果长度为0的话，说明任何人都可以访问
+	if len(pages) == 0 {
+		return false
+	}
 	//  请求/project/read     map[admin:{} project:{}]
 	// 判断 pages 是否存在 perm
 	// 注意点： 这里的页面权限本应该只会匹配到一个， 这个是对于的页面权限的值
