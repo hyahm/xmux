@@ -144,6 +144,27 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
+func bind(route *rt, req *http.Request, fd *FlowData) {
+	// 数据绑定
+	var err error
+	defer req.Body.Close()
+	switch route.bindType {
+	case jsonT:
+		err = json.NewDecoder(req.Body).Decode(&fd.Data)
+
+	case yamlT:
+		err = yaml.NewDecoder(req.Body).Decode(&fd.Data)
+
+	case xmlT:
+		err = xml.NewDecoder(req.Body).Decode(&fd.Data)
+	}
+	if err != nil {
+		if err != io.EOF {
+			log.Println(err)
+		}
+	}
+}
+
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request) {
 	fd := &FlowData{
 		ctx: make(map[string]interface{}),
@@ -169,37 +190,10 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		} else {
 			fd.Data = reflect.New(reflect.TypeOf(route.dataSource)).Interface()
 		}
-
-		// 数据绑定
-		switch route.bindType {
-		case jsonT:
-			err := json.NewDecoder(req.Body).Decode(&fd.Data)
-			if err != nil {
-				if err != io.EOF {
-					log.Println(err)
-				}
-				break
-			}
-			defer req.Body.Close()
-		case yamlT:
-			err := yaml.NewDecoder(req.Body).Decode(&fd.Data)
-			if err != nil {
-				if err != io.EOF {
-					log.Println(err)
-				}
-				break
-			}
-			defer req.Body.Close()
-		case xmlT:
-			err := xml.NewDecoder(req.Body).Decode(&fd.Data)
-			if err != nil {
-				if err != io.EOF {
-					log.Println(err)
-				}
-				break
-			}
-			defer req.Body.Close()
+		if route.bindType != 0 {
+			bind(route, req, fd)
 		}
+
 	}
 	for k, v := range route.Header {
 		w.Header().Set(k, v)

@@ -154,7 +154,6 @@ func (rt *Route) Bind(s interface{}) *Route {
 // json数据绑定
 func (rt *Route) BindJson(s interface{}) *Route {
 	// 接口补充说明
-
 	rt.dataSource = s
 	rt.bindType = jsonT
 	return rt

@@ -139,14 +139,21 @@ func printTime(ws *xmux.BaseWs, mt byte) {
 
 }
 
+type UserInfo struct {
+	User     string `json:"user"`
+	Password string `json:"password"`
+}
+
 func main() {
 	router := xmux.NewRouter()
 	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
-	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/user/info", func(w http.ResponseWriter, r *http.Request) {
+		ui := xmux.GetInstance(r).Data.(*UserInfo)
+		fmt.Printf("%#v", *ui)
 		w.Write([]byte("ok"))
-	})
+	}).BindJson(UserInfo{})
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
 	// router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	// router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
