@@ -224,5 +224,5 @@ func main() {
 	// doc := router.ShowApi("/docs")
 	// router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	// router.DebugRoute()
-	router.Run(":8888")
+	router.RunUnsafeTLS(":8888")
 }

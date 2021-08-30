@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -331,16 +333,30 @@ func (r *Router) Run(opt ...string) error {
 	if len(opt) > 0 {
 		addr = opt[0]
 	}
-	srv := &http.Server{
+	svc := &http.Server{
 		Addr:        addr,
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
 	fmt.Printf("listen on %s\n", addr)
-	return srv.ListenAndServe()
+	return svc.ListenAndServe()
 }
 
-func (r *Router) RunTLS(crt, key string, opt ...string) error {
+func SetPem(name string) string {
+	return name
+}
+
+func SetKey(name string) string {
+	return name
+}
+
+type Opt interface {
+	SetKey() string
+	SetPem() string
+	SetAddr() string
+}
+
+func (r *Router) RunUnsafeTLS(opt ...string) error {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -348,13 +364,65 @@ func (r *Router) RunTLS(crt, key string, opt ...string) error {
 	if len(opt) > 0 {
 		addr = opt[0]
 	}
-	srv := &http.Server{
+
+	svc := &http.Server{
 		Addr:        addr,
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
-	fmt.Printf("listen on %s\n", addr)
-	return srv.ListenAndServeTLS(crt, key)
+	keyfile := "keys/server.key"
+	pemfile := "keys/server.pem"
+	// 如果key文件不存在那么就自动生成
+	_, err1 := os.Stat(keyfile)
+	_, err2 := os.Stat(pemfile)
+	if os.IsNotExist(err1) || os.IsNotExist(err2) {
+		CreateTLS()
+		if err := svc.ListenAndServeTLS(pemfile, keyfile); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := svc.ListenAndServeTLS(pemfile, keyfile); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("listen on " + addr + " over https")
+	return nil
+}
+
+func (r *Router) RunTLS(keyfile, pemfile string, opt ...string) error {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	if strings.Trim(keyfile, "") == "" {
+		panic("keyfile is empty")
+	}
+	if strings.Trim(pemfile, "") == "" {
+		panic("pemfile is empty")
+	}
+	addr := ":443"
+	if len(opt) > 0 {
+		addr = opt[0]
+	}
+
+	svc := &http.Server{
+		Addr:        addr,
+		ReadTimeout: r.ReadTimeout,
+		Handler:     r,
+	}
+
+	// 如果key文件不存在那么就自动生成
+	_, err1 := os.Stat(keyfile)
+	_, err2 := os.Stat(pemfile)
+	if os.IsNotExist(err1) || os.IsNotExist(err2) {
+		CreateTLS()
+		if err := svc.ListenAndServeTLS(filepath.Join("keys", "server.pem"), filepath.Join("keys", "server.key")); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := svc.ListenAndServeTLS(pemfile, keyfile); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("listen on " + addr + " over https")
+	return nil
 }
 
 func NewRouter(cache ...uint64) *Router {
