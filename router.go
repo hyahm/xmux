@@ -289,11 +289,9 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 			re := regexp.MustCompile(reUrl)
 			req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
-				thisRoute, ok = r.tpl[reUrl][req.Method]
-				if !ok {
-					r.HandleNotFound.ServeHTTP(w, req)
-					atomic.AddInt32(&connections, -1)
-					return
+				if thisRoute, ok = r.tpl[reUrl][req.Method]; !ok {
+					// 有匹配到，但是没找到方法就继续向下匹配
+					continue
 				}
 				ap := make(map[string]string)
 				vl := re.FindStringSubmatch(req.URL.Path)
@@ -309,7 +307,6 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 		return
 	}
 endloop:
-
 	// 缓存handler
 	thisRouter := &rt{
 		Handle:     thisRoute.handle,

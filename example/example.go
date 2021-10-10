@@ -154,6 +154,7 @@ func main() {
 		fmt.Printf("%#v", *ui)
 		w.Write([]byte("ok"))
 	}).BindJson(UserInfo{})
+	router.Get("/user/{int:info}", nil)
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
 	// router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	// router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
@@ -224,5 +225,5 @@ func main() {
 	// doc := router.ShowApi("/docs")
 	// router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	// router.DebugRoute()
-	router.RunUnsafeTLS(":8888")
+	router.Run(":8888")
 }
