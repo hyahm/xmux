@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hyahm/xmux"
@@ -144,7 +145,26 @@ type UserInfo struct {
 	Password string `json:"password"`
 }
 
+type TestData struct {
+	ID int `json:"id"`
+}
+
+var filter map[int]struct{}
+
+var lock sync.RWMutex
+
+func Add(key int) error {
+	lock.Lock()
+	defer lock.Unlock()
+	if _, ok := filter[key]; !ok {
+		filter[key] = struct{}{}
+	}
+	return fmt.Errorf("key exsits %d", key)
+}
+
 func main() {
+	filter = make(map[int]struct{})
+	lock = sync.RWMutex{}
 	router := xmux.NewRouter()
 	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
@@ -154,6 +174,13 @@ func main() {
 		fmt.Printf("%#v", *ui)
 		w.Write([]byte("ok"))
 	}).BindJson(UserInfo{})
+	router.Post("/test/form", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("5555")
+		ui := xmux.GetInstance(r).Data.(*TestData)
+		fmt.Println(ui.ID)
+		Add(ui.ID)
+		w.Write([]byte("ok"))
+	}).BindJson(TestData{})
 	router.Get("/user/{int:info}", nil)
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
 	// router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
