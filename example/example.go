@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -164,8 +163,6 @@ func Add(key int) error {
 }
 
 func main() {
-	defer golog.Sync()
-	golog.Info("555555")
 	filter = make(map[int]struct{})
 	lock = sync.RWMutex{}
 	router := xmux.NewRouter()
@@ -178,14 +175,9 @@ func main() {
 		w.Write([]byte("ok"))
 	}).BindJson(UserInfo{})
 	router.Post("/test/form", func(w http.ResponseWriter, r *http.Request) {
-		golog.Info(r.RemoteAddr)
 		ui := xmux.GetInstance(r).Data.(*TestData)
-		golog.Info(ui.ID)
 		Add(ui.ID)
 		w.Write([]byte("ok"))
-		golog.Info(r.Close)
-		golog.Info(r.Body.Close())
-		golog.Info(r.Close)
 	}).BindJson(TestData{})
 	router.Get("/user/{int:info}", nil)
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
@@ -260,3 +252,20 @@ func main() {
 	// router.DebugRoute()
 	router.Run(":8888")
 }
+
+// func cni(w http.ResponseWriter, r *http.Request) {
+// 	proxy := httputil.NewSingleHostReverseProxy(r.URL)
+// 	proxy.ServeHTTP(w, r)
+// }
+
+// func test(w http.ResponseWriter, r *http.Request) {
+// 	proxy := httputil.NewSingleHostReverseProxy(r.URL)
+// 	proxy.ServeHTTP(w, r)
+// }
+
+// func main() {
+// 	router := xmux.NewRouter()
+// 	router.Get("/download/aa{string:CNI_VERSION}bb{word}", test)
+// 	router.Get("/containernetworking/plugins/releases/download/{string:CNI_VERSION}/cni-plugins-linux-{ARCH}-{string:CNI_VERSION}.tgz", cni)
+// 	router.Run(":8080")
+// }

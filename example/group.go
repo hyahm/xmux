@@ -7,7 +7,7 @@ import (
 	"github.com/hyahm/xmux"
 )
 
-func test(w http.ResponseWriter, r *http.Request) bool {
+func testgroup(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println("test")
 	return false
 }
@@ -22,7 +22,7 @@ func Admin() *xmux.GroupRoute {
 }
 
 func Home() *xmux.GroupRoute {
-	home := xmux.NewGroupRoute().AddModule(test)
+	home := xmux.NewGroupRoute().AddModule(testgroup)
 	home.Get("/home", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("home"))
 	})

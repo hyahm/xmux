@@ -18,7 +18,7 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 }
 
 func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
-	// 判断是否是正则
+
 	temphead := make(map[string]string)
 	for k, v := range r.header {
 		temphead[k] = v
@@ -39,6 +39,7 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 		delmodule:   delModule{},
 		delPageKeys: make([]string, 0),
 	}
+	// 判断是否是正则
 	url, ok := r.makeRoute(pattern)
 	if ok {
 		if _, urlok := r.tpl[url]; urlok {
@@ -60,8 +61,6 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 			r.tpl[url] = mr
 			return newRoute
 		}
-		// 判断是不是正则
-		// return gr.tpl[url].getRoute(url, method, handler, gr)
 	} else {
 		if _, urlok := r.route[url]; urlok {
 			// 如果存在就判断是否存在method

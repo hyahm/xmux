@@ -6,12 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/hyahm/golog"
 )
 
 func TestRequest(t *testing.T) {
-	defer golog.Sync()
 	cli := http.Client{
 		// Transport: &http.Transport{
 		// 	DisableKeepAlives: true,
@@ -30,7 +27,6 @@ func TestRequest(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	golog.Info(string(b))
-	golog.Info(response.StatusCode)
+	log.Println(string(b))
 	response.Body.Close()
 }
