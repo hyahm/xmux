@@ -1,18 +1,21 @@
 package xmux
 
 import (
-	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/hyahm/golog"
 )
 
 func TestRequest(t *testing.T) {
+	defer golog.Sync()
 	cli := http.Client{
-		Transport: &http.Transport{
-			DisableKeepAlives: true,
-		},
+		// Transport: &http.Transport{
+		// 	DisableKeepAlives: true,
+		// },
 	}
 
 	req, err := http.NewRequest("POST", "http://localhost:8888/test/form", strings.NewReader(`{"id": 1}`))
@@ -23,6 +26,11 @@ func TestRequest(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(response.StatusCode)
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	golog.Info(string(b))
+	golog.Info(response.StatusCode)
 	response.Body.Close()
 }

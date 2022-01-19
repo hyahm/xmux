@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -163,6 +164,8 @@ func Add(key int) error {
 }
 
 func main() {
+	defer golog.Sync()
+	golog.Info("555555")
 	filter = make(map[int]struct{})
 	lock = sync.RWMutex{}
 	router := xmux.NewRouter()
@@ -175,11 +178,14 @@ func main() {
 		w.Write([]byte("ok"))
 	}).BindJson(UserInfo{})
 	router.Post("/test/form", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("5555")
+		golog.Info(r.RemoteAddr)
 		ui := xmux.GetInstance(r).Data.(*TestData)
-		fmt.Println(ui.ID)
+		golog.Info(ui.ID)
 		Add(ui.ID)
 		w.Write([]byte("ok"))
+		golog.Info(r.Close)
+		golog.Info(r.Body.Close())
+		golog.Info(r.Close)
 	}).BindJson(TestData{})
 	router.Get("/user/{int:info}", nil)
 	// router.SetHeader("Access-Control-Allow-Origin", "*")

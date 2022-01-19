@@ -125,13 +125,13 @@ func main() {
 ```go
 func main() {
 	router := xmux.NewRouter()
-	router.Slash = true
+	router.IgnoreSlash = true
 	router.Get("/get",show) // 不同请求分别处理
 	router.Get("/get/",show) // 不同请求分别处理
 	router.Run()
 }
 
-如果 router.Slash = false
+如果 router.IgnoreSlash = false
 那么运行上面将会报错，/get/被转为 /get 如下  
 2019/11/29 21:51:11 pattern duplicate for /get
 
@@ -247,7 +247,7 @@ func main() {
 // 如果某些路由有单独请求头， 可以单独设置
 func main() {
 	router := xmux.NewRouter()
-	router.Slash = true
+	router.IgnoreSlash = true
 	router.SetHeader("Access-Control-Allow-Origin", "*")  // 主要的解决跨域, 因为是全局的请求头， 所以后面增加的路由全部支持跨域
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,Access-Token,X-Token,Origin,smail,authorization")  // 新增加的请求头
 	router.Get("/", index)
@@ -356,7 +356,7 @@ http://www.hyahm.com/mmm///af/af,  默认是请求不到的
 但是设置后
 ```go
 router := xmux.NewRouter()
-router.Slash = true  
+router.IgnoreSlash = true  
 ```
 是可以直接访问 http://www.hyahm.com/mmm/af/af 这个地址的请求
 

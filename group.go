@@ -9,7 +9,7 @@ import (
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
 	route       PatternMR // 完全匹配的路由对应的methodsroute
-	slash       bool
+	ignoreSlash bool
 	header      map[string]string
 	tpl         PatternMR // 正则匹配的路由对应的methodsroute
 	module      module
@@ -136,8 +136,8 @@ func (g *GroupRoute) DelModule(handles ...func(http.ResponseWriter, *http.Reques
 // 返回url 和 是否是正则表达式
 func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 	// 格式路径
-	if g.slash {
-		pattern = slash(pattern)
+	if g.ignoreSlash {
+		pattern = prettySlash(pattern)
 	}
 
 	if g.params == nil {

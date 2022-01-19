@@ -14,7 +14,7 @@ const (
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
-func slash(s string) string {
+func prettySlash(s string) string {
 	sl := strings.Split(s, "/")
 	n := make([]string, 0, len(sl))
 	for _, v := range sl {

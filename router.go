@@ -63,7 +63,7 @@ type Router struct {
 	DisableOption  bool         // 禁止全局option
 	HandleOptions  http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound http.Handler
-	Slash          bool                // 忽略地址多个斜杠， 默认不忽略
+	IgnoreSlash    bool                // 忽略地址多个斜杠， 默认不忽略
 	route          PatternMR           // 单实例路由， 组路由最后也会合并过来
 	tpl            PatternMR           // 正则路由， 组路由最后也会合并过来
 	params         map[string][]string // 记录所有路由， []string 是正则匹配的参数
@@ -87,8 +87,8 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
 
-	if r.Slash {
-		pattern = slash(pattern)
+	if r.IgnoreSlash {
+		pattern = prettySlash(pattern)
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
@@ -239,8 +239,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
-	if r.Slash {
-		req.URL.Path = slash(req.URL.Path)
+	if r.IgnoreSlash {
+		req.URL.Path = prettySlash(req.URL.Path)
 	}
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和模块
 	if req.URL.Path == "/favicon.ico" {
