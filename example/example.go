@@ -180,10 +180,10 @@ func main() {
 		w.Write([]byte("ok"))
 	}).BindJson(TestData{})
 	router.Get("/user/{int:info}", nil)
+	router.AddGroup(xmux.Pprof())
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
 	// router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	// router.SetHeader("Access-Control-Allow-Headers", "Content-Type,smail,authorization")
-	// // router.Slash = true
 	// // router.MiddleWare(GetExecTime)
 	// router.Request("/aaaa", home, http.MethodGet, http.MethodPost)
 	// router.Get("/{user}/{info}", func(rw http.ResponseWriter, r *http.Request) {
@@ -250,6 +250,7 @@ func main() {
 	// doc := router.ShowApi("/docs")
 	// router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	// router.DebugRoute()
+	router.DebugAssignRoute("/user/info")
 	router.Run(":8888")
 }
 

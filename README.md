@@ -58,6 +58,7 @@ import (
 
 func main() {
 	router := xmux.NewRouter()
+	// 只是例子不建议下面的写法， 而是使用   router.Reqeust("/",nil, "POST", "GET")
 	router.Get("/",nil)  // get请求
 	router.Post("/",nil)  // post请求
 	router.Reqeust("/getpost",nil, "POST", "GET")  // 同时支持get，post请求
@@ -782,7 +783,49 @@ type Call struct {
 	Msg  string `json:"msg" type:"string" need:"否" information:"错误信息"`
 }
 ```
+### 性能分析
+
+```
+func main() {
+	router := xmux.NewRouter()
+	router.AddModule(DefaultPermissionTemplate)
+	router.Post("/permission", AddName).AddPageKeys("admin", "editor")
+	router.Post("/permission/page", AddStd).DelPageKeys("editor")
+	router.Post("/permission/directive", AddFoo)
+	// 也可以直接使用内置的
+	router.AddGroup(xmux.Pprof())
+	router.Run()
+}
+```
+
+
+
+> open http://localhost:8080/debug/pprof  can see pprof page
+
+
+
+### 查看某handel详细的中间件模块等信息
+
+```
+// 查看某个指定路由的详细信息
+router.DebugAssignRoute("/user/info")  
+// 查看某个正则火匹配路由的固定uri来获取某路由的详细
+router.DebugIncludeTpl("")
+// 显示全部的， 不建议使用，
+router.DebugRoute()
+router.DebugTpl()
+```
+
+> out
+
+```
+2022/01/22 17:16:11 url: /user/info, method: GET, header: map[], module: xmux.funcOrder{"github.com/hyahm/xmux.DefaultPermissionTemplate"}, midware: "" , pages: map[string]struct {}{}
+```
+
+
+
 ### 压力测试
+
 ```
 PS D:\myproject\xmux> go.exe test -benchmem -run=^$ -bench . github.com/hyahm/xmux -v                        
 goos: windows
