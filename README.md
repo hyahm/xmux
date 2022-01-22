@@ -788,10 +788,7 @@ type Call struct {
 ```
 func main() {
 	router := xmux.NewRouter()
-	router.AddModule(DefaultPermissionTemplate)
-	router.Post("/permission", AddName).AddPageKeys("admin", "editor")
-	router.Post("/permission/page", AddStd).DelPageKeys("editor")
-	router.Post("/permission/directive", AddFoo)
+	router.Post("/", nil)
 	// 也可以直接使用内置的
 	router.AddGroup(xmux.Pprof())
 	router.Run()
