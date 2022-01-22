@@ -17,7 +17,6 @@
 - [x] 数据绑定
 - [x] 增加websocket， 可以学习，不建议使用, 如果其他的不好可以试试  
 - [x] 集成pprof， router.AddGroup(xmux.Pprof())
-- [x] 支持代理（参考于:  https://github.com/ouqiang/goproxy ）
 - [x] 支持权限控制
 - [x] 进入时和处理完成时的钩子函数 
 
@@ -96,6 +95,7 @@ func main() {
 ```go
 func main() {
 	router := xmux.NewRouter()
+	router.Get("/foo/{all:age}", foo)
 	router.Get("/{all:age}", show)   // 这个可以匹配任何路由
 	router.Post("/{all:age}", Who)   // 这个可以匹配任何路由
 	router.Run()
@@ -103,8 +103,9 @@ func main() {
 ```
 
 记住， 是100%，  此路由优先匹配完全匹配规则， 匹配不到再寻找 正则匹配， 加快了寻址速度  
-访问 /get -> 识别 show   
-访问  /post   -> 识别 Who  
+访问 /foo/get  get -> 识别 foo 
+访问 /foo/get  get -> 识别 show   
+访问 /foo/post  post   -> 识别 Who  
 
 ### 自动检测重复项,
 ```go
@@ -134,8 +135,6 @@ func main() {
 如果 router.IgnoreSlash = false
 那么运行上面将会报错，/get/被转为 /get 如下  
 2019/11/29 21:51:11 pattern duplicate for /get
-
-否则正常启动
 
 ```
 
@@ -267,6 +266,7 @@ func filter(w http.ResponseWriter, r *http.Request) bool {
 
 func name(w http.ResponseWriter, r *http.Request) {
 	name := xmux.GetInstance(r).Get("name").(string)
+    fmt.Println(name)
 	w.Write([]byte("hello world " + name))
 	return
 }
@@ -277,10 +277,22 @@ func main() {
 	router.Run()
 }
 
+
+```
+
+> /aaa/name
+
+```
+login mw
+name
 ```
 
 
+
+
+
 ### 获取正则匹配的参数
+
 ```go
 func Who(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var(r)["name"])
@@ -294,25 +306,12 @@ func main() {
 	router.Get("/aaa/{name}/{int:age}", Who)
 	router.Run()
 }
-``` 
+```
 ### 数据绑定（Bind(), 与Module 一起使用,DelModule必须放在AddModule之后）
 将数据结构绑定到此 Handle 里， 通过读取r.Body 来解析数据
 因为解析的代码都是一样的， 绑定后可以共用同一份代码
 
 ```go
-func filter(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("login mw")
-	xmux.GetInstance(r).Set("name","xmux")
-	r.Header.Set("bbb", "ccc")
-	return false
-}
-
-func name(w http.ResponseWriter, r *http.Request) {
-	name := xmux.GetInstance(r).Get("name").(string)
-	w.Write([]byte("hello world " + name))
-	return
-}
-
 func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
 	// 任何报错信息， 直接return true， 就是此handle 直接执行完毕了， 不继续向后面走了
 	if goconfig.ReadBool("debug", false) {
@@ -334,20 +333,35 @@ func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-type DataName struct {}
-type DataStd struct {}
-type DataFoo struct {}
+type DataName struct{}
+type DataStd struct{}
+type DataFoo struct{}
 
+func AddName(w http.ResponseWriter, r *http.Request) {
+	df := xmux.GetInstance(r).Data.(*DataName)
+	fmt.Printf("%#v", df)
+}
+
+func AddStd(w http.ResponseWriter, r *http.Request) {
+	df := xmux.GetInstance(r).Data.(*DataStd)
+	fmt.Printf("%#v", df)
+}
+
+func AddFoo(w http.ResponseWriter, r *http.Request) {
+	df := xmux.GetInstance(r).Data.(*DataFoo)
+	fmt.Printf("%#v", df)
+}
 
 func main() {
 	router := xmux.NewRouter()
-	router.Post("/important/name", handle.AddName).Bind(&DataName{}).AddMidware(midware.JsonToStruct)
-	router.Post("/important/std", handle.AddStd).Bind(&DataStd{}).AddMidware(midware.JsonToStruct)
-	router.Post("/important/foo", handle.AddFoo).Bind(&DataFoo{}).AddMidware(midware.JsonToStruct)
+	router.Post("/important/name", AddName).Bind(&DataName{}).AddModule(JsonToStruct)
+	router.Post("/important/std", AddStd).Bind(&DataStd{}).AddModule(JsonToStruct)
+	router.Post("/important/foo", AddFoo).Bind(&DataFoo{}).AddModule(JsonToStruct)
 	// 也可以直接使用内置的
-	router.Post("/important/foo", handle.AddFoo).BindJson(&DataFoo{})  // 如果是json格式的可以直接 BindJson 与上面是类似的效果
+	router.Post("/important/foo/by/json", AddFoo).BindJson(&DataFoo{}) // 如果是json格式的可以直接 BindJson 与上面是类似的效果
 	router.Run()
 }
+
 ```
 
 ### 自动修复请求的url
@@ -499,54 +513,200 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
 
 ###  权限控制
 - 页面权限
-思路来自前端框架路由组件 meta 的 roles  
-通过给定数组来判断
+  思路来自前端框架路由组件 meta 的 roles  
+  通过给定数组来判断
 
-- 细致的增删改查权限但不限于 增删改查
-想过最简单的是根据 handle 的函数名 来判断
+  > 以github前端star最多的vue后端项目为例子    https://github.com/PanJiaChen/vue-element-admin
+
+  
+
+  ```
+  src/router/index.js 里面的页面权限路由
+  
+  
+  {
+      path: '/permission',
+      component: Layout,
+      redirect: '/permission/page',
+      alwaysShow: true, // will always show the root menu
+      name: 'Permission',
+      meta: {
+        title: 'Permission',
+        icon: 'lock',
+        roles: ['admin', 'editor'] // you can set roles in root nav
+      },
+      children: [
+        {
+          path: 'page',
+          component: () => import('@/views/permission/page'),
+          name: 'PagePermission',
+          meta: {
+            title: 'Page Permission',
+            roles: ['admin'] // or you can only set roles in sub nav
+          }
+        },
+        {
+          path: 'directive',
+          component: () => import('@/views/permission/directive'),
+          name: 'DirectivePermission',
+          meta: {
+            title: 'Directive Permission'
+            // if do not set roles, means: this page does not require permission
+          }
+        },
+        {
+          path: 'role',
+          component: () => import('@/views/permission/role'),
+          name: 'RolePermission',
+          meta: {
+            title: 'Role Permission',
+            roles: ['admin']
+          }
+        }
+      ]
+    },
+  ```
+
+  > xmux 对应的写法
+
+  ```
+  
+  func AddName(w http.ResponseWriter, r *http.Request) {
+  	fmt.Printf("%v", "AddName")
+  }
+  
+  func AddStd(w http.ResponseWriter, r *http.Request) {
+  	fmt.Printf("%v", "AddStd")
+  }
+  
+  func AddFoo(w http.ResponseWriter, r *http.Request) {
+  	fmt.Printf("%v", "AddFoo")
+  }
+  
+  func role(w http.ResponseWriter, r *http.Request) {
+  	fmt.Printf("%v", "role")
+  }
+  
+  func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
+  
+  	// 拿到对应uri的权限， 也就是AddPageKeys和DelPageKeys所设置的
+  	pages := xmux.GetInstance(r).Get(xmux.PAGES).(map[string]struct{})
+  	// 如果长度为0的话，说明任何人都可以访问
+  	if len(pages) == 0 {
+  		return false
+  	}
+  
+  	// 拿到用户对应的 role，判断是都在
+  	roles := []string{"admin"} //从数据库中获取或redis获取用户的权限
+  	for _, role := range roles {
+  		if _, ok := pages[role]; ok {
+  			// 这里匹配的是存在这个权限， 那么久继续往后面的走
+  			return false
+  		}
+  	}
+  	// 没有权限
+  	w.Write([]byte("no permission"))
+  	return true
+  }
+  
+  func main() {
+  	router := xmux.NewRouter()
+  	router.AddModule(DefaultPermissionTemplate)
+  	router.Post("/permission", AddName).AddPageKeys("admin", "editor")
+  	router.Post("/permission/page", AddStd).DelPageKeys("editor")
+  	router.Post("/permission/directive", AddFoo)
+  	// 也可以直接使用内置的
+  	router.Post("/permission/role", role).DelPageKeys("editor")
+  	router.Run()
+  }
+  
+  ```
+
+  
+
+- 更加细致的增删改查权限但不限于 增删改查
+  想过最简单的是根据 handle 的函数名 来判断， 
+
+  以下内容来自xmuxd的权限模板  xmux.DefaultPermissionTemplate
+
 ```go
 // 页面权限示例 类似 setheader
 // 
-AddPageKeys("admin", "me", "xxx")  // 添加 roles 角色， 类似 前端路由的的roles字段
-DelPageKeys("admin")  // 某些节点或组删除掉这些角色权限
+// AddPageKeys("admin", "me", "xxx")  // 添加 roles 角色， 类似 前端路由的的roles字段
+// DelPageKeys("admin")  // 某些节点或组删除掉这些角色权限
 
 
 // CURD 权限， 需要统一handle 函数命令才可以，  比如增删改查对应的 handle 就是
 // Create  Update Delete List
 // 通过 module 来过滤细致权限
 
-func PermMudule(w http.ResponseWriter, r *http.Request) bool {
-	// 通过类似 token 获取到用户的uid
-	// uid := "from token" //
-	// 直接写在token 验证路由里面或者 单独在加一个module 都可以
-	// 根据uid 获取用户的CURD
-	// 获取一个给定的结构存储函数对应的细致权限
-	// 根据uid 判断自己有什么权限， 假如是retrieve 权限
-	// ------------    这是开发给定的固定值  ，也可以放到map中---------------------
-	// create := []string{"Create"} // 注意大小写方便判断
-	retrieve := []string{"List", "Get"}
-	// ------------    这是开发给定的固定值  ---------------------
-	// 获取执行函数的方法名
-	// 增删改查建议使用二进制对应  github.com/imroc/biu   1111  由二进制的某位对应一个权限
-	currFun := xmux.GetInstance(r).Get(xmux.CURRFUNCNAME) // module 或 handle 中都必定有此 值
-	// pages := xmux.GetInstance(r).Get(xmux.PAGES)          // 页面的权限， 一般都是假如到路由组 必定有此 值
-	// 假如路由匹配到这里 func List(w w http.ResponseWriter, r *http.Request) {}  currFun = "List"
-	// router.Post("/home", List)
-	// 因为 currFun = "List" 所以 retrieve 中 包含了 List 也就是 权限符合
-	// 增加switch 来判断多条件即可
-	for _, v := range retrieve {
-		if v == currFun {
-			// 符合条件， 放行
-			return false
+func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
+	// 如果是管理员的，直接就过
+	// if uid == <adminId> {
+	// 	retrun false
+	// }
+
+	// roles := []string{"env", "important"}
+	// 内置的方法最大支持8种权限，如果想要更多可以自己实现
+	var pl = []string{"Read", "Create", "Update", "Delete"}
+	// map 的key 对应页面的value  value 对应二进制位置(从右到左)
+	permissionMap := make(map[string]int)
+	for k, v := range pl {
+		permissionMap[v] = k
+	}
+	// 假如权限拿到二进制对应的10进制数据是下面
+	perm := make(map[string]uint8)
+	perm["env"] = 14       // 00001110   {"Delete", "Create", "Update"}
+	perm["important"] = 10 // 00001010   {"Create", "Delete"}
+	perm["project"] = 4    // 00000100   {"Update"}
+
+	//
+	pages := GetInstance(r).Get(PAGES).(map[string]struct{})
+	// 如果长度为0的话，说明任何人都可以访问
+	if len(pages) == 0 {
+		return false
+	}
+	//  请求/project/read     map[admin:{} project:{}]
+	// 判断 pages 是否存在 perm
+	// 注意点： 这里的页面权限本应该只会匹配到一个， 这个是对于的页面权限的值
+	page := ""
+	// 判断页面权限的
+	hasPerm := false
+	for role := range perm {
+		if _, ok := pages[role]; ok {
+			hasPerm = true
+			page = role
+			break
 		}
 	}
-	w.Write([]byte("no permission"))
-	// 认证失败， 直接返回
-	return true
+	if !hasPerm {
+		w.Write([]byte("没有页面权限"))
+		return true
+	}
+	// permMap := make(map[string]bool)
+	result := GetPerm(pl, perm[page])
+	handleName := GetInstance(r).Get(CURRFUNCNAME).(string)
+	// 这个值就是判断有没有这个操作权限
+	if !result[permissionMap[handleName]] {
+		w.Write([]byte("没有权限"))
+		return true
+	}
+	// 先拿到pl 对应名称的 索引
+	//         8        4        2          1
+	//		 delete	 update	 create		read
+	//  bit   0        0       0         0
+	/*
+		用户表
+		id
+		1
+		权限表
+		id      uid   roles                       perm
+		1       1     "env"                       0-15
+		2       1     "important"
+	*/
+	return false
 }
 
-// 注意在需要认证的路由中添加此module  AddModule(PermMudule) 即可完成， 后面权限控制全在这个module中
-// 需要修改的也在此module 中修改， 而不用考虑逻辑代码
 ```
 
 ### 客户端文件下载（官方内置方法 mp4文件为例）
@@ -655,12 +815,7 @@ Benchmark404Many-6                       9690430               123.1 ns/op      
 ### plow 压力测试预览(因cpu满载中，效果不是真实的)
 ![plow](plow.png)
 
-###  代理使用
-```go
-func main() {
-	# proxy 也是一个路由
-	proxy := NewProxy()
-	log.Fatal(http.ListenAndServe(":8080", proxy))
-}
-```
+
+
+
 

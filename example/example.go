@@ -165,7 +165,7 @@ func Add(key int) error {
 func main() {
 	filter = make(map[int]struct{})
 	lock = sync.RWMutex{}
-	router := xmux.NewRouter()
+	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate)
 	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})

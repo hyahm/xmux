@@ -11,17 +11,18 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 	// }
 
 	// roles := []string{"env", "important"}
+	// 内置的方法最大支持8种权限，如果想要更多可以自己实现
 	var pl = []string{"Read", "Create", "Update", "Delete"}
-	var permissionMap = map[string]int{
-		"Read":   0,
-		"Create": 1,
-		"Update": 2,
-		"Delete": 3,
+	// map 的key 对应页面的value  value 对应二进制位置(从右到左)
+	permissionMap := make(map[string]int)
+	for k, v := range pl {
+		permissionMap[v] = k
 	}
+	// 假如权限拿到二进制对应的10进制数据是下面
 	perm := make(map[string]uint8)
-	perm["env"] = 14
-	perm["important"] = 10
-	perm["project"] = 4
+	perm["env"] = 14       // 00001110   {"Delete", "Create", "Update"}
+	perm["important"] = 10 // 00001010   {"Create", "Delete"}
+	perm["project"] = 4    // 00000100   {"Update"}
 
 	//
 	pages := GetInstance(r).Get(PAGES).(map[string]struct{})
@@ -67,7 +68,7 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 		1       1     "env"                       0-15
 		2       1     "important"
 	*/
-	return
+	return false
 }
 
 // 给定一个权限组， 顺序对应2进制的值必须是 1 << index,
