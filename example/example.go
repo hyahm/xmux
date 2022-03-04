@@ -168,6 +168,7 @@ func main() {
 
 	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate)
 	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Connection", "Close")
 		w.Write([]byte("ok"))
 	})
 	router.Post("/user/info", func(w http.ResponseWriter, r *http.Request) {

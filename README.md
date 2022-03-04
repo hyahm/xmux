@@ -214,6 +214,7 @@ func GetExecTime(handle func(http.ResponseWriter, *http.Request), w http.Respons
 ```go
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+	// 主要为了打印执行的时间
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 
@@ -609,11 +610,13 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
   	w.Write([]byte("no permission"))
   	return true
   }
+
+  func 
   
   func main() {
   	router := xmux.NewRouter()
-  	router.AddModule(DefaultPermissionTemplate)
-  	router.Post("/permission", AddName).AddPageKeys("admin", "editor")
+  	router.AddModule(DefaultPermissionTemplate).AddPageKeys("admin", "editor")
+  	router.Post("/permission", AddName)
   	router.Post("/permission/page", AddStd).DelPageKeys("editor")
   	router.Post("/permission/directive", AddFoo)
   	// 也可以直接使用内置的
