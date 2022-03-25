@@ -1,49 +1,57 @@
 package main
 
-// func main() {
-// 	fmt.Println([]byte("asldjf;ljasld;fj;"))
-// 	interrupt := make(chan os.Signal, 1)
-// 	signal.Notify(interrupt, os.Interrupt)
+import (
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
 
-// 	socket := gowebsocket.New("ws://127.0.0.1:8080/23")
+	"github.com/sacOO7/gowebsocket"
+)
 
-// 	socket.OnConnected = func(socket gowebsocket.Socket) {
-// 		log.Println("Connected to server")
-// 	}
+func main() {
+	fmt.Println([]byte("asldjf;ljasld;fj;"))
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
 
-// 	socket.OnConnectError = func(err error, socket gowebsocket.Socket) {
-// 		log.Println("Recieved connect error ", err)
-// 	}
+	socket := gowebsocket.New("ws://127.0.0.1:8888/23")
 
-// 	socket.OnTextMessage = func(message string, socket gowebsocket.Socket) {
-// 		log.Println("Recieved message " + message)
-// 	}
+	socket.OnConnected = func(socket gowebsocket.Socket) {
+		log.Println("Connected to server")
+	}
 
-// 	socket.OnBinaryMessage = func(data []byte, socket gowebsocket.Socket) {
-// 		log.Println("Recieved binary data ", data)
-// 	}
+	socket.OnConnectError = func(err error, socket gowebsocket.Socket) {
+		log.Println("Recieved connect error ", err)
+	}
 
-// 	socket.OnPingReceived = func(data string, socket gowebsocket.Socket) {
-// 		log.Println("Recieved ping " + data)
-// 	}
+	socket.OnTextMessage = func(message string, socket gowebsocket.Socket) {
+		log.Println("Recieved message " + message)
+	}
 
-// 	socket.OnPongReceived = func(data string, socket gowebsocket.Socket) {
-// 		log.Println("Recieved pong " + data)
-// 	}
+	socket.OnBinaryMessage = func(data []byte, socket gowebsocket.Socket) {
+		log.Println("Recieved binary data ", data)
+	}
 
-// 	socket.OnDisconnected = func(err error, socket gowebsocket.Socket) {
-// 		log.Println("Disconnected from server ")
-// 		return
-// 	}
+	socket.OnPingReceived = func(data string, socket gowebsocket.Socket) {
+		log.Println("Recieved ping " + data)
+	}
 
-// 	socket.Connect()
+	socket.OnPongReceived = func(data string, socket gowebsocket.Socket) {
+		log.Println("Recieved pong " + data)
+	}
 
-// 	for {
-// 		select {
-// 		case <-interrupt:
-// 			log.Println("interrupt")
-// 			socket.Close()
-// 			return
-// 		}
-// 	}
-// }
+	socket.OnDisconnected = func(err error, socket gowebsocket.Socket) {
+		log.Println("Disconnected from server ")
+		return
+	}
+
+	socket.Connect()
+	for {
+		select {
+		case <-interrupt:
+			log.Println("interrupt")
+			socket.Close()
+			return
+		}
+	}
+}

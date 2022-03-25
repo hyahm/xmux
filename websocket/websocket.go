@@ -55,6 +55,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	for {
+
 		if websocket.Conn == nil {
 			return
 		}
@@ -68,6 +69,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 			wsmu.Unlock()
 			break
 		}
+		log.Println(msg)
 		websocket.SendMessage([]byte(msg+r.RemoteAddr), msgType)
 		ps[websocket] = msgType
 		c := client{
