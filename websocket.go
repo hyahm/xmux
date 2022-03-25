@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -103,9 +102,7 @@ const (
 )
 
 func (xws *BaseWs) Ping(ping []byte) error {
-	err := xws.SendMessage(ping, TypePing)
-	fmt.Println(err)
-	return err
+	return xws.SendMessage(ping, TypePing)
 }
 
 // TODO: 没有处理附加数据
