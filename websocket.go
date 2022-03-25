@@ -130,7 +130,7 @@ func (xws *BaseWs) ReadBytes() (byte, []byte, error) {
 			xws.SendMessage([]byte(""), TypePong)
 			xws.Conn.Close()
 			xws.Conn = nil
-			return 0, nil, ErrConnectClosed
+			return TypeClose, nil, ErrConnectClosed
 		case TypeMsg, TypeBinary:
 			// 正常消息，就继续
 
