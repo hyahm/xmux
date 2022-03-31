@@ -135,7 +135,7 @@ func (xws *BaseWs) ReadBytes() (byte, []byte, error) {
 			// 正常消息，就继续
 
 		default:
-			return 0, nil, ErrorProtocol
+			return lpack[0], nil, ErrorProtocol
 		}
 	}
 	var length int64

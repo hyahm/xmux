@@ -23,12 +23,18 @@ func Pprof() *GroupRoute {
 	pprof.Get("/debug/pprof", index).SetHeader("Content-Type", "text/html; charset=utf-8")
 	pprof.Get("/debug/pprof/", index).SetHeader("Content-Type", "text/html; charset=utf-8")
 	pprof.Get("/debug/{name}", debug).SetHeader("Content-Type", "text/plain; charset=utf-8")
-	pprof.Get("/debug/pprof/cmdline", cmdline).SetHeader("Content-Type", "text/plain; charset=utf-8")
+	pprof.Get("/debug/cmdline", cmdline).SetHeader("Content-Type", "text/plain; charset=utf-8")
 	pprof.Get("/debug/profile", profile).SetHeader("Content-Type", "application/octet-stream").
 		SetHeader("Content-Disposition", `attachment; filename="profile"`)
 	pprof.Get("/debug/pprof/symbol", symbol).SetHeader("Content-Type", "text/plain; charset=utf-8")
 	pprof.Get("/debug/trace", tra).SetHeader("Content-Type", "application/octet-stream").
 		SetHeader("Content-Disposition", `attachment; filename="trace"`)
+
+	pprof.Get("/debug/pprof/trace", tra).SetHeader("Content-Type", "application/octet-stream").
+		SetHeader("Content-Disposition", `attachment; filename="trace"`)
+
+	pprof.Get("/debug/pprof/profile", profile).SetHeader("Content-Type", "application/octet-stream").
+		SetHeader("Content-Disposition", `attachment; filename="profile"`)
 	return pprof
 }
 
