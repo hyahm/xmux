@@ -61,7 +61,7 @@ func main() {
 	// 只是例子不建议下面的写法， 而是使用   router.Reqeust("/",nil, "POST", "GET")
 	router.Get("/",nil)  // get请求
 	router.Post("/",nil)  // post请求
-	router.Reqeust("/getpost",nil, "POST", "GET")  // 同时支持get，post请求
+	router.Request("/getpost",nil, "POST", "GET")  // 同时支持get，post请求
 	router.Any("/any",nil)  // 支持除了options 之外的所有请求
 	router.Run()
 }
@@ -72,7 +72,7 @@ func main() {
 > aritclegroup.go
 ```go
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var[r.URL.Path]["id"])
+	fmt.Println(xmux.Var(r)["id"])
 	w.Write([]byte("hello world!!!!"))
 	return
 }
