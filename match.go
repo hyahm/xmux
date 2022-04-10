@@ -40,9 +40,6 @@ func match(path string) (string, []string) {
 	)
 	for _, v := range pl {
 		block, vl := macheOne(v, "", []string{})
-		if block == "" && len(vl) == 0 {
-			continue
-		}
 		pathlist = append(pathlist, block)
 		varlist = append(varlist, vl...)
 	}
