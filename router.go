@@ -172,14 +172,12 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		ctx: make(map[string]interface{}),
 		mu:  &sync.RWMutex{},
 	}
-	atomic.AddInt32(&connections, 1)
+
 	allconn.Set(req, fd)
 	defer func() {
-		atomic.AddInt32(&connections, -1)
+
 		allconn.Del(req)
-		if r.Exit != nil {
-			r.Exit(start, w, req)
-		}
+
 		if err := recover(); err != nil {
 			log.Println(req.URL.Path, "---------", err)
 		}
@@ -225,20 +223,24 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	start := time.Now()
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+	start := time.Now()
 	if r.Enter != nil {
 		if r.Enter(w, req) {
 			return
 		}
 	}
-
+	if r.Exit != nil {
+		r.Exit(start, w, req)
+	}
 	if stop {
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
+	atomic.AddInt32(&connections, 1)
+	defer atomic.AddInt32(&connections, -1)
 	if r.IgnoreSlash {
 		req.URL.Path = prettySlash(req.URL.Path)
 	}
