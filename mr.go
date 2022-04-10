@@ -14,7 +14,7 @@ func (mr MethodsRoute) SetHeader(key, value string) MethodsRoute {
 	return mr
 }
 
-func (mr MethodsRoute) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) MethodsRoute {
+func (mr MethodsRoute) MiddleWare(midware func(w http.ResponseWriter, r *http.Request)) MethodsRoute {
 	for _, route := range mr {
 		route.MiddleWare(midware)
 	}
@@ -42,7 +42,7 @@ func (mr MethodsRoute) DelHeader(key string) MethodsRoute {
 	return mr
 }
 
-func (mr MethodsRoute) DelMiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) MethodsRoute {
+func (mr MethodsRoute) DelMiddleWare(midware func(w http.ResponseWriter, r *http.Request)) MethodsRoute {
 	for _, route := range mr {
 		route.DelMiddleWare(midware)
 	}

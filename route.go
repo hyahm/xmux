@@ -39,8 +39,8 @@ type Route struct {
 	bindType   bindType    // 数据绑定格式
 	dataSource interface{} // 数据源
 	// perms map[int]
-	midware    func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
-	delmidware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
+	midware    func(w http.ResponseWriter, r *http.Request)
+	delmidware func(w http.ResponseWriter, r *http.Request)
 }
 
 func (rt *Route) GetHeader() map[string]string {
@@ -101,13 +101,13 @@ func (rt *Route) ApiCreateGroup(key, title, lable string) *Route {
 	return rt
 }
 
-func (rt *Route) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Route {
+func (rt *Route) MiddleWare(midware func(w http.ResponseWriter, r *http.Request)) *Route {
 	// 创建文档的组
 	rt.midware = midware
 	return rt
 }
 
-func (rt *Route) DelMiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Route {
+func (rt *Route) DelMiddleWare(midware func(w http.ResponseWriter, r *http.Request)) *Route {
 	// 创建文档的组
 	if rt.isRoot {
 		// 那么直接就删除

@@ -46,7 +46,7 @@ type rt struct {
 	module     []func(http.ResponseWriter, *http.Request) bool
 	dataSource interface{} // 绑定数据结构，
 	bindType   bindType
-	midware    func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
+	midware    func(w http.ResponseWriter, r *http.Request)
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
@@ -59,10 +59,10 @@ type Router struct {
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
 	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
-	HanleFavicon   http.Handler
-	DisableOption  bool         // 禁止全局option
-	HandleOptions  http.Handler // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	HandleNotFound http.Handler
+	HanleFavicon   func(http.ResponseWriter, *http.Request)
+	DisableOption  bool                                     // 禁止全局option
+	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
+	HandleNotFound func(http.ResponseWriter, *http.Request)
 	IgnoreSlash    bool                // 忽略地址多个斜杠， 默认不忽略
 	route          PatternMR           // 单实例路由， 组路由最后也会合并过来
 	tpl            PatternMR           // 正则路由， 组路由最后也会合并过来
@@ -71,10 +71,10 @@ type Router struct {
 	module         module              // 全局模块
 	// routeTable     *rt                                             // 路由表
 	pagekeys map[string]struct{}
-	midware  func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)
+	midware  func(w http.ResponseWriter, r *http.Request)
 }
 
-func (r *Router) MiddleWare(midware func(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request)) *Router {
+func (r *Router) MiddleWare(midware func(w http.ResponseWriter, req *http.Request)) *Router {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -208,7 +208,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		}
 	}
 	if route.midware != nil {
-		route.midware(route.Handle.ServeHTTP, w, req)
+		route.midware(w, req)
 	} else {
 		route.Handle.ServeHTTP(w, req)
 	}
@@ -234,7 +234,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if r.Exit != nil {
-		r.Exit(start, w, req)
+		defer r.Exit(start, w, req)
 	}
 	if stop {
 		fd.Set(STATUSCODE, http.StatusLocked)
@@ -254,7 +254,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			for k, v := range r.header {
 				w.Header().Set(k, v)
 			}
-			r.HanleFavicon.ServeHTTP(w, req)
+			r.HanleFavicon(w, req)
 			return
 		}
 	}
@@ -263,7 +263,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		for k, v := range r.header {
 			w.Header().Set(k, v)
 		}
-		r.HandleOptions.ServeHTTP(w, req)
+		r.HandleOptions(w, req)
 		return
 	}
 
@@ -284,7 +284,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute, ok = r.route[req.URL.Path][req.Method]
 		if !ok {
-			r.HandleNotFound.ServeHTTP(w, req)
+			r.HandleNotFound(w, req)
 			atomic.AddInt32(&connections, -1)
 			return
 		}
@@ -306,7 +306,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 				goto endloop
 			}
 		}
-		r.HandleNotFound.ServeHTTP(w, req)
+		r.HandleNotFound(w, req)
 		atomic.AddInt32(&connections, -1)
 		return
 	}
@@ -440,32 +440,26 @@ func NewRouter(cache ...uint64) *Router {
 		header:         map[string]string{},
 		Exit:           exit,
 		params:         make(map[string][]string),
-		HanleFavicon:   handleFavicon(),
-		HandleOptions:  handleOptions(),
-		HandleNotFound: handleNotFound(),
+		HanleFavicon:   handleFavicon,
+		HandleOptions:  handleOptions,
+		HandleNotFound: handleNotFound,
 		module:         module{},
 	}
 }
 
-func handleNotFound() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
-		w.WriteHeader(http.StatusNotFound)
-	})
+func handleNotFound(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
+	w.WriteHeader(http.StatusNotFound)
 }
 
-func handleOptions() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
+func handleOptions(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
-func handleFavicon() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.WriteHeader(http.StatusOK)
-	})
+func handleFavicon(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (r *Router) merge(group *GroupRoute, route *Route) {
