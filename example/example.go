@@ -162,15 +162,21 @@ func Add(key int) error {
 	return fmt.Errorf("key exsits %d", key)
 }
 
+func home1(w http.ResponseWriter, r *http.Request) bool {
+	w.Header().Set("Connection", "Close")
+	xmux.GetInstance(r).Set("aaaa", "bbb")
+	return false
+}
+
 func main() {
 	filter = make(map[int]struct{})
-	lock = sync.RWMutex{}
-	xmux.NewGroupRoute()
 	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate)
 	router.Get("/user/info", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Connection", "Close")
+		fmt.Println(xmux.GetInstance(r).Get("aaaa"))
+		fmt.Println(xmux.GetConnents())
 		w.Write([]byte("ok"))
-	})
+	}).AddModule(home1)
 	router.Post("/user/info", func(w http.ResponseWriter, r *http.Request) {
 		ui := xmux.GetInstance(r).Data.(*UserInfo)
 		fmt.Printf("%#v", *ui)
@@ -252,7 +258,7 @@ func main() {
 	// doc := router.ShowApi("/docs")
 	// router.AddGroup(doc) // 开启文档， 一般都是写在路由的最后, 后面的api不会显示
 	// router.DebugRoute()
-	router.DebugAssignRoute("/user/info")
+	// router.DebugAssignRoute("/user/info")
 	router.Run(":8888")
 }
 

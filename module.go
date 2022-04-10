@@ -1,10 +1,17 @@
 package xmux
 
 import (
+	"log"
 	"net/http"
 	"reflect"
 	"runtime"
+	"time"
 )
+
+func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+	log.Printf("methed: %s\turl: %s\ttime: %f\t status_code: %v, body:%v\n", r.Method,
+		r.URL.Path, time.Since(start).Seconds(), GetInstance(r).Get(STATUSCODE), GetInstance(r).Get(RESPONSEBODY))
+}
 
 func DefaultModuleTemplate(w http.ResponseWriter, r *http.Request) bool {
 	return false

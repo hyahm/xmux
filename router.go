@@ -167,16 +167,9 @@ func bind(route *rt, req *http.Request, fd *FlowData) {
 	}
 }
 
-func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request) {
-	fd := &FlowData{
-		ctx: make(map[string]interface{}),
-		mu:  &sync.RWMutex{},
-	}
+func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 
-	allconn.Set(req, fd)
 	defer func() {
-
-		allconn.Del(req)
 
 		if err := recover(); err != nil {
 			log.Println(req.URL.Path, "---------", err)
@@ -226,6 +219,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+	fd := &FlowData{
+		ctx: make(map[string]interface{}),
+		mu:  &sync.RWMutex{},
+	}
+	allconn.Set(req, fd)
+	defer allconn.Del(req)
+	fd.Set(STATUSCODE, 200)
+	fd.Set(RESPONSEBODY, nil)
 	start := time.Now()
 	if r.Enter != nil {
 		if r.Enter(w, req) {
@@ -236,6 +237,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.Exit(start, w, req)
 	}
 	if stop {
+		fd.Set(STATUSCODE, http.StatusLocked)
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
@@ -269,15 +271,15 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// 先进行路由表缓存寻找
 	route, ok := Get(req.URL.Path + req.Method)
 	if ok {
-		r.readFromCache(start, route, w, req)
+		r.readFromCache(start, route, w, req, fd)
 	} else {
 		// 寻址
-		r.serveHTTP(start, w, req)
+		r.serveHTTP(start, w, req, fd)
 	}
 }
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
-func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request) {
+func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	var thisRoute *Route
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute, ok = r.route[req.URL.Path][req.Method]
@@ -321,7 +323,7 @@ endloop:
 	}
 	// 设置缓存
 	Set(req.URL.Path+req.Method, thisRouter)
-	r.readFromCache(start, thisRouter, w, req)
+	r.readFromCache(start, thisRouter, w, req, fd)
 }
 
 func (r *Router) Run(opt ...string) error {
@@ -436,6 +438,7 @@ func NewRouter(cache ...uint64) *Router {
 		route:          make(map[string]MethodsRoute),
 		tpl:            make(map[string]MethodsRoute),
 		header:         map[string]string{},
+		Exit:           exit,
 		params:         make(map[string][]string),
 		HanleFavicon:   handleFavicon(),
 		HandleOptions:  handleOptions(),
@@ -447,6 +450,7 @@ func NewRouter(cache ...uint64) *Router {
 func handleNotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
+		GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
 		w.WriteHeader(http.StatusNotFound)
 	})
 }
