@@ -2,6 +2,8 @@ package xmux
 
 import (
 	"strings"
+
+	"github.com/hyahm/golog"
 )
 
 const (
@@ -39,7 +41,13 @@ func match(path string) (string, []string) {
 		varlist  []string
 	)
 	for _, v := range pl {
+		golog.Info(v)
 		block, vl := macheOne(v, "", []string{})
+		if block == "" && len(vl) == 0 {
+			continue
+		}
+		golog.Info(block)
+		golog.Info(vl)
 		pathlist = append(pathlist, block)
 		varlist = append(varlist, vl...)
 	}
@@ -67,6 +75,7 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 
 	// 保存头部可能存在的字符串
 	head := path[:firstPrev]
+	golog.Info(head)
 	// 保存已经去掉开头字符串的后面字符串
 	newPath := path[firstPrev+1:]
 
@@ -74,6 +83,7 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 		return newpath + path, varlist
 	}
 	if newPath[:3] == "re:" {
+		golog.Info("re before")
 		// 如果后面是正则，那么先匹配到下一个:
 		nextColon := strings.Index(newPath[3:], ":")
 		firstSuffix := strings.Index(newPath[3+nextColon:], "}")
@@ -88,7 +98,7 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 		} else {
 			varlist = append(varlist, strings.Split(vars, ",")...)
 		}
-		newpath += newPath[3 : 3+nextColon]
+		newpath += head + newPath[3:3+nextColon]
 		path = newPath[4+nextColon+firstSuffix:]
 	} else {
 		// 第一个 } 的位置
