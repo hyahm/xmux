@@ -226,7 +226,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
 	fd.Set(STATUSCODE, 200)
-	fd.Set(RESPONSEBODY, nil)
+	body := make([]byte, 0, 2048)
+	fd.Set(RESPONSEBODY, body)
+	fd.Set(CONNECTID, time.Now().UnixNano())
 	start := time.Now()
 	if r.Enter != nil {
 		if r.Enter(w, req) {

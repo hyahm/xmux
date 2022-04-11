@@ -9,8 +9,11 @@ import (
 )
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	log.Printf("method: %s\turl: %s\ttime: %f\t status_code: %v, body:%v\n", r.Method,
-		r.URL.Path, time.Since(start).Seconds(), GetInstance(r).Get(STATUSCODE), GetInstance(r).Get(RESPONSEBODY))
+	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, body: %v\n",
+		GetInstance(r).Get(CONNECTID),
+		r.Method,
+		r.URL.Path, time.Since(start).Seconds(), GetInstance(r).Get(STATUSCODE),
+		string(GetInstance(r).Get(RESPONSEBODY).([]byte)))
 }
 
 func DefaultModuleTemplate(w http.ResponseWriter, r *http.Request) bool {
