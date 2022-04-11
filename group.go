@@ -204,6 +204,13 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	// 模块合并
 	route.module = g.module.addModule(route.module)
 
+	if route.delmodule.modules == nil {
+		route.delmodule.modules = make(map[string]struct{})
+	}
+	for k, v := range g.delmodule.modules {
+		route.delmodule.modules[k] = v
+	}
+
 	merge(group, route)
 }
 
