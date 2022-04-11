@@ -8,24 +8,26 @@ import (
 // 服务启动前的操作， 所以里面的map 都是单线程不需要加锁的
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
-	route       PatternMR // 完全匹配的路由对应的methodsroute
-	ignoreSlash bool
-	header      map[string]string
-	tpl         PatternMR // 正则匹配的路由对应的methodsroute
-	module      module
-	delmodule   delModule
-	params      map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
-	delheader   []string
-	pagekeys    map[string]struct{} // 页面权限
-	groupKey    string
-	delPageKeys []string
-	groupTitle  string
-	groupLabel  string
-	reqHeader   map[string]string
-	codeMsg     map[string]string
-	codeField   string
-	midware     func(w http.ResponseWriter, r *http.Request)
-	delmidware  func(w http.ResponseWriter, r *http.Request)
+	route        PatternMR // 完全匹配的路由对应的methodsroute
+	ignoreSlash  bool
+	header       map[string]string
+	tpl          PatternMR // 正则匹配的路由对应的methodsroute
+	module       module
+	delmodule    delModule
+	responseData interface{}
+	params       map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
+	delheader    []string
+	pagekeys     map[string]struct{} // 页面权限
+	groupKey     string
+	delPageKeys  []string
+	groupTitle   string
+	groupLabel   string
+	response     interface{}
+	reqHeader    map[string]string
+	codeMsg      map[string]string
+	codeField    string
+	midware      func(w http.ResponseWriter, r *http.Request)
+	delmidware   func(w http.ResponseWriter, r *http.Request)
 }
 
 func NewGroupRoute() *GroupRoute {
@@ -33,6 +35,11 @@ func NewGroupRoute() *GroupRoute {
 		header: make(map[string]string),
 		module: module{},
 	}
+}
+
+func (g *GroupRoute) BindResponse(response interface{}) *GroupRoute {
+	g.responseData = response
+	return g
 }
 
 func (g *GroupRoute) AddPageKeys(pagekeys ...string) *GroupRoute {
@@ -169,46 +176,65 @@ func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 }
 
 func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
-	// 合并head
 	tempHeader := make(map[string]string)
 	for k, v := range g.header {
 		tempHeader[k] = v
 	}
+	// 组的删除大于全局, 后于组
+	for _, v := range group.delheader {
+		delete(tempHeader, v)
+	}
+	// 添加个人路由
 	for k, v := range route.header {
 		tempHeader[k] = v
 	}
+	// 删除单路由
+	for _, v := range route.delheader {
+		delete(tempHeader, v)
+	}
 	route.header = tempHeader
 	// 合并中间件
-	if group.midware == nil {
-		route.midware = g.midware
+	if route.midware == nil {
+		route.midware = group.midware
+		if group.midware == nil {
+			route.midware = g.midware
+		}
 	}
-
-	// 合并 delheader
-	route.delheader = append(g.delheader, route.delheader...)
+	// 合并返回
+	if route.responseData == nil {
+		route.responseData = group.responseData
+		if group.responseData == nil {
+			route.responseData = g.responseData
+		}
+	}
 
 	// 合并 pagekeys
 	tempPages := make(map[string]struct{})
 	for k := range g.pagekeys {
 		tempPages[k] = struct{}{}
 	}
+	// 组的删除大于全局, 后于组
+	for _, v := range group.delPageKeys {
+		delete(tempPages, v)
+	}
 	for k := range route.pagekeys {
 		tempPages[k] = struct{}{}
 	}
+	// 删除单路由
+	for _, v := range route.delPageKeys {
+		delete(tempPages, v)
+	}
 	route.pagekeys = tempPages
-	// 合并 delPageKeys
-	route.delPageKeys = append(g.delPageKeys, route.delPageKeys...)
-	// delete midware
-	if route.delmidware != nil && GetFuncName(route.delmidware) == GetFuncName(g.midware) {
+	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
+	if route.midware != nil && GetFuncName(route.delmidware) == GetFuncName(route.midware) {
 		route.midware = nil
 	}
 	// 模块合并
 	route.module = g.module.addModule(route.module)
-
-	if route.delmodule.modules == nil {
-		route.delmodule.modules = make(map[string]struct{})
-	}
-	for k, v := range g.delmodule.modules {
-		route.delmodule.modules[k] = v
+	// 与组的区别， 组里面这里是合并， 这里是删除
+	// 删除模块
+	for key := range route.delmodule.modules {
+		route.module = route.module.deleteKey(key)
 	}
 
 	merge(group, route)

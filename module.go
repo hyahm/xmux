@@ -1,6 +1,8 @@
 package xmux
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -9,6 +11,14 @@ import (
 )
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+	fmt.Println(GetInstance(r).Response)
+	if GetInstance(r).Response != nil {
+		send, err := json.Marshal(GetInstance(r).Response)
+		if err != nil {
+			log.Println(err)
+		}
+		w.Write(send)
+	}
 	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, body: %v\n",
 		GetInstance(r).Get(CONNECTID),
 		r.Method,

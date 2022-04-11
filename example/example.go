@@ -16,33 +16,41 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 
 func home(w http.ResponseWriter, r *http.Request) {
 	xmux.GetInstance(r).Set("aaaa", "bbb")
+	fmt.Println("home")
 }
 
 func v1Group() *xmux.GroupRoute {
-	v1 := xmux.NewGroupRoute()
+	global := &Global{
+		Code: 100,
+		Msg:  "ok",
+	}
+	v1 := xmux.NewGroupRoute().BindResponse(global)
 	v1.Get("/v1/login", home)
-	v1.Get("/v1/22", home)
+	// v1.Get("/v1/22", home)
 	return v1
 }
 
-func v2Group() *xmux.GroupRoute {
-	v2 := xmux.NewGroupRoute().DelModule(home1)
-	v2.Get("/v2/login", home)
-	v2.Get("/v2/22", home)
-	v2.AddGroup(v1Group())
-	return v2
+// func v2Group() *xmux.GroupRoute {
+// 	v2 := xmux.NewGroupRoute().DelModule(home1)
+// 	v2.Get("/v2/login", home)
+// 	v2.Get("/v2/22", home)
+// 	v2.AddGroup(v1Group())
+// 	return v2
+// }
+
+type Global struct {
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
 }
 
 func main() {
-	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1)
-	router.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd:name,age}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Connection", "Close")
-		fmt.Println(xmux.GetInstance(r).Get("aaaa"))
-		fmt.Println(xmux.GetConnents())
-		xmux.GetInstance(r).Append(xmux.RESPONSEBODY, []byte("ok"))
-		w.Write([]byte("ok"))
-	})
-	router.AddGroup(v2Group())
-	router.DebugAssignRoute("/v1/login")
+	global := &Global{
+		Code: 200,
+		Msg:  "ok",
+	}
+	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(global)
+
+	router.AddGroup(v1Group())
 	router.Run(":8888")
 }
