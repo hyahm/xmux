@@ -58,7 +58,6 @@ type Router struct {
 	new            bool                                          // 判断是否是通过newRouter 来初始化的
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
-	IgnoreIco      bool // 是否忽略 /favicon.ico 请求。 默认忽略
 	HanleFavicon   func(http.ResponseWriter, *http.Request)
 	DisableOption  bool                                     // 禁止全局option
 	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
@@ -68,7 +67,7 @@ type Router struct {
 	tpl            PatternMR           // 正则路由， 组路由最后也会合并过来
 	params         map[string][]string // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string   // 全局路由头
-	module         module              // 全局模块
+	module         *module             // 全局模块
 	responseData   interface{}
 	// routeTable     *rt                                             // 路由表
 	pagekeys map[string]struct{}
@@ -141,8 +140,13 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-
-	r.module = r.module.add(handles...)
+	if r.module == nil {
+		r.module = &module{
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+			filter:    make(map[string]struct{}),
+		}
+	}
+	r.module.add(handles...)
 	return r
 }
 
@@ -245,15 +249,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	// /favicon.ico  和 Option 请求， 不支持自定义请求头和模块
 	if req.URL.Path == "/favicon.ico" {
-		if r.IgnoreIco {
-			return
-		} else {
-			for k, v := range r.header {
-				w.Header().Set(k, v)
-			}
-			r.HanleFavicon(w, req)
-			return
+		for k, v := range r.header {
+			w.Header().Set(k, v)
 		}
+		r.HanleFavicon(w, req)
+		return
 	}
 	// option 请求处理
 	if !r.DisableOption && req.Method == http.MethodOptions {
@@ -312,7 +312,7 @@ endloop:
 	thisRouter := &rt{
 		Handle:       thisRoute.handle,
 		Header:       thisRoute.header,
-		module:       thisRoute.module.getMuduleList(),
+		module:       thisRoute.module.GetModules(),
 		dataSource:   thisRoute.dataSource,
 		pagekeys:     thisRoute.pagekeys,
 		bindType:     thisRoute.bindType,
@@ -430,17 +430,19 @@ func NewRouter(cache ...uint64) *Router {
 	}
 	InitCache(c)
 	return &Router{
-		new:            true,
-		IgnoreIco:      true,
-		route:          make(map[string]MethodsRoute),
-		tpl:            make(map[string]MethodsRoute),
-		header:         map[string]string{},
-		Exit:           exit,
-		params:         make(map[string][]string),
+		new:    true,
+		route:  make(map[string]MethodsRoute),
+		tpl:    make(map[string]MethodsRoute),
+		header: map[string]string{},
+		Exit:   exit,
+		params: make(map[string][]string),
+		module: &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		},
 		HanleFavicon:   handleFavicon,
 		HandleOptions:  handleOptions,
 		HandleNotFound: handleNotFound,
-		module:         module{},
 	}
 }
 
@@ -466,7 +468,15 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	for k, v := range r.header {
 		tempHeader[k] = v
 	}
-	// 组的删除大于全局, 后于组
+	// 组的删除是为了删全局
+	for _, v := range group.delheader {
+		delete(tempHeader, v)
+	}
+	// 添加组路由的
+	for k, v := range group.header {
+		tempHeader[k] = v
+	}
+	// 私有路由删除组合全局的
 	for _, v := range group.delheader {
 		delete(tempHeader, v)
 	}
@@ -478,6 +488,7 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	for _, v := range route.delheader {
 		delete(tempHeader, v)
 	}
+	// 最终请求头
 	route.header = tempHeader
 
 	// 合并返回
@@ -491,30 +502,43 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 
 	// 合并 pagekeys
 	tempPages := make(map[string]struct{})
+	// 全局key
 	for k := range r.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-	// 组的删除大于全局, 后于组
+	// 组的删除为了删全局
 	for _, v := range group.delPageKeys {
 		delete(tempPages, v)
 	}
-	for k := range route.pagekeys {
+	// 添加组
+	for k := range group.pagekeys {
 		tempPages[k] = struct{}{}
 	}
+	// 个人的删除组
 	// 删除单路由
 	for _, v := range route.delPageKeys {
 		delete(tempPages, v)
 	}
+	// 添加个人
+	for k := range route.pagekeys {
+		tempPages[k] = struct{}{}
+	}
+	// 最终页面权限
 	route.pagekeys = tempPages
 
 	// 模块合并
-	route.module = r.module.addModule(route.module)
+	tempModules := r.module.cloneMudule()
+	// 组删除模块为了删全局
+	tempModules.delete(group.delmodule)
+	// 添加组模块
+	tempModules.add(group.module.funcOrder...)
+	// 私有删除模块
+	tempModules.delete(route.delmodule)
+	// 添加私有模块
+	tempModules.add(route.module.funcOrder...)
+	route.module = tempModules
 	// 与组的区别， 组里面这里是合并， 这里是删除
 	// 删除模块
-	for key := range route.delmodule.modules {
-		route.module = route.module.deleteKey(key)
-	}
-
 	merge(group, route)
 }
 
@@ -616,8 +640,12 @@ func merge(group *GroupRoute, route *Route) {
 
 func debugPrint(url string, mr MethodsRoute) {
 	for k, v := range mr {
+		names := make([]string, 0)
+		for _, v := range v.module.funcOrder {
+			names = append(names, GetFuncName(v))
+		}
 		log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
-			url, k, v.header, v.module.funcOrder, v.pagekeys)
+			url, k, v.header, names, v.pagekeys)
 	}
 }
 

@@ -31,11 +31,11 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 	newRoute := &Route{
 		handle:      http.HandlerFunc(handler),
 		pagekeys:    tempPages,
-		module:      r.module,
+		module:      &module{filter: r.module.filter, funcOrder: r.module.funcOrder},
 		isRoot:      true,
 		header:      temphead,
 		delheader:   make([]string, 0),
-		delmodule:   delModule{},
+		delmodule:   make(map[string]struct{}),
 		delPageKeys: make([]string, 0),
 	}
 	// 判断是否是正则

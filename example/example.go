@@ -27,28 +27,23 @@ func v1Group() *xmux.GroupRoute {
 	}
 	v1 := xmux.NewGroupRoute().BindResponse(global)
 	v1.Get("/v1/login", home)
+	v1.Get("/v2/tt", home)
+	v1.Get("/v3/login", home)
 	return v1
 }
 
-// func v2Group() *xmux.GroupRoute {
-// 	v2 := xmux.NewGroupRoute().DelModule(home1)
-// 	v2.Get("/v2/login", home)
-// 	v2.Get("/v2/22", home)
-// 	v2.AddGroup(v1Group())
-// 	return v2
-// }
+func v2Group() *xmux.GroupRoute {
+	v2 := xmux.NewGroupRoute().DelModule(home1)
+	v2.Get("/v2/login", home)
+	v2.Get("/v2/22", home)
+	v2.AddGroup(v1Group())
+	return v2
+}
 
 type Global struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
-}
-
-func midware() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	})
 }
 
 func main() {
@@ -57,6 +52,7 @@ func main() {
 		Msg:  "ok",
 	}
 	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(global)
-	router.AddGroup(v1Group())
+	router.AddGroup(v2Group())
+	router.DebugAssignRoute("/v1/login")
 	router.Run(":8888")
 }

@@ -12,8 +12,8 @@ type GroupRoute struct {
 	ignoreSlash  bool
 	header       map[string]string
 	tpl          PatternMR // 正则匹配的路由对应的methodsroute
-	module       module
-	delmodule    delModule
+	module       *module
+	delmodule    map[string]struct{}
 	responseData interface{}
 	params       map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
 	delheader    []string
@@ -26,14 +26,16 @@ type GroupRoute struct {
 	reqHeader    map[string]string
 	codeMsg      map[string]string
 	codeField    string
-	midware      http.Handler
-	delmidware   http.Handler
 }
 
 func NewGroupRoute() *GroupRoute {
 	return &GroupRoute{
 		header: make(map[string]string),
-		module: module{},
+		module: &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		},
+		delmodule: make(map[string]struct{}),
 	}
 }
 
@@ -116,12 +118,23 @@ func (g *GroupRoute) ApiCreateGroup(key string, title string, lable string) *Gro
 }
 
 func (g *GroupRoute) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
-	g.module = g.module.add(handles...)
+	if g.module == nil {
+		g.module = &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		}
+	}
+	g.module.add(handles...)
 	return g
 }
 
 func (g *GroupRoute) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
-	g.delmodule = g.delmodule.addDeleteKey(handles...)
+	if g.delmodule == nil {
+		g.delmodule = make(map[string]struct{})
+	}
+	for _, handle := range handles {
+		g.delmodule[GetFuncName(handle)] = struct{}{}
+	}
 	return g
 }
 
@@ -164,11 +177,20 @@ func (g *GroupRoute) makeRoute(pattern string) (string, bool) {
 }
 
 func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
+	// 合并head
 	tempHeader := make(map[string]string)
 	for k, v := range g.header {
 		tempHeader[k] = v
 	}
-	// 组的删除大于全局, 后于组
+	// 组的删除是为了删全局
+	for _, v := range group.delheader {
+		delete(tempHeader, v)
+	}
+	// 添加组路由的
+	for k, v := range group.header {
+		tempHeader[k] = v
+	}
+	// 私有路由删除组合全局的
 	for _, v := range group.delheader {
 		delete(tempHeader, v)
 	}
@@ -180,11 +202,13 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	for _, v := range route.delheader {
 		delete(tempHeader, v)
 	}
+	// 最终请求头
 	route.header = tempHeader
 
 	// 合并返回
 	if route.responseData == nil {
 		route.responseData = group.responseData
+
 		if group.responseData == nil {
 			route.responseData = g.responseData
 		}
@@ -192,30 +216,44 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 
 	// 合并 pagekeys
 	tempPages := make(map[string]struct{})
+	// 全局key
 	for k := range g.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-	// 组的删除大于全局, 后于组
+	// 组的删除为了删全局
 	for _, v := range group.delPageKeys {
 		delete(tempPages, v)
 	}
-	for k := range route.pagekeys {
+	// 添加组
+	for k := range group.pagekeys {
 		tempPages[k] = struct{}{}
 	}
+	// 个人的删除组
 	// 删除单路由
 	for _, v := range route.delPageKeys {
 		delete(tempPages, v)
 	}
+	// 添加个人
+	for k := range route.pagekeys {
+		tempPages[k] = struct{}{}
+	}
+	// 最终页面权限
 	route.pagekeys = tempPages
-	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
+
 	// 模块合并
-	route.module = g.module.addModule(route.module)
+	tempModules := g.module.cloneMudule()
+	// 组删除模块为了删全局
+	tempModules.delete(group.delmodule)
+	// 添加组模块
+	tempModules.add(
+		group.module.funcOrder...)
+	// 私有删除模块
+	tempModules.delete(route.delmodule)
+	// 添加私有模块
+	tempModules.add(route.module.funcOrder...)
+	route.module = tempModules
 	// 与组的区别， 组里面这里是合并， 这里是删除
 	// 删除模块
-	for key := range route.delmodule.modules {
-		route.module = route.module.deleteKey(key)
-	}
-
 	merge(group, route)
 }
 

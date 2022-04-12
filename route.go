@@ -3,8 +3,6 @@ package xmux
 import (
 	"fmt"
 	"net/http"
-	"reflect"
-	"runtime"
 )
 
 // 初始化临时使用， 最后会合并到 router
@@ -13,8 +11,8 @@ type Route struct {
 	isRoot bool         // 是否是router直接挂载的路由
 	handle http.Handler // handle
 
-	module    module    // 增加的 modules
-	delmodule delModule // 删除的modules
+	module    *module             // 增加的 modules
+	delmodule map[string]struct{} // 删除的modules
 
 	pagekeys    map[string]struct{} // 页面权限
 	delPageKeys []string            // 删除的权限
@@ -38,8 +36,6 @@ type Route struct {
 
 	bindType   bindType    // 数据绑定格式
 	dataSource interface{} // 数据源
-	// perms map[int]
-	delmidware http.Handler
 }
 
 func (rt *Route) GetHeader() map[string]string {
@@ -271,23 +267,22 @@ func (rt *Route) DelHeader(k string) *Route {
 }
 
 func (rt *Route) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
-	rt.module = rt.module.add(handles...)
+	if rt.module == nil {
+		rt.module = &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		}
+	}
+	rt.module.add(handles...)
 	return rt
 }
 
 func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
-	if rt.isRoot {
-		for _, mf := range handles {
-			mn := runtime.FuncForPC(reflect.ValueOf(mf).Pointer()).Name()
-			rt.module = rt.module.deleteKey(mn)
-		}
-	} else {
-		rt.delmodule = rt.delmodule.addDeleteKey(handles...)
+	if rt.delmodule == nil {
+		rt.delmodule = make(map[string]struct{})
+	}
+	for _, handle := range handles {
+		rt.delmodule[GetFuncName(handle)] = struct{}{}
 	}
 	return rt
-}
-
-func (rt *Route) GetModule() []string {
-
-	return rt.module.funcOrder
 }
