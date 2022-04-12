@@ -27,7 +27,6 @@ func v1Group() *xmux.GroupRoute {
 	}
 	v1 := xmux.NewGroupRoute().BindResponse(global)
 	v1.Get("/v1/login", home)
-	// v1.Get("/v1/22", home)
 	return v1
 }
 

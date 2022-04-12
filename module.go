@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -11,9 +10,10 @@ import (
 )
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	fmt.Println(GetInstance(r).Response)
+	var send []byte
+	var err error
 	if GetInstance(r).Response != nil {
-		send, err := json.Marshal(GetInstance(r).Response)
+		send, err = json.Marshal(GetInstance(r).Response)
 		if err != nil {
 			log.Println(err)
 		}
@@ -23,7 +23,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 		GetInstance(r).Get(CONNECTID),
 		r.Method,
 		r.URL.Path, time.Since(start).Seconds(), GetInstance(r).Get(STATUSCODE),
-		string(GetInstance(r).Get(RESPONSEBODY).([]byte)))
+		string(send))
 }
 
 func DefaultModuleTemplate(w http.ResponseWriter, r *http.Request) bool {

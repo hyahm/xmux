@@ -62,18 +62,6 @@ func (g *GroupRoute) ApiReqHeader(k, v string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) MiddleWare(midware http.Handler) *GroupRoute {
-	// 接口的请求头
-	g.midware = midware
-	return g
-}
-
-func (g *GroupRoute) DelMiddleWare(midware http.Handler) *GroupRoute {
-	// 接口的请求头
-	g.delmidware = midware
-	return g
-}
-
 func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
 
 	if g.header == nil {
