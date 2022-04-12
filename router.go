@@ -40,13 +40,14 @@ func StartService() {
 }
 
 type rt struct {
-	Handle     http.Handler
-	Header     map[string]string
-	pagekeys   map[string]struct{}
-	module     []func(http.ResponseWriter, *http.Request) bool
-	dataSource interface{} // 绑定数据结构，
-	bindType   bindType
-	midware    http.Handler
+	Handle       http.Handler
+	Header       map[string]string
+	pagekeys     map[string]struct{}
+	module       []func(http.ResponseWriter, *http.Request) bool
+	dataSource   interface{} // 绑定数据结构，
+	bindType     bindType
+	midware      http.Handler
+	responseData interface{}
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
@@ -69,6 +70,7 @@ type Router struct {
 	params         map[string][]string // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string   // 全局路由头
 	module         module              // 全局模块
+	responseData   interface{}
 	// routeTable     *rt                                             // 路由表
 	pagekeys map[string]struct{}
 	midware  http.Handler
@@ -79,6 +81,14 @@ func (r *Router) MiddleWare(midware http.Handler) *Router {
 		panic("must be use get router by NewRouter()")
 	}
 	r.midware = midware
+	return r
+}
+
+func (r *Router) BindResponse(response interface{}) *Router {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	r.responseData = response
 	return r
 }
 
@@ -170,7 +180,6 @@ func bind(route *rt, req *http.Request, fd *FlowData) {
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 
 	defer func() {
-
 		if err := recover(); err != nil {
 			log.Println(req.URL.Path, "---------", err)
 		}
@@ -183,11 +192,13 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		} else {
 			fd.Data = reflect.New(reflect.TypeOf(route.dataSource)).Interface()
 		}
+
 		if route.bindType != 0 {
 			bind(route, req, fd)
 		}
 
 	}
+	fd.Response = route.responseData
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
@@ -315,13 +326,14 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 endloop:
 	// 缓存handler
 	thisRouter := &rt{
-		Handle:     thisRoute.handle,
-		Header:     thisRoute.header,
-		module:     thisRoute.module.getMuduleList(),
-		dataSource: thisRoute.dataSource,
-		midware:    thisRoute.midware,
-		pagekeys:   thisRoute.pagekeys,
-		bindType:   thisRoute.bindType,
+		Handle:       thisRoute.handle,
+		Header:       thisRoute.header,
+		module:       thisRoute.module.getMuduleList(),
+		dataSource:   thisRoute.dataSource,
+		midware:      thisRoute.midware,
+		pagekeys:     thisRoute.pagekeys,
+		bindType:     thisRoute.bindType,
+		responseData: thisRoute.responseData,
 	}
 	// 设置缓存
 	Set(req.URL.Path+req.Method, thisRouter)
@@ -464,34 +476,58 @@ func handleFavicon(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// 组路由合并到每个单路由里面
 func (r *Router) merge(group *GroupRoute, route *Route) {
 	// 合并head
 	tempHeader := make(map[string]string)
 	for k, v := range r.header {
 		tempHeader[k] = v
 	}
+	// 组的删除大于全局, 后于组
+	for _, v := range group.delheader {
+		delete(tempHeader, v)
+	}
+	// 添加个人路由
 	for k, v := range route.header {
 		tempHeader[k] = v
 	}
+	// 删除单路由
+	for _, v := range route.delheader {
+		delete(tempHeader, v)
+	}
 	route.header = tempHeader
 	// 合并中间件
-	if group.midware == nil {
-		route.midware = r.midware
+	if route.midware == nil {
+		route.midware = group.midware
+		if group.midware == nil {
+			route.midware = r.midware
+		}
 	}
+	// 合并返回
+	if route.responseData == nil {
+		route.responseData = group.responseData
 
-	// // 合并 delheader
-	// route.delheader = append(r.delheader, route.delheader...)
+		if group.responseData == nil {
+			route.responseData = r.responseData
+		}
+	}
 
 	// 合并 pagekeys
 	tempPages := make(map[string]struct{})
 	for k := range r.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-
+	// 组的删除大于全局, 后于组
+	for _, v := range group.delPageKeys {
+		delete(tempPages, v)
+	}
 	for k := range route.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-
+	// 删除单路由
+	for _, v := range route.delPageKeys {
+		delete(tempPages, v)
+	}
 	route.pagekeys = tempPages
 	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
 	if route.midware != nil && GetFuncName(route.delmidware) == GetFuncName(route.midware) {
@@ -504,15 +540,7 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	for key := range route.delmodule.modules {
 		route.module = route.module.deleteKey(key)
 	}
-	// 删除 delheader
-	for _, k := range route.delheader {
-		delete(route.header, k)
-	}
 
-	// 删除 pagekeys
-	for _, k := range route.delPageKeys {
-		delete(route.pagekeys, k)
-	}
 	merge(group, route)
 }
 

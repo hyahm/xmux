@@ -22,15 +22,15 @@ type Route struct {
 	header    map[string]string // 请求头
 	delheader []string          // 删除的请求头
 
-	describe       string            // 接口描述
-	request        string            // 请求的请求示例
-	response       string            // 接口返回示例
-	st_request     interface{}       // api 请求示例
-	params_request map[string]string // get请求参数
-	st_response    interface{}       // api 返回示例
-	reqHeader      map[string]string // api请求头
-	supplement     string            // api附录
-
+	describe                         string // 接口描述
+	request                          string // 请求的请求示例
+	response                         string
+	responseData                     interface{}       // 接口返回示例
+	st_request                       interface{}       // api 请求示例
+	params_request                   map[string]string // get请求参数
+	st_response                      interface{}       // api 返回示例
+	reqHeader                        map[string]string // api请求头
+	supplement                       string            // api附录
 	codeMsg                          map[string]string // api请求返回信息
 	codeField                        string            // api 文档请求字段
 	groupKey, groupLabel, groupTitle string            // 组路由的key， label， title
@@ -45,6 +45,11 @@ type Route struct {
 
 func (rt *Route) GetHeader() map[string]string {
 	return rt.header
+}
+
+func (rt *Route) BindResponse(response interface{}) *Route {
+	rt.responseData = response
+	return rt
 }
 
 func (rt *Route) GetMidwareName() string {
