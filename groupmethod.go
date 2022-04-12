@@ -25,7 +25,6 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 	tempDelPageKeys = append(tempDelPageKeys, gr.delPageKeys...)
 	newRoute := &Route{
 		handle:      http.HandlerFunc(handler),
-		midware:     gr.midware,
 		pagekeys:    tempPages,
 		delmidware:  gr.delmidware,
 		module:      gr.module,

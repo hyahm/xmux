@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/hyahm/xmux"
 )
@@ -44,13 +45,19 @@ type Global struct {
 	Data interface{} `json:"data"`
 }
 
+func midware() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	})
+}
+
 func main() {
 	global := &Global{
 		Code: 200,
 		Msg:  "ok",
 	}
 	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(global)
-
 	router.AddGroup(v1Group())
 	router.Run(":8888")
 }

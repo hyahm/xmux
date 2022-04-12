@@ -14,13 +14,6 @@ func (mr MethodsRoute) SetHeader(key, value string) MethodsRoute {
 	return mr
 }
 
-func (mr MethodsRoute) MiddleWare(midware http.Handler) MethodsRoute {
-	for _, route := range mr {
-		route.MiddleWare(midware)
-	}
-	return mr
-}
-
 func (mr MethodsRoute) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) MethodsRoute {
 	for _, route := range mr {
 		route.AddModule(handles...)
@@ -38,13 +31,6 @@ func (mr MethodsRoute) AddPageKeys(pagekeys ...string) MethodsRoute {
 func (mr MethodsRoute) DelHeader(key string) MethodsRoute {
 	for _, route := range mr {
 		route.DelHeader(key)
-	}
-	return mr
-}
-
-func (mr MethodsRoute) DelMiddleWare(midware http.Handler) MethodsRoute {
-	for _, route := range mr {
-		route.DelMiddleWare(midware)
 	}
 	return mr
 }

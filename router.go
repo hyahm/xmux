@@ -46,7 +46,6 @@ type rt struct {
 	module       []func(http.ResponseWriter, *http.Request) bool
 	dataSource   interface{} // 绑定数据结构，
 	bindType     bindType
-	midware      http.Handler
 	responseData interface{}
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
@@ -73,15 +72,6 @@ type Router struct {
 	responseData   interface{}
 	// routeTable     *rt                                             // 路由表
 	pagekeys map[string]struct{}
-	midware  http.Handler
-}
-
-func (r *Router) MiddleWare(midware http.Handler) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
-	r.midware = midware
-	return r
 }
 
 func (r *Router) BindResponse(response interface{}) *Router {
@@ -218,11 +208,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 			return
 		}
 	}
-	if route.midware != nil {
-		route.midware.ServeHTTP(w, req)
-	} else {
-		route.Handle.ServeHTTP(w, req)
-	}
+	route.Handle.ServeHTTP(w, req)
 
 }
 
@@ -330,7 +316,6 @@ endloop:
 		Header:       thisRoute.header,
 		module:       thisRoute.module.getMuduleList(),
 		dataSource:   thisRoute.dataSource,
-		midware:      thisRoute.midware,
 		pagekeys:     thisRoute.pagekeys,
 		bindType:     thisRoute.bindType,
 		responseData: thisRoute.responseData,
@@ -496,13 +481,7 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 		delete(tempHeader, v)
 	}
 	route.header = tempHeader
-	// 合并中间件
-	if route.midware == nil {
-		route.midware = group.midware
-		if group.midware == nil {
-			route.midware = r.midware
-		}
-	}
+
 	// 合并返回
 	if route.responseData == nil {
 		route.responseData = group.responseData
@@ -529,10 +508,7 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 		delete(tempPages, v)
 	}
 	route.pagekeys = tempPages
-	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
-	if route.midware != nil && GetFuncName(route.delmidware) == GetFuncName(route.midware) {
-		route.midware = nil
-	}
+
 	// 模块合并
 	route.module = r.module.addModule(route.module)
 	// 与组的区别， 组里面这里是合并， 这里是删除
@@ -642,8 +618,8 @@ func merge(group *GroupRoute, route *Route) {
 
 func debugPrint(url string, mr MethodsRoute) {
 	for k, v := range mr {
-		log.Printf("url: %s, method: %s, header: %+v, module: %#v, midware: %#v , pages: %#v\n",
-			url, k, v.header, v.module.funcOrder, GetFuncName(v.midware), v.pagekeys)
+		log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
+			url, k, v.header, v.module.funcOrder, v.pagekeys)
 	}
 }
 

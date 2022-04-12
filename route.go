@@ -39,7 +39,6 @@ type Route struct {
 	bindType   bindType    // 数据绑定格式
 	dataSource interface{} // 数据源
 	// perms map[int]
-	midware    http.Handler
 	delmidware http.Handler
 }
 
@@ -50,15 +49,6 @@ func (rt *Route) GetHeader() map[string]string {
 func (rt *Route) BindResponse(response interface{}) *Route {
 	rt.responseData = response
 	return rt
-}
-
-func (rt *Route) GetMidwareName() string {
-	defer func() {
-		if err := recover(); err != nil {
-			return
-		}
-	}()
-	return GetFuncName(rt.midware)
 }
 
 func (rt *Route) ApiExitGroup() *Route {
@@ -102,32 +92,6 @@ func (rt *Route) ApiCreateGroup(key, title, lable string) *Route {
 	rt.groupKey = key
 	rt.groupLabel = lable
 	rt.groupTitle = title
-
-	return rt
-}
-
-func (rt *Route) MiddleWare(midware http.Handler) *Route {
-	// 创建文档的组
-	rt.midware = midware
-	return rt
-}
-
-func (rt *Route) DelMiddleWare(midware http.Handler) *Route {
-	// 创建文档的组
-	if rt.isRoot {
-		// 那么直接就删除
-		if rt.midware == nil {
-			return rt
-		}
-		if rt.midware != nil {
-			if midware != nil && GetFuncName(rt.midware) == GetFuncName(midware) {
-				rt.midware = nil
-			}
-		}
-		return rt
-	} else {
-		rt.delmidware = midware
-	}
 
 	return rt
 }

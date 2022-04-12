@@ -30,7 +30,6 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 	}
 	newRoute := &Route{
 		handle:      http.HandlerFunc(handler),
-		midware:     r.midware,
 		pagekeys:    tempPages,
 		module:      r.module,
 		isRoot:      true,

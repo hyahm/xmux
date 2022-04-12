@@ -193,13 +193,7 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 		delete(tempHeader, v)
 	}
 	route.header = tempHeader
-	// 合并中间件
-	if route.midware == nil {
-		route.midware = group.midware
-		if group.midware == nil {
-			route.midware = g.midware
-		}
-	}
+
 	// 合并返回
 	if route.responseData == nil {
 		route.responseData = group.responseData
@@ -226,9 +220,6 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	}
 	route.pagekeys = tempPages
 	// delete midware, 如果router存在组路由，并且和delmidware相等，那么就删除
-	if route.midware != nil && GetFuncName(route.delmidware) == GetFuncName(route.midware) {
-		route.midware = nil
-	}
 	// 模块合并
 	route.module = g.module.addModule(route.module)
 	// 与组的区别， 组里面这里是合并， 这里是删除
