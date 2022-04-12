@@ -46,7 +46,7 @@ type rt struct {
 	module     []func(http.ResponseWriter, *http.Request) bool
 	dataSource interface{} // 绑定数据结构，
 	bindType   bindType
-	midware    func(w http.ResponseWriter, r *http.Request)
+	midware    http.Handler
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
@@ -71,10 +71,10 @@ type Router struct {
 	module         module              // 全局模块
 	// routeTable     *rt                                             // 路由表
 	pagekeys map[string]struct{}
-	midware  func(w http.ResponseWriter, r *http.Request)
+	midware  http.Handler
 }
 
-func (r *Router) MiddleWare(midware func(w http.ResponseWriter, req *http.Request)) *Router {
+func (r *Router) MiddleWare(midware http.Handler) *Router {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -208,7 +208,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		}
 	}
 	if route.midware != nil {
-		route.midware(w, req)
+		route.midware.ServeHTTP(w, req)
 	} else {
 		route.Handle.ServeHTTP(w, req)
 	}
