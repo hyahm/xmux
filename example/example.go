@@ -5,7 +5,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -48,7 +47,6 @@ type Global struct {
 }
 
 func main() {
-	defer golog.Sync()
 	global := &Global{
 		Code: 200,
 		Msg:  "ok",
