@@ -3,20 +3,15 @@
 专注前后端分离项目， 良好的设计可以大量减少代码冗余   
 
 ### 特性
-- [x] xmux.NewGroupRoute()
 - [x] 支持路由分组
 - [x] 支持全局请求头， 组请求头， 私有请求头
-- [x] 支持自定义method，
-- [x] 支持正则匹配和参数获取
-- [x] 完全匹配优先于正则匹配
 - [x] 正则匹配支持（int(\d+), word(\w+), re, string, all(.*?)，不写默认 word
 - [x] 支持三大全局 HanleFavicon, HandleNotFound, HandleOptions）  
 - [x] 强大的模块让你的代码模块化变得非常简单 
-- [x] 中间件支持 
 - [x] 内嵌接口文档
-- [x] 数据绑定
-- [x] 增加websocket， 可以学习，不建议使用, 如果其他的不好可以试试  
-- [x] 集成pprof， router.AddGroup(xmux.Pprof())
+- [x] 数据绑定(请求和返回)
+- [x] 增加websocket， 可以学习， 如果其他的不好可以试试  
+- [x] 集成pprof， 通过 router.AddGroup(xmux.Pprof()) 挂载
 - [x] 支持权限控制
 - [x] 进入时和处理完成时的钩子函数 
 
@@ -147,11 +142,11 @@ HandleNotFound: 	  handleNotFound(),   // 默认返回404 ， 也可以自定义
 HanleFavicon：        methodNotAllowed(),    // 默认请求 favicon
 
 // 默认调用的方法如下， 没有找到路由
-func handleNotFound() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	})
+func handleNotFound(w http.ResponseWriter, r *http.Request)  {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	// 注意这一行， 这是为了将状态码传递到exit中打印状态码
+	GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
+	w.WriteHeader(http.StatusNotFound)
 }
 
 ```
@@ -197,18 +192,6 @@ func main() {
 
 ```
 
-### 中间件
-- 中间件最多只能有一个， 功能较多建议使用模块  
-优先级与header 一样， 中间件如下， 这是个计算执行时间的例子  
-计算的时间不包含路由匹配和模块的时间  
-```go
-func GetExecTime(handle func(http.ResponseWriter, *http.Request), w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	handle(w, r)
-	fmt.Printf("url: %s -- addr: %s -- method: %s -- exectime: %f\n", r.URL.Path, r.RemoteAddr, r.Method, time.Since(start).Seconds())
-}
-
-```
 
 ### Enter, Exit 进入和退出的钩子
 ```go
@@ -256,7 +239,7 @@ func main() {
 }
 ```
 
-### 适合在当前handle 的 module，  handle 传递值   
+### 生命周期内的传递值   
 > 生命周期从定义开始， 到此handle执行完毕将被释放
 ```go
 func filter(w http.ResponseWriter, r *http.Request) bool {
@@ -309,7 +292,7 @@ func main() {
 	router.Run()
 }
 ```
-### 数据绑定（Bind(), 与Module 一起使用,DelModule必须放在AddModule之后）
+### 数据绑定（Bind(), 可以与Module 一起使用）
 将数据结构绑定到此 Handle 里， 通过读取r.Body 来解析数据
 因为解析的代码都是一样的， 绑定后可以共用同一份代码
 
@@ -383,7 +366,7 @@ router.IgnoreSlash = true
  int  匹配整数    
  all： 匹配所有的包括/   
  re： 自定义正则   
-/aaa/{name}          这个和下面一个一样， 省略类型， 默认是string  
+/aaa/{name}          这个和下面一个一样， 省略类型， 默认是word  
 /aaa/{string:name}   这个和上面一样， string类型  
 /aaa/{int:name}       这个匹配int类型   
 /aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd:name,age}  这个是一段里面匹配了2个参数 name, age，   
@@ -860,6 +843,6 @@ Benchmark404Many-6                       9690430               123.1 ns/op      
 
 
 ### 流程图总结
-![xmux流程图](xmux.jpeg)
+![xmux流程图](xmux.png)
 
 
