@@ -144,6 +144,7 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 		r.module = &module{
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 			filter:    make(map[string]struct{}),
+			mu:        sync.RWMutex{},
 		}
 	}
 	r.module.add(handles...)
@@ -439,6 +440,7 @@ func NewRouter(cache ...uint64) *Router {
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+			mu:        sync.RWMutex{},
 		},
 		HanleFavicon:   handleFavicon,
 		HandleOptions:  handleOptions,
@@ -469,24 +471,25 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 		tempHeader[k] = v
 	}
 	// 组的删除是为了删全局
-	for _, v := range group.delheader {
-		delete(tempHeader, v)
+	for k := range group.delheader {
+		delete(tempHeader, k)
 	}
 	// 添加组路由的
 	for k, v := range group.header {
 		tempHeader[k] = v
 	}
 	// 私有路由删除组合全局的
-	for _, v := range group.delheader {
-		delete(tempHeader, v)
+	for k := range group.delheader {
+		delete(tempHeader, k)
+		route.delheader[k] = struct{}{}
 	}
 	// 添加个人路由
 	for k, v := range route.header {
 		tempHeader[k] = v
 	}
 	// 删除单路由
-	for _, v := range route.delheader {
-		delete(tempHeader, v)
+	for k := range route.delheader {
+		delete(tempHeader, k)
 	}
 	// 最终请求头
 	route.header = tempHeader
@@ -507,8 +510,9 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 		tempPages[k] = struct{}{}
 	}
 	// 组的删除为了删全局
-	for _, v := range group.delPageKeys {
-		delete(tempPages, v)
+	for k := range group.delPageKeys {
+		delete(tempPages, k)
+		route.delPageKeys[k] = struct{}{}
 	}
 	// 添加组
 	for k := range group.pagekeys {
@@ -516,8 +520,8 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	}
 	// 个人的删除组
 	// 删除单路由
-	for _, v := range route.delPageKeys {
-		delete(tempPages, v)
+	for k := range route.delPageKeys {
+		delete(tempPages, k)
 	}
 	// 添加个人
 	for k := range route.pagekeys {

@@ -3,6 +3,7 @@ package xmux
 import (
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 // 初始化临时使用， 最后会合并到 router
@@ -15,10 +16,10 @@ type Route struct {
 	delmodule map[string]struct{} // 删除的modules
 
 	pagekeys    map[string]struct{} // 页面权限
-	delPageKeys []string            // 删除的权限
+	delPageKeys map[string]struct{} // 删除的权限
 
-	header    map[string]string // 请求头
-	delheader []string          // 删除的请求头
+	header    map[string]string   // 请求头
+	delheader map[string]struct{} // 删除的请求头
 
 	describe                         string // 接口描述
 	request                          string // 请求的请求示例
@@ -66,14 +67,11 @@ func (rt *Route) AddPageKeys(pagekeys ...string) *Route {
 
 func (rt *Route) DelPageKeys(pagekeys ...string) *Route {
 	if rt.delPageKeys == nil {
-		if len(pagekeys) == 0 {
-			return rt
-		} else {
-			rt.delPageKeys = pagekeys
-		}
-
+		rt.delPageKeys = make(map[string]struct{})
 	}
-	rt.delPageKeys = append(rt.delPageKeys, pagekeys...)
+	for _, key := range pagekeys {
+		rt.delPageKeys[key] = struct{}{}
+	}
 	return rt
 }
 
@@ -252,16 +250,12 @@ func (rt *Route) SetHeader(k, v string) *Route {
 	return rt
 }
 
-func (rt *Route) DelHeader(k string) *Route {
-	if rt.isRoot {
-		for k := range rt.header {
-			delete(rt.header, k)
-		}
-	} else {
-		if rt.delheader == nil {
-			rt.delheader = make([]string, 0)
-		}
-		rt.delheader = append(rt.delheader, k)
+func (rt *Route) DelHeader(dh ...string) *Route {
+	if rt.delheader == nil {
+		rt.delheader = make(map[string]struct{})
+	}
+	for _, v := range dh {
+		rt.delheader[v] = struct{}{}
 	}
 	return rt
 }
@@ -271,6 +265,7 @@ func (rt *Route) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 		rt.module = &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+			mu:        sync.RWMutex{},
 		}
 	}
 	rt.module.add(handles...)

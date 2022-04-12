@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -33,65 +34,59 @@ type module struct {
 	// order     []func(w http.ResponseWriter, r *http.Request) bool // 保存执行的顺序
 	filter    map[string]struct{}                                 // 过滤重复的,值是索引的位置
 	funcOrder []func(w http.ResponseWriter, r *http.Request) bool // 函数名排序
+	mu        sync.RWMutex
 }
 
 // 获取module数组
 func (m *module) cloneMudule() *module {
-	if m == nil {
-		return &module{
-			filter:    make(map[string]struct{}),
-			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-		}
-
+	newModule := &module{
+		filter:    make(map[string]struct{}),
+		funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0, len(m.funcOrder)),
+		mu:        sync.RWMutex{},
 	}
-	return &module{
-		filter:    m.filter,
-		funcOrder: m.funcOrder,
+	for k := range m.filter {
+		newModule.filter[k] = struct{}{}
 	}
+	newModule.funcOrder = append(newModule.funcOrder, m.funcOrder...)
+	return newModule
 }
 
 // 删除模块， 返回新的模块
 func (m *module) delete(delmodules map[string]struct{}) {
-	if m == nil {
-		m = &module{
-			filter:    make(map[string]struct{}),
-			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-		}
-	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for name := range delmodules {
 		if _, ok := m.filter[name]; ok {
 			// 说明存在
-			exsit := false
+			tempFilter := make([]func(w http.ResponseWriter, r *http.Request) bool, 0, len(delmodules))
 			for index, value := range m.funcOrder {
 				if GetFuncName(value) == name {
-					m.funcOrder = append(m.funcOrder[:index], m.funcOrder[index+1:]...)
+					tempFilter = append(m.funcOrder[:index], m.funcOrder[index+1:]...)
 					delete(m.filter, name)
 					break
 				}
 			}
-			if !exsit {
-				log.Println("xmux must be have somthing wrong, please make issue it to https://github.com/hyahm/xmux/issues")
-			}
+			m.funcOrder = tempFilter
 		}
 	}
 }
 
 func (m *module) GetModules() []func(w http.ResponseWriter, r *http.Request) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return m.funcOrder
 }
 
 // 添加模块
 func (m *module) add(mds ...func(w http.ResponseWriter, r *http.Request) bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	// 添加, 不会重复添加 module
-	if m == nil {
-		m = &module{
-			filter:    make(map[string]struct{}),
-			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-		}
-	}
 	for _, md := range mds {
-		if _, ok := m.filter[GetFuncName(md)]; !ok {
+		name := GetFuncName(md)
+		if _, ok := m.filter[name]; !ok {
 			m.funcOrder = append(m.funcOrder, md)
+			m.filter[name] = struct{}{}
 		}
 	}
 

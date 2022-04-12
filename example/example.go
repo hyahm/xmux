@@ -5,6 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
+	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
@@ -27,15 +28,15 @@ func v1Group() *xmux.GroupRoute {
 	}
 	v1 := xmux.NewGroupRoute().BindResponse(global)
 	v1.Get("/v1/login", home)
-	v1.Get("/v2/tt", home)
-	v1.Get("/v3/login", home)
+	v1.Get("/v2/tt", home).AddModule(home1)
+	// v1.Get("/v3/login", home)
 	return v1
 }
 
 func v2Group() *xmux.GroupRoute {
 	v2 := xmux.NewGroupRoute().DelModule(home1)
-	v2.Get("/v2/login", home)
-	v2.Get("/v2/22", home)
+	// v2.Get("/v2/login", home)
+	// v2.Get("/v2/22", home)
 	v2.AddGroup(v1Group())
 	return v2
 }
@@ -47,6 +48,7 @@ type Global struct {
 }
 
 func main() {
+	defer golog.Sync()
 	global := &Global{
 		Code: 200,
 		Msg:  "ok",
@@ -54,5 +56,6 @@ func main() {
 	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(global)
 	router.AddGroup(v2Group())
 	router.DebugAssignRoute("/v1/login")
+	router.DebugAssignRoute("/v2/tt")
 	router.Run(":8888")
 }

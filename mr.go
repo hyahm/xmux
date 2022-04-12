@@ -15,7 +15,6 @@ func (mr MethodsRoute) SetHeader(key, value string) MethodsRoute {
 }
 
 func (mr MethodsRoute) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) MethodsRoute {
-
 	for _, route := range mr {
 		route.AddModule(handles...)
 	}

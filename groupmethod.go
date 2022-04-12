@@ -3,6 +3,7 @@ package xmux
 import (
 	"log"
 	"net/http"
+	"sync"
 )
 
 // get this route
@@ -13,25 +14,24 @@ func (gr *GroupRoute) method(pattern string, handler func(http.ResponseWriter, *
 		temphead[k] = v
 	}
 
-	tempDelHead := make([]string, 0)
-
-	tempDelHead = append(tempDelHead, gr.delheader...)
-
 	tempPages := make(map[string]struct{})
 	for k := range gr.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-	tempDelPageKeys := make([]string, 0)
-	tempDelPageKeys = append(tempDelPageKeys, gr.delPageKeys...)
 	newRoute := &Route{
-		handle:      http.HandlerFunc(handler),
-		pagekeys:    tempPages,
-		module:      gr.module,
-		delmodule:   gr.delmodule,
-		header:      temphead,
-		delheader:   tempDelHead,
-		delPageKeys: tempDelPageKeys,
+		handle:   http.HandlerFunc(handler),
+		pagekeys: make(map[string]struct{}),
+		module: &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+			mu:        sync.RWMutex{},
+		},
+		header:      make(map[string]string),
+		delmodule:   make(map[string]struct{}),
+		delPageKeys: make(map[string]struct{}),
+		delheader:   make(map[string]struct{}),
 	}
+
 	url, ok := gr.makeRoute(pattern)
 	if ok {
 		if _, urlOk := gr.tpl[url]; urlOk {

@@ -3,6 +3,7 @@ package xmux
 import (
 	"log"
 	"net/http"
+	"sync"
 )
 
 // get this route
@@ -29,14 +30,18 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 		tempPages[k] = struct{}{}
 	}
 	newRoute := &Route{
-		handle:      http.HandlerFunc(handler),
-		pagekeys:    tempPages,
-		module:      &module{filter: r.module.filter, funcOrder: r.module.funcOrder},
+		handle:   http.HandlerFunc(handler),
+		pagekeys: tempPages,
+		module: &module{
+			filter:    r.module.filter,
+			funcOrder: r.module.funcOrder,
+			mu:        sync.RWMutex{},
+		},
 		isRoot:      true,
 		header:      temphead,
-		delheader:   make([]string, 0),
+		delheader:   make(map[string]struct{}),
 		delmodule:   make(map[string]struct{}),
-		delPageKeys: make([]string, 0),
+		delPageKeys: make(map[string]struct{}),
 	}
 	// 判断是否是正则
 	url, ok := r.makeRoute(pattern)
