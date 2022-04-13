@@ -9,24 +9,25 @@ import (
 // 服务启动前的操作， 所以里面的map 都是单线程不需要加锁的
 type GroupRoute struct {
 	// 感觉还没到method， 应该先uri后缀的
-	route        PatternMR // 完全匹配的路由对应的methodsroute
-	ignoreSlash  bool
-	header       map[string]string
-	tpl          PatternMR // 正则匹配的路由对应的methodsroute
-	module       *module
-	delmodule    map[string]struct{}
-	responseData interface{}
-	params       map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
-	delheader    map[string]struct{}
-	pagekeys     map[string]struct{} // 页面权限
-	groupKey     string
-	delPageKeys  map[string]struct{}
-	groupTitle   string
-	groupLabel   string
-	response     interface{}
-	reqHeader    map[string]string
-	codeMsg      map[string]string
-	codeField    string
+	route            PatternMR // 完全匹配的路由对应的methodsroute
+	ignoreSlash      bool
+	header           map[string]string
+	tpl              PatternMR // 正则匹配的路由对应的methodsroute
+	module           *module
+	delmodule        map[string]struct{}
+	responseData     interface{}
+	bindResponseData bool
+	params           map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
+	delheader        map[string]struct{}
+	pagekeys         map[string]struct{} // 页面权限
+	groupKey         string
+	delPageKeys      map[string]struct{}
+	groupTitle       string
+	groupLabel       string
+	response         interface{}
+	reqHeader        map[string]string
+	codeMsg          map[string]string
+	codeField        string
 }
 
 func NewGroupRoute() *GroupRoute {
@@ -43,6 +44,7 @@ func NewGroupRoute() *GroupRoute {
 
 func (g *GroupRoute) BindResponse(response interface{}) *GroupRoute {
 	g.responseData = response
+	g.bindResponseData = true
 	return g
 }
 
@@ -202,10 +204,10 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	route.header = tempHeader
 
 	// 合并返回
-	if route.responseData == nil {
-		route.responseData = group.responseData
-
-		if group.responseData == nil {
+	if !route.bindResponseData {
+		if group.bindResponseData {
+			route.responseData = group.responseData
+		} else {
 			route.responseData = g.responseData
 		}
 	}

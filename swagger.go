@@ -2,67 +2,66 @@ package xmux
 
 import (
 	"bytes"
+	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
+	"strings"
 )
 
 type MethodStrcut struct {
-	Summary    string              `json:"summary" yaml:"summary"`
-	Parameters []Parameter         `json:"parameters" yaml:"parameters"`
-	Responses  map[string]Response `json:"responses" yaml:"responses"`
+	Summary    string              `json:"summary,omitempty" yaml:"summary"`
+	Parameters []Parameter         `json:"parameters,omitempty" yaml:"parameters"`
+	Responses  map[string]Response `json:"responses,omitempty" yaml:"responses"`
+	Produces   []string            `json:"produces,omitempty" yaml:"produces"`
+	Consumes   []string            `json:"consumes,omitempty" yaml:"consumes"`
 }
 
 type Parameter struct {
-	Un       string `json:"in" yaml:"in"`
-	Name     string `json:"name" yaml:"name"`
-	Required bool   `required:"in" yaml:"required"`
-	Type     string `json:"type" yaml:"type"`
+	In       string            `json:"in,omitempty" yaml:"in"`
+	Name     string            `json:"name,omitempty" yaml:"name"`
+	Required bool              `required:"in,omitempty" yaml:"required"`
+	Type     string            `json:"type,omitempty" yaml:"type"`
+	Schema   map[string]string `json:"schema,omitempty" yaml:"schema"`
+	Minimum  int64             `json:"minimum,omitempty" yaml:"minimum"`
+}
+
+type Schema struct {
+	Type       string                     `json:"type" yaml:"type"`
+	Properties map[string]map[string]Type `json:"properties" yaml:"properties"`
+}
+
+type Type struct {
+	Type    string `json:"type" yaml:"type"`
+	Example string `json:"example" yaml:"example"`
 }
 
 type Response struct {
-	Description string            `json:"type" yaml:"type"`
-	Schema      map[string]string `json:"schema" yaml:"schema"`
+	Description string            `json:"type,omitempty" yaml:"type"`
+	Schema      map[string]string `json:"schema,omitempty" yaml:"schema"`
 }
 
-type Path map[string]MethodStrcut
-
-// swagger: "2.0"
-// host: api.example.com
-// basePath: /v1
-// schemes:
-//   - https
-// paths:
-//   /users/{userId}:
-//     get:
-//       summary: Returns a user by ID.
-//       parameters:
-//         - in: path
-//           name: userId
-//           required: true
-//           type: integer
-//       responses:
-//         200:
-//           description: OK
-//           schema:
-//             $ref: '#/definitions/User'
-//   /users:
-//     post:
-//       summary: Creates a new user.
-//       parameters:
-//         - in: body
-//           name: user
-//           schema:
-//             $ref: '#/definitions/User'
-//       responses:
-//         200:
-//           description: OK
+type Info struct {
+	Title       string `json:"title" yaml:"title"`
+	Description string `json:"description" yaml:"description"`
+	Version     string `json:"version" yaml:"version"`
+}
 
 type Swagger struct {
-	Swagger  string          `json:"swagger" yaml:"swagger"`
-	Host     string          `json:"host" yaml:"host"`
-	BasePath string          `json:"basePath" yaml:"basePath"`
-	Schemes  []string        `json:"schemes" yaml:"schemes"`
-	Paths    map[string]Path `json:"paths" yaml:"paths"`
+	Swagger             string                             `json:"swagger" yaml:"swagger"`
+	Info                Info                               `json:"info" yaml:"info"`
+	Host                string                             `json:"host" yaml:"host"`
+	BasePath            string                             `json:"basePath,omitempty" yaml:"basePath"`
+	Schemes             []string                           `json:"schemes,omitempty" yaml:"schemes"`
+	Paths               map[string]map[string]MethodStrcut `json:"paths,omitempty" yaml:"paths"`
+	Definitions         map[string]Definition              `json:"definitions,omitempty" yaml:"definitions"`
+	Security            []map[string][]string              `json:"security,omitempty" yaml:"security"`
+	SecurityDefinitions map[string]Type                    `json:"securityDefinitions,omitempty" yaml:"securityDefinitions"`
+}
+
+type Definition struct {
+	Properties map[string]Type `json:"properties" yaml:"properties"`
+	Required   []string        `json:"required" yaml:"required"`
 }
 
 type SwaggerUIOpts struct {
@@ -81,35 +80,48 @@ type SwaggerUIOpts struct {
 	Title string
 }
 
-func (r *Router) ShowSwagger(url, host string, schemes ...string) {
-	r.Get(url, func(w http.ResponseWriter, r *http.Request) {
+func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
+	swagger := NewGroupRoute().BindResponse(nil)
+	swagger.Get(url, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		opts := DefaultEnsure()
 		tmpl := template.Must(template.New("swaggerui").Parse(swaggeruiTemplate))
 
 		buf := bytes.NewBuffer(nil)
 		_ = tmpl.Execute(buf, &opts)
-		GetInstance(r).Response = ""
 		w.Write(buf.Bytes())
 	})
-	r.Get("/swagger.json", func(w http.ResponseWriter, req *http.Request) {
+	swagger.Get("/swagger.json", func(w http.ResponseWriter, req *http.Request) {
 		// 拿到路由
-		// swagger := Swagger{
-		// 	Swagger: "2.0",
-		// 	Host:    host,
-		// 	Schemes: schemes,
-		// }
-		// for k, v := range r.route {
-		// 	path := make(map[string]MethodStrcut)
-		// 	for method, rt := range v {
-		// 		path[method] = MethodStrcut{
-		// 			Summary: "",
-		// 		}
-		// 	}
-		// 	swagger.Paths[k] = path
-		// }
-		w.Write([]byte(``))
+		ss := schemes
+		if len(schemes) == 0 {
+			ss = []string{"http"}
+		}
+		swagger := Swagger{
+			Swagger: "2.0",
+			Host:    host,
+			Schemes: ss,
+			Paths:   make(map[string]map[string]MethodStrcut),
+		}
+		for k, v := range r.route {
+			if k == url || k == "/swagger.json" {
+				continue
+			}
+			path := make(map[string]MethodStrcut)
+			for method, rt := range v {
+				path[strings.ToLower(method)] = MethodStrcut{
+					Summary: rt.describe,
+				}
+			}
+			swagger.Paths[k] = path
+		}
+		send, err := json.MarshalIndent(swagger, "", "\t")
+		if err != nil {
+			log.Println(err)
+		}
+		w.Write(send)
 	})
+	return swagger
 }
 
 func DefaultEnsure() *SwaggerUIOpts {

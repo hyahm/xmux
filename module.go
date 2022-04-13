@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -11,7 +12,9 @@ import (
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	var send []byte
 	var err error
+	fmt.Println("----", GetInstance(r).Response)
 	if GetInstance(r).Response != nil {
+		fmt.Println("-----------")
 		send, err = json.Marshal(GetInstance(r).Response)
 		if err != nil {
 			log.Println(err)

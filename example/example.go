@@ -53,6 +53,6 @@ func main() {
 	}
 	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(response)
 	router.AddGroup(v2Group())
-	router.Swagger("/swagger")
+	router.AddGroup(router.ShowSwagger("/swagger", "127.0.0.1"))
 	router.Run(":8888")
 }

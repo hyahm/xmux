@@ -24,7 +24,8 @@ type Route struct {
 	describe                         string // 接口描述
 	request                          string // 请求的请求示例
 	response                         string
-	responseData                     interface{}       // 接口返回示例
+	responseData                     interface{} // 接口返回实例
+	bindResponseData                 bool
 	st_request                       interface{}       // api 请求示例
 	params_request                   map[string]string // get请求参数
 	st_response                      interface{}       // api 返回示例
@@ -45,6 +46,7 @@ func (rt *Route) GetHeader() map[string]string {
 
 func (rt *Route) BindResponse(response interface{}) *Route {
 	rt.responseData = response
+	rt.bindResponseData = true
 	return rt
 }
 

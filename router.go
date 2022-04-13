@@ -495,10 +495,11 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	route.header = tempHeader
 
 	// 合并返回
-	if route.responseData == nil {
-		route.responseData = group.responseData
-
-		if group.responseData == nil {
+	// 本身要是绑定了数据，就不需要找上级了
+	if !route.bindResponseData {
+		if group.bindResponseData {
+			route.responseData = group.responseData
+		} else {
 			route.responseData = r.responseData
 		}
 	}
