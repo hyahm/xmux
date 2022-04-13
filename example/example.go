@@ -47,13 +47,12 @@ type Global struct {
 }
 
 func main() {
-	global := &Global{
+	response := &Global{
 		Code: 200,
 		Msg:  "ok",
 	}
-	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(global)
+	router := xmux.NewRouter().AddModule(xmux.DefaultPermissionTemplate, home1).BindResponse(response)
 	router.AddGroup(v2Group())
-	router.DebugAssignRoute("/v1/login")
-	router.DebugAssignRoute("/v2/tt")
+	router.Swagger("/swagger")
 	router.Run(":8888")
 }
