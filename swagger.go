@@ -80,18 +80,21 @@ type SwaggerUIOpts struct {
 	Title string
 }
 
-func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
+func (r *Router) ShowSwagger(url, jsonPath, host string, schemes ...string) *GroupRoute {
+	if jsonPath == "" {
+		jsonPath = "/swagger.json"
+	}
 	swagger := NewGroupRoute().BindResponse(nil)
 	swagger.Get(url, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		opts := DefaultEnsure()
+		opts := DefaultEnsure(jsonPath)
 		tmpl := template.Must(template.New("swaggerui").Parse(swaggeruiTemplate))
 
 		buf := bytes.NewBuffer(nil)
 		_ = tmpl.Execute(buf, &opts)
 		w.Write(buf.Bytes())
 	})
-	swagger.Get("/swagger.json", func(w http.ResponseWriter, req *http.Request) {
+	swagger.Get(jsonPath, func(w http.ResponseWriter, req *http.Request) {
 		// 拿到路由
 		ss := schemes
 		if len(schemes) == 0 {
@@ -104,7 +107,7 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
 		for k, v := range r.route {
-			if k == url || k == "/swagger.json" {
+			if k == url || k == jsonPath {
 				continue
 			}
 			path := make(map[string]MethodStrcut)
@@ -124,8 +127,9 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 	return swagger
 }
 
-func DefaultEnsure() *SwaggerUIOpts {
+func DefaultEnsure(jsonPath string) *SwaggerUIOpts {
 	return &SwaggerUIOpts{
+		SpecURL:          jsonPath,
 		SwaggerURL:       swaggerLatest,
 		SwaggerPresetURL: swaggerPresetLatest,
 		SwaggerStylesURL: swaggerStylesLatest,
@@ -214,7 +218,7 @@ const (
     window.onload = function() {
       // Begin Swagger UI call region
       const ui = SwaggerUIBundle({
-        url: '/swagger.json',
+        url: '{{ .SpecURL }}',
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [
