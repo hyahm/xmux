@@ -158,11 +158,11 @@ func bind(route *rt, req *http.Request, fd *FlowData) {
 }
 
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println(req.URL.Path, "---------", err)
-		}
-	}()
+	// defer func() {
+	// if err := recover(); err != nil {
+	// 	log.Println(req.URL.Path, "---------", err)
+	// }
+	// }()
 	if route.dataSource != nil {
 		base := reflect.TypeOf(route.dataSource)
 		// 支持bind 指针和结构体
@@ -177,7 +177,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		}
 
 	}
-	if route.dataSource != nil {
+	if route.responseData != nil {
 		response := reflect.TypeOf(route.responseData)
 		// 支持bind 指针和结构体
 		if response.Kind() == reflect.Ptr {
