@@ -3,6 +3,9 @@ package xmux
 import "reflect"
 
 func Clone(src interface{}) interface{} {
+	if src == nil {
+		return nil
+	}
 	g := reflect.TypeOf(src)
 	if g.Kind() != reflect.Ptr {
 		panic("bindReponse must be a pointer")
