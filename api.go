@@ -1,10 +1,7 @@
 package xmux
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 )
 
 func css(w http.ResponseWriter, r *http.Request) {
@@ -40,61 +37,61 @@ func js(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func showThisDoc(w http.ResponseWriter, r *http.Request) {
-	id := Var(r)["id"]
-	t := NewTemplate()
-	intid, _ := strconv.Atoi(id)
-	if api, ok := apiDocument[intid]; ok {
-		api.Sidebar = sidebar
-		err := t.Execute(w, api)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-		}
-		return
-	} else {
-		apiDocument[0] = Doc{
-			Title:   "this is document home page",
-			Sidebar: sidebar,
-		}
-		http.Redirect(w, r, "/-/api/0.html", 302)
-	}
+// func showThisDoc(w http.ResponseWriter, r *http.Request) {
+// 	id := Var(r)["id"]
+// 	t := NewTemplate()
+// 	intid, _ := strconv.Atoi(id)
+// 	if api, ok := apiDocument[intid]; ok {
+// 		api.Sidebar = sidebar
+// 		err := t.Execute(w, api)
+// 		if err != nil {
+// 			w.Write([]byte(err.Error()))
+// 		}
+// 		return
+// 	} else {
+// 		apiDocument[0] = Doc{
+// 			Title:   "this is document home page",
+// 			Sidebar: sidebar,
+// 		}
+// 		http.Redirect(w, r, "/-/api/0.html", 302)
+// 	}
 
-}
+// }
 
-func homeDoc(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-	t := NewHomeTemplate()
-	apiDocument[0] = Doc{
-		Title:   "this is document home page",
-		Sidebar: sidebar,
-	}
-	err := t.Execute(w, apiDocument[0])
-	if err != nil {
-		w.Write([]byte(err.Error()))
-	}
-	w.WriteHeader(http.StatusOK)
-}
+// func homeDoc(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+// 	t := NewHomeTemplate()
+// 	apiDocument[0] = Doc{
+// 		Title:   "this is document home page",
+// 		Sidebar: sidebar,
+// 	}
+// 	err := t.Execute(w, apiDocument[0])
+// 	if err != nil {
+// 		w.Write([]byte(err.Error()))
+// 	}
+// 	w.WriteHeader(http.StatusOK)
+// }
 
-func testdoc(w http.ResponseWriter, r *http.Request) {
-	send, err := json.Marshal(apiDocument)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	w.Write(send)
-}
+// func testdoc(w http.ResponseWriter, r *http.Request) {
+// 	send, err := json.Marshal(apiDocument)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	w.Write(send)
+// }
 
-func (r *Router) ShowApi(pattern string) *GroupRoute {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
-	api := NewGroupRoute()
-	NewDocs(r)
-	api.Get("/-/js/{name}.js", js).SetHeader("Content-Type", "application/javascript; charset=utf8")
-	api.Get("/-/css/{name}.css", css).SetHeader("Content-Type", "text/css; charset=utf8")
-	api.Get("/-/api/{int:id}.html", showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
-	api.Get("/-/api/0.html", homeDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
-	api.Get("/-/api/help", testdoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
-	api.Get(pattern, homeDoc)
-	return api
-}
+// func (r *Router) ShowApi(pattern string) *GroupRoute {
+// 	if !r.new {
+// 		panic("must be use get router by NewRouter()")
+// 	}
+// 	api := NewGroupRoute()
+// 	NewDocs(r)
+// 	api.Get("/-/js/{name}.js", js).SetHeader("Content-Type", "application/javascript; charset=utf8")
+// 	api.Get("/-/css/{name}.css", css).SetHeader("Content-Type", "text/css; charset=utf8")
+// 	api.Get("/-/api/{int:id}.html", showThisDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+// 	api.Get("/-/api/0.html", homeDoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+// 	api.Get("/-/api/help", testdoc).SetHeader("Content-Type", "text/html; charset=UTF-8")
+// 	api.Get(pattern, homeDoc)
+// 	return api
+// }

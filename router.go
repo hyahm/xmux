@@ -63,8 +63,8 @@ type Router struct {
 	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound func(http.ResponseWriter, *http.Request)
 	IgnoreSlash    bool                // 忽略地址多个斜杠， 默认不忽略
-	route          PatternMR           // 单实例路由， 组路由最后也会合并过来
-	tpl            PatternMR           // 正则路由， 组路由最后也会合并过来
+	route          map[string]*Route   // 单实例路由， 组路由最后也会合并过来
+	tpl            map[string]*Route   // 正则路由， 组路由最后也会合并过来
 	params         map[string][]string // 记录所有路由， []string 是正则匹配的参数
 	header         map[string]string   // 全局路由头
 	module         *module             // 全局模块
@@ -82,7 +82,7 @@ func (r *Router) BindResponse(response interface{}) *Router {
 }
 
 // 判断是否是正则路径， 返回一个路径 string 和是否是正则的 bool
-func (r *Router) makeRoute(pattern string) (string, bool) {
+func (r *Router) makeRoute(pattern string) (string, []string, bool) {
 	// 格式化路径
 	// 创建 methodsRoute
 
@@ -91,27 +91,12 @@ func (r *Router) makeRoute(pattern string) (string, bool) {
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
-		if r.tpl == nil {
-			r.tpl = make(map[string]MethodsRoute)
-			r.tpl[v] = make(map[string]*Route)
-		}
-		if _, ok := r.tpl[v]; !ok {
-			r.tpl[v] = make(map[string]*Route)
-		}
 		r.params[v] = listvar
-		return v, true
+		return v, listvar, true
 	} else {
-		if r.route == nil {
-			r.route = make(map[string]MethodsRoute)
-			r.route[pattern] = make(map[string]*Route)
 
-		}
-		if _, ok := r.route[pattern]; !ok {
-			r.route[pattern] = make(map[string]*Route)
-
-		}
 		r.params[pattern] = make([]string, 0)
-		return pattern, false
+		return pattern, nil, false
 	}
 }
 
@@ -280,18 +265,20 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	var thisRoute *Route
 	if _, ok := r.route[req.URL.Path]; ok {
-		thisRoute, ok = r.route[req.URL.Path][req.Method]
-		if !ok {
+		thisRoute = r.route[req.URL.Path]
+		if _, ok = thisRoute.methods[req.Method]; !ok {
 			r.HandleNotFound(w, req)
 			atomic.AddInt32(&connections, -1)
 			return
 		}
+
 	} else {
 		for reUrl := range r.tpl {
 			re := regexp.MustCompile(reUrl)
 			req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
-				if thisRoute, ok = r.tpl[reUrl][req.Method]; !ok {
+				thisRoute = r.tpl[reUrl]
+				if _, ok := thisRoute.methods[req.Method]; !ok {
 					// 有匹配到，但是没找到方法就继续向下匹配
 					continue
 				}
@@ -432,11 +419,11 @@ func NewRouter(cache ...uint64) *Router {
 	InitCache(c)
 	return &Router{
 		new:    true,
-		route:  make(map[string]MethodsRoute),
-		tpl:    make(map[string]MethodsRoute),
+		route:  make(map[string]*Route),
+		tpl:    make(map[string]*Route),
 		header: map[string]string{},
-		Exit:   exit,
 		params: make(map[string][]string),
+		Exit:   exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
@@ -544,7 +531,6 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	route.module = tempModules
 	// 与组的区别， 组里面这里是合并， 这里是删除
 	// 删除模块
-	merge(group, route)
 }
 
 // 组路由添加到router里面,
@@ -561,21 +547,15 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 	for url, args := range group.params {
 		r.params[url] = args
 		if len(args) == 0 {
-			for method := range group.route[url] {
-				if _, ok := r.route[url][method]; ok {
-					log.Fatalf("%s %s is Duplication", url, method)
-				}
-				r.merge(group, group.route[url][method])
-			}
+
+			r.merge(group, group.route[url])
+
 			r.route[url] = group.route[url]
 
 		} else {
-			for method := range group.tpl[url] {
-				if _, ok := r.tpl[url][method]; ok {
-					log.Fatalf("%s %s is Duplication", url, method)
-				}
-				r.merge(group, group.tpl[url][method])
-			}
+
+			r.merge(group, group.tpl[url])
+
 			r.tpl[url] = group.tpl[url]
 		}
 
@@ -585,73 +565,18 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 }
 
 // 将路由组的信息合并到路由
-func merge(group *GroupRoute, route *Route) {
 
-	// 合并 groupKey
-	if route.groupKey == "" {
-		route.groupKey = group.groupKey
-		route.groupLabel = group.groupLabel
-		route.groupTitle = group.groupTitle
+func debugPrint(url string, route *Route) {
+	names := make([]string, 0)
+	for _, v := range route.module.funcOrder {
+		names = append(names, GetFuncName(v))
 	}
-
-	// 合并 reqHeader
-	if group.reqHeader != nil {
-		//
-		tmpReqHeader := make(map[string]string)
-		for k, v := range group.reqHeader {
-			tmpReqHeader[k] = v
-		}
-
-		if route.reqHeader != nil {
-			for k, v := range route.reqHeader {
-				tmpReqHeader[k] = v
-			}
-
-		}
-
-		route.reqHeader = tmpReqHeader
-
+	methods := make([]string, 0)
+	for k := range route.methods {
+		methods = append(methods, k)
 	}
-
-	// 合并请求头
-
-	// 合并 codeMsg
-	if group.codeMsg != nil {
-		//
-		tmpCodeMsg := make(map[string]string)
-		for k, v := range group.codeMsg {
-			tmpCodeMsg[k] = v
-		}
-		if route.codeMsg != nil {
-			for k, v := range route.codeMsg {
-				if v == "" {
-					delete(tmpCodeMsg, k)
-				} else {
-					tmpCodeMsg[k] = v
-				}
-
-			}
-
-		}
-
-		route.codeMsg = tmpCodeMsg
-	}
-	// 合并 codeField
-	if route.codeField == "" {
-		route.codeField = group.codeField
-	}
-
-}
-
-func debugPrint(url string, mr MethodsRoute) {
-	for k, v := range mr {
-		names := make([]string, 0)
-		for _, v := range v.module.funcOrder {
-			names = append(names, GetFuncName(v))
-		}
-		log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
-			url, k, v.header, names, v.pagekeys)
-	}
+	log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
+		url, methods, route.header, names, route.pagekeys)
 }
 
 func (r *Router) DebugRoute() {
@@ -675,13 +600,13 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	}
 }
 
-func (r *Router) GetAssignRoute(thisurl string) MethodsRoute {
+func (r *Router) GetAssignRoute(thisurl string) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.route {
+	for url := range r.route {
 		if thisurl == url {
-			return mr
+			return r.route[url]
 		}
 	}
 	return nil

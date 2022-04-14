@@ -89,7 +89,6 @@ func (r *Router) ShowSwagger(url, jsonPath, host string, schemes ...string) *Gro
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		opts := DefaultEnsure(jsonPath)
 		tmpl := template.Must(template.New("swaggerui").Parse(swaggeruiTemplate))
-
 		buf := bytes.NewBuffer(nil)
 		_ = tmpl.Execute(buf, &opts)
 		w.Write(buf.Bytes())
@@ -111,9 +110,9 @@ func (r *Router) ShowSwagger(url, jsonPath, host string, schemes ...string) *Gro
 				continue
 			}
 			path := make(map[string]MethodStrcut)
-			for method, rt := range v {
+			for method := range v.methods {
 				path[strings.ToLower(method)] = MethodStrcut{
-					Summary: rt.describe,
+					Summary: v.describe,
 				}
 			}
 			swagger.Paths[k] = path

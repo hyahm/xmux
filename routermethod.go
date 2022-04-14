@@ -7,19 +7,10 @@ import (
 )
 
 // get this route
-func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
+func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
 	if len(methods) == 0 {
 		panic(pattern + " have not any methods")
 	}
-	mr := make(MethodsRoute)
-	for _, method := range methods {
-		mr[method] = r.method(pattern, handler, method)
-	}
-	return mr
-}
-
-func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
-
 	temphead := make(map[string]string)
 	for k, v := range r.header {
 		temphead[k] = v
@@ -37,65 +28,55 @@ func (r *Router) method(pattern string, handler func(http.ResponseWriter, *http.
 			funcOrder: r.module.funcOrder,
 			mu:        sync.RWMutex{},
 		},
-		isRoot:      true,
+		methods:     make(map[string]struct{}, len(methods)),
+		new:         true,
 		header:      temphead,
 		delheader:   make(map[string]struct{}),
 		delmodule:   make(map[string]struct{}),
 		delPageKeys: make(map[string]struct{}),
 	}
 	// 判断是否是正则
-	url, ok := r.makeRoute(pattern)
+	url, vars, ok := r.makeRoute(pattern)
+	r.params[url] = vars
 	if ok {
-		if _, urlok := r.tpl[url]; urlok {
+		// 正则匹配的
+		for _, method := range methods {
 			// 如果存在就判断是否存在method
-			if _, methodok := r.tpl[url][method]; methodok {
+			if _, methodok := newRoute.methods[method]; methodok {
 				// 如果也存在， 那么method重复了
 				log.Fatal("method : " + method + "  duplicate, url: " + url)
 				return nil
-			} else {
-				// 如果不存在就创建一个 route
-				r.tpl[url][method] = newRoute
-				return newRoute
 			}
-		} else {
-			// 如果不存在就创建一个PatternMR
-			r.tpl = make(PatternMR)
-			mr := make(MethodsRoute)
-			mr[method] = newRoute
-			r.tpl[url] = mr
-			return newRoute
+
+			newRoute.methods[method] = struct{}{}
 		}
+		r.tpl[url] = newRoute
+		// 如果不存在就创建一个 route
+
 	} else {
-		if _, urlok := r.route[url]; urlok {
+		// 直接匹配
+		for _, method := range methods {
 			// 如果存在就判断是否存在method
-			if _, methodok := r.route[url][method]; methodok {
+			if _, methodok := newRoute.methods[method]; methodok {
 				// 如果也存在， 那么method重复了
 				log.Fatal("method : " + method + "  duplicate, url: " + url)
 				return nil
-			} else {
-				// 如果不存在就创建一个 route
-				r.route[url][method] = newRoute
-				return newRoute
 			}
-		} else {
-			// 如果不存在就创建一个PatternMR
-			r.route = make(PatternMR)
-			mr := make(MethodsRoute)
-			mr[method] = newRoute
-			r.route[url] = mr
-			return newRoute
+			newRoute.methods[method] = struct{}{}
 		}
+		r.route[url] = newRoute
 	}
+	return newRoute
 }
 
 func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodPost)
+	return r.defindMethod(pattern, handler, http.MethodPost)
 }
 
-func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) MethodsRoute {
+func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -105,14 +86,21 @@ func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Req
 	)
 }
 
+// func (mr MethodsRoute) Bind(data interface{}) MethodsRoute {
+// 	for _, route := range mr {
+// 		route.dataSource = data
+// 	}
+// 	return mr
+// }
+
 func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodGet)
+	return r.defindMethod(pattern, handler, http.MethodGet)
 }
 
-func (r *Router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
+func (r *Router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -123,47 +111,47 @@ func (r *Router) Delete(pattern string, handler func(http.ResponseWriter, *http.
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodDelete)
+	return r.defindMethod(pattern, handler, http.MethodDelete)
 }
 
 func (r *Router) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodHead)
+	return r.defindMethod(pattern, handler, http.MethodHead)
 }
 
 func (r *Router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodOptions)
+	return r.defindMethod(pattern, handler, http.MethodOptions)
 }
 
 func (r *Router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodConnect)
+	return r.defindMethod(pattern, handler, http.MethodConnect)
 }
 
 func (r *Router) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodPatch)
+	return r.defindMethod(pattern, handler, http.MethodPatch)
 }
 
 func (r *Router) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodTrace)
+	return r.defindMethod(pattern, handler, http.MethodTrace)
 }
 
 func (r *Router) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.method(pattern, handler, http.MethodPut)
+	return r.defindMethod(pattern, handler, http.MethodPut)
 }
