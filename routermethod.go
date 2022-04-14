@@ -47,7 +47,6 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 				log.Fatal("method : " + method + "  duplicate, url: " + url)
 				return nil
 			}
-
 			newRoute.methods[method] = struct{}{}
 		}
 		r.tpl[url] = newRoute

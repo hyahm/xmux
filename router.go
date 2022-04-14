@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hyahm/golog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -158,7 +159,7 @@ func bind(route *rt, req *http.Request, fd *FlowData) {
 }
 
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
-
+	golog.Info("6666")
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println(req.URL.Path, "---------", err)
@@ -189,7 +190,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 	// 当前函数名去掉目录层级后的
 	name := runtime.FuncForPC(reflect.ValueOf(route.Handle).Pointer()).Name()
 	n := strings.LastIndex(name, ".")
-
+	golog.Info("6666")
 	fd.Set(CURRFUNCNAME, name[n+1:])
 	// 请求模块
 	for _, module := range route.module {
@@ -198,6 +199,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 			return
 		}
 	}
+	golog.Info("6666")
 	route.Handle.ServeHTTP(w, req)
 
 }
@@ -263,6 +265,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
+
 	var thisRoute *Route
 	if _, ok := r.route[req.URL.Path]; ok {
 		thisRoute = r.route[req.URL.Path]
@@ -271,7 +274,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 			atomic.AddInt32(&connections, -1)
 			return
 		}
-
+		golog.Info("4444")
 	} else {
 		for reUrl := range r.tpl {
 			re := regexp.MustCompile(reUrl)
@@ -296,6 +299,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 		return
 	}
 endloop:
+	golog.Info("55555")
 	// 缓存handler
 	thisRouter := &rt{
 		Handle:       thisRoute.handle,
@@ -485,9 +489,9 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	// 本身要是绑定了数据，就不需要找上级了
 	if !route.bindResponseData {
 		if group.bindResponseData {
-			route.responseData = group.responseData
+			route.responseData = Clone(group.responseData)
 		} else {
-			route.responseData = r.responseData
+			route.responseData = Clone(r.responseData)
 		}
 	}
 

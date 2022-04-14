@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
@@ -19,18 +17,18 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 
 	}
 	if r.Method == http.MethodPost {
-		b, err := io.ReadAll(r.Body)
-		if err != nil {
-			golog.Info(err)
-			w.WriteHeader(404)
-			return true
-		}
-		golog.Info(string(b))
-		err = json.Unmarshal(b, xmux.GetInstance(r).Data)
-		if err != nil {
-			w.WriteHeader(404)
-			return true
-		}
+		// b, err := io.ReadAll(r.Body)
+		// if err != nil {
+		// 	golog.Info(err)
+		// 	w.WriteHeader(404)
+		// 	return true
+		// }
+		// golog.Info(string(b))
+		// err = json.Unmarshal(b, xmux.GetInstance(r).Data)
+		// if err != nil {
+		// 	w.WriteHeader(404)
+		// 	return true
+		// }
 
 	}
 
@@ -55,12 +53,16 @@ type User struct {
 
 func main() {
 	defer golog.Sync()
+	global := &Global{
+		Code: 200,
+	}
+
 	router := xmux.NewRouter()
-	group := xmux.NewGroupRoute()
+	group := xmux.NewGroupRoute().BindResponse(global)
 	group.Post("/post", home)
 	router.AddGroup(group)
 	router.Get("/get", home)
 	router.Any("/", home).AddModule(home1).Bind(User{})
-	router.DebugAssignRoute("/post")
+	router.DebugAssignRoute("/")
 	router.Run(":8888")
 }

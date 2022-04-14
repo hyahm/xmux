@@ -65,7 +65,7 @@ func getHc(b, salt string) string {
 
 // 检查jwt, must be a point
 func GetJwt(jwt, salt string, token Jwter) error {
-	if reflect.TypeOf(token).Kind() != reflect.Pointer {
+	if reflect.TypeOf(token).Kind() != reflect.Ptr {
 		return errors.New("token must be a pointer")
 	}
 	js := strings.Split(jwt, ".")
