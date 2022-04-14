@@ -5,14 +5,12 @@ import (
 	_ "net/http/pprof"
 	"strings"
 
-	"github.com/hyahm/golog"
 	"github.com/hyahm/xmux"
 )
 
 func home1(w http.ResponseWriter, r *http.Request) bool {
 	ct := r.Header.Get("Content-Type")
 	ct = strings.ToLower(ct)
-	golog.Info(ct)
 	if r.Method == http.MethodGet {
 
 	}
@@ -52,7 +50,6 @@ type User struct {
 }
 
 func main() {
-	defer golog.Sync()
 	global := &Global{
 		Code: 200,
 	}
