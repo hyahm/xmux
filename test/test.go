@@ -15,6 +15,14 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 	// 	return true
 	// }
 	// fmt.Println(string(b))
+	fmt.Println(r.FormValue("username"))
+	// err := r.ParseForm()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	// fmt.Println(r.Form.Get("username"))
+	// fmt.Println(r.Form.Get("username"))
 	// ct := r.Header.Get("Content-Type")
 	// ct = strings.ToLower(ct)
 
@@ -36,8 +44,9 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 
 func home(w http.ResponseWriter, r *http.Request) {
 	xmux.GetInstance(r).Set("aaaa", "bbb")
-	user := xmux.GetInstance(r).Data.(*User)
-	fmt.Printf("%#v\n", *user)
+
+	// user := xmux.GetInstance(r).Data.(*User)
+	// fmt.Printf("%#v\n", *user)
 }
 
 type Global struct {
@@ -53,14 +62,14 @@ type User struct {
 }
 
 func main() {
-	global := &Global{
-		Code: 200,
-	}
+	// global := &Global{
+	// 	Code: 200,
+	// }
 
 	router := xmux.NewRouter()
-	group := xmux.NewGroupRoute().BindResponse(global)
+	group := xmux.NewGroupRoute()
 	group.Post("/post", home)
 	router.Get("/get", home)
-	router.Any("/", home).AddModule(home1).BindJson(User{})
+	router.Post("/", home).AddModule(home1)
 	router.Run(":8888")
 }
