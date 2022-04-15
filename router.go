@@ -50,7 +50,8 @@ func DefaultExitTemplate(now time.Time, w http.ResponseWriter, r *http.Request) 
 
 type Router struct {
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
-	new                  bool                                          // 判断是否是通过newRouter 来初始化的
+	new                  bool // 判断是否是通过newRouter 来初始化的
+	PrintRequestStr      bool
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout          time.Duration
 	HanleFavicon         func(http.ResponseWriter, *http.Request)
@@ -133,11 +134,7 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 }
 
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
-	// defer func() {
-	// if err := recover(); err != nil {
-	// 	log.Println(req.URL.Path, "---------", err)
-	// }
-	// }()
+
 	if route.dataSource != nil {
 		base := reflect.TypeOf(route.dataSource)
 		// 支持bind 指针和结构体

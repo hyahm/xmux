@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -42,6 +43,9 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 	if err != nil {
 		return false, err
 	}
+	if r.PrintRequestStr {
+		fmt.Println(string(b))
+	}
 	tt := reflect.TypeOf(fd.Data).Elem()
 	l := tt.NumField()
 	for i := 0; i < l; i++ {
@@ -64,6 +68,30 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 	return false, err
 }
 
+func (r *Router) unmarsharYaml(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		return false, err
+	}
+	if r.PrintRequestStr {
+		fmt.Println(string(b))
+	}
+	err = yaml.Unmarshal(b, &fd.Data)
+	return false, err
+}
+
+func (r *Router) unmarsharXml(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		return false, err
+	}
+	if r.PrintRequestStr {
+		fmt.Println(string(b))
+	}
+	err = xml.Unmarshal(b, &fd.Data)
+	return false, err
+}
+
 func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) bool {
 	// 数据绑定
 	defer req.Body.Close()
@@ -75,17 +103,17 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 		}
 		return cont
 	case yamlT:
-		err := yaml.NewDecoder(req.Body).Decode(&fd.Data)
+		cont, err := r.unmarsharYaml(w, req, fd)
 		if err != nil {
-			return unmarshalError(err, w, req)
+			return r.UnmarshalError(err, w, req)
 		}
-		return false
+		return cont
 	case xmlT:
-		err := xml.NewDecoder(req.Body).Decode(&fd.Data)
+		cont, err := r.unmarsharXml(w, req, fd)
 		if err != nil {
-			return unmarshalError(err, w, req)
+			return r.UnmarshalError(err, w, req)
 		}
-		return false
+		return cont
 	case formT:
 		cont, err := r.unmarsharForm(w, req, fd)
 		if err != nil {
@@ -114,10 +142,11 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 				}
 			}
 			if head == MIMEXML || head == MIMEXML2 {
-				err := xml.NewDecoder(req.Body).Decode(&fd.Data)
+				cont, err := r.unmarsharXml(w, req, fd)
 				if err != nil {
-					return unmarshalError(err, w, req)
+					return r.UnmarshalError(err, w, req)
 				}
+				return cont
 
 			}
 			if head == MIMEPOSTForm || head == MIMEMultipartPOSTForm {
@@ -143,7 +172,7 @@ func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 	for i := 0; i < l; i++ {
 		keys := tt.Field(i).Tag.Get("form")
 		tagkeys := strings.Split(keys, ",")
-		if tagkeys[0] == "" {
+		if len(tagkeys) == 0 && tagkeys[0] == "" {
 			continue
 		}
 		key := tagkeys[0]
