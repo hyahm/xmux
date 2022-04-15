@@ -1,10 +1,7 @@
 package xmux
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,8 +13,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 var connections int32
@@ -54,23 +49,24 @@ func DefaultExitTemplate(now time.Time, w http.ResponseWriter, r *http.Request) 
 }
 
 type Router struct {
-	Exit           func(time.Time, http.ResponseWriter, *http.Request)
-	new            bool                                          // 判断是否是通过newRouter 来初始化的
-	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
-	ReadTimeout    time.Duration
-	HanleFavicon   func(http.ResponseWriter, *http.Request)
-	DisableOption  bool                                     // 禁止全局option
-	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	HandleNotFound func(http.ResponseWriter, *http.Request)
-	IgnoreSlash    bool                // 忽略地址多个斜杠， 默认不忽略
-	route          map[string]*Route   // 单实例路由， 组路由最后也会合并过来
-	tpl            map[string]*Route   // 正则路由， 组路由最后也会合并过来
-	params         map[string][]string // 记录所有路由， []string 是正则匹配的参数
-	header         map[string]string   // 全局路由头
-	module         *module             // 全局模块
-	responseData   interface{}
-	// routeTable     *rt                                             // 路由表
-	pagekeys map[string]struct{}
+	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
+	new                  bool                                          // 判断是否是通过newRouter 来初始化的
+	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
+	ReadTimeout          time.Duration
+	HanleFavicon         func(http.ResponseWriter, *http.Request)
+	DisableOption        bool                                     // 禁止全局option
+	HandleOptions        func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
+	HandleNotFound       func(http.ResponseWriter, *http.Request)
+	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
+	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
+	IgnoreSlash          bool                // 忽略地址多个斜杠， 默认不忽略
+	route                map[string]*Route   // 单实例路由， 组路由最后也会合并过来
+	tpl                  map[string]*Route   // 正则路由， 组路由最后也会合并过来
+	params               map[string][]string // 记录所有路由， []string 是正则匹配的参数
+	header               map[string]string   // 全局路由头
+	module               *module             // 全局模块
+	responseData         interface{}
+	pagekeys             map[string]struct{}
 }
 
 func (r *Router) BindResponse(response interface{}) *Router {
@@ -136,27 +132,6 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
-func bind(route *rt, req *http.Request, fd *FlowData) {
-	// 数据绑定
-	var err error
-	defer req.Body.Close()
-	switch route.bindType {
-	case jsonT:
-		err = json.NewDecoder(req.Body).Decode(&fd.Data)
-
-	case yamlT:
-		err = yaml.NewDecoder(req.Body).Decode(&fd.Data)
-
-	case xmlT:
-		err = xml.NewDecoder(req.Body).Decode(&fd.Data)
-	}
-	if err != nil {
-		if err != io.EOF {
-			log.Println(err)
-		}
-	}
-}
-
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	// defer func() {
 	// if err := recover(); err != nil {
@@ -173,7 +148,9 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		}
 
 		if route.bindType != 0 {
-			bind(route, req, fd)
+			if r.bind(route, w, req, fd) {
+				return
+			}
 		}
 
 	}
@@ -430,10 +407,22 @@ func NewRouter(cache ...uint64) *Router {
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 			mu:        sync.RWMutex{},
 		},
-		HanleFavicon:   handleFavicon,
-		HandleOptions:  handleOptions,
-		HandleNotFound: handleNotFound,
+		HanleFavicon:         handleFavicon,
+		HandleOptions:        handleOptions,
+		HandleNotFound:       handleNotFound,
+		NotFoundRequireField: notFoundRequireField,
+		UnmarshalError:       unmarshalError,
 	}
+}
+
+func unmarshalError(err error, w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println(err)
+	return false
+}
+
+func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("require field not found", key)
+	return false
 }
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {

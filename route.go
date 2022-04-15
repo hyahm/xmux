@@ -91,6 +91,26 @@ func (rt *Route) BindJson(s interface{}) *Route {
 	return rt
 }
 
+func (rt *Route) BindByContentType(s interface{}) *Route {
+	if !rt.new {
+		panic("can not support init")
+	}
+	// 接口补充说明
+	rt.dataSource = s
+	rt.bindType = headT
+	return rt
+}
+
+func (rt *Route) BindForm(s interface{}) *Route {
+	if !rt.new {
+		panic("can not support init")
+	}
+	// 接口补充说明
+	rt.dataSource = s
+	rt.bindType = formT
+	return rt
+}
+
 // yaml数据绑定
 func (rt *Route) BindYaml(s interface{}) *Route {
 	if !rt.new {
