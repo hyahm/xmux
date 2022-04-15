@@ -162,9 +162,9 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	// 合并返回
 	if !route.bindResponseData {
 		if group.bindResponseData {
-			route.responseData = group.responseData
+			route.responseData = Clone(group.responseData)
 		} else {
-			route.responseData = g.responseData
+			route.responseData = Clone(g.responseData)
 		}
 	}
 

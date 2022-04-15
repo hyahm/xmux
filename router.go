@@ -178,13 +178,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 
 	}
 	if route.responseData != nil {
-		response := reflect.TypeOf(route.responseData)
-		// 支持bind 指针和结构体
-		if response.Kind() == reflect.Ptr {
-			fd.Response = reflect.New(reflect.TypeOf(route.responseData).Elem()).Interface()
-		} else {
-			fd.Response = reflect.New(reflect.TypeOf(route.responseData)).Interface()
-		}
+		fd.Response = Clone(route.responseData)
 	}
 
 	for k, v := range route.Header {
@@ -492,9 +486,9 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	// 本身要是绑定了数据，就不需要找上级了
 	if !route.bindResponseData {
 		if group.bindResponseData {
-			route.responseData = group.responseData
+			route.responseData = Clone(group.responseData)
 		} else {
-			route.responseData = r.responseData
+			route.responseData = Clone(r.responseData)
 		}
 	}
 
