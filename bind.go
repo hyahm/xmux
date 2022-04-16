@@ -44,7 +44,7 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 		return false, err
 	}
 	if r.PrintRequestStr {
-		r.requestBytes(b, req)
+		r.RequestBytes(b, req)
 	}
 	tt := reflect.TypeOf(fd.Data).Elem()
 	l := tt.NumField()
@@ -74,7 +74,7 @@ func (r *Router) unmarsharYaml(w http.ResponseWriter, req *http.Request, fd *Flo
 		return false, err
 	}
 	if r.PrintRequestStr {
-		r.requestBytes(b, req)
+		r.RequestBytes(b, req)
 	}
 	err = yaml.Unmarshal(b, &fd.Data)
 	return false, err
@@ -86,7 +86,7 @@ func (r *Router) unmarsharXml(w http.ResponseWriter, req *http.Request, fd *Flow
 		return false, err
 	}
 	if r.PrintRequestStr {
-		r.requestBytes(b, req)
+		r.RequestBytes(b, req)
 	}
 	err = xml.Unmarshal(b, &fd.Data)
 	return false, err
@@ -173,7 +173,7 @@ func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 	if r.PrintRequestStr && err != nil && length >= MaxPrintLength {
 		b, _ := io.ReadAll(req.Body)
 		if r.PrintRequestStr {
-			r.requestBytes(b, req)
+			r.RequestBytes(b, req)
 		}
 		req.Body = io.NopCloser(bytes.NewBuffer(b))
 	}
