@@ -13,6 +13,7 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Header.Get("Content-Length"))
 	fmt.Printf("%T\n", r.Body)
 }
 
@@ -48,7 +49,8 @@ func sub1group() *xmux.GroupRoute {
 func main() {
 	router := xmux.NewRouter().AddModule(home1)
 	router.AddGroup(subgroup())
-	router.Get("/get", home).BindForm(User{})
+	router.PrintRequestStr = true
+	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
 	router.DebugAssignRoute("/")
 	router.Run(":8888")

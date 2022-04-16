@@ -6,7 +6,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -45,7 +44,7 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 		return false, err
 	}
 	if r.PrintRequestStr {
-		log.Printf("connect_id: %d\tdata: %s", GetInstance(req).Get(CONNECTID), string(b))
+		r.requestBytes(b, req)
 	}
 	tt := reflect.TypeOf(fd.Data).Elem()
 	l := tt.NumField()
@@ -75,7 +74,7 @@ func (r *Router) unmarsharYaml(w http.ResponseWriter, req *http.Request, fd *Flo
 		return false, err
 	}
 	if r.PrintRequestStr {
-		log.Printf("connect_id: %d\tdata: %s", GetInstance(req).Get(CONNECTID), string(b))
+		r.requestBytes(b, req)
 	}
 	err = yaml.Unmarshal(b, &fd.Data)
 	return false, err
@@ -87,7 +86,7 @@ func (r *Router) unmarsharXml(w http.ResponseWriter, req *http.Request, fd *Flow
 		return false, err
 	}
 	if r.PrintRequestStr {
-		log.Printf("connect_id: %d\tdata: %s", GetInstance(req).Get(CONNECTID), string(b))
+		r.requestBytes(b, req)
 	}
 	err = xml.Unmarshal(b, &fd.Data)
 	return false, err
@@ -166,11 +165,15 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 	return false
 }
 
+var MaxPrintLength uint64 = 2 << 10
+
 func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
-	if r.PrintRequestStr {
+	cl := req.Header.Get("Content-Length")
+	length, err := strconv.ParseUint(cl, 10, 64)
+	if r.PrintRequestStr && err != nil && length >= MaxPrintLength {
 		b, _ := io.ReadAll(req.Body)
 		if r.PrintRequestStr {
-			log.Printf("connect_id: %d\tdata: %s", GetInstance(req).Get(CONNECTID), string(b))
+			r.requestBytes(b, req)
 		}
 		req.Body = io.NopCloser(bytes.NewBuffer(b))
 	}

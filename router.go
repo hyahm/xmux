@@ -45,7 +45,8 @@ type rt struct {
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
-func DefaultExitTemplate(now time.Time, w http.ResponseWriter, r *http.Request) {
+func requestBytes(reqbody []byte, r *http.Request) {
+	log.Printf("connect_id: %d\tdata: %s", GetInstance(r).Get(CONNECTID), string(reqbody))
 }
 
 type Router struct {
@@ -60,6 +61,7 @@ type Router struct {
 	HandleNotFound       func(http.ResponseWriter, *http.Request)
 	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
+	RequestBytes         func([]byte, *http.Request)
 	IgnoreSlash          bool                // 忽略地址多个斜杠， 默认不忽略
 	route                map[string]*Route   // 单实例路由， 组路由最后也会合并过来
 	tpl                  map[string]*Route   // 正则路由， 组路由最后也会合并过来
@@ -386,12 +388,13 @@ func NewRouter(cache ...uint64) *Router {
 	}
 	InitCache(c)
 	return &Router{
-		new:    true,
-		route:  make(map[string]*Route),
-		tpl:    make(map[string]*Route),
-		header: map[string]string{},
-		params: make(map[string][]string),
-		Exit:   exit,
+		new:          true,
+		route:        make(map[string]*Route),
+		tpl:          make(map[string]*Route),
+		header:       map[string]string{},
+		params:       make(map[string][]string),
+		RequestBytes: requestBytes,
+		Exit:         exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
