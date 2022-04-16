@@ -8,12 +8,12 @@
 - [x] 正则匹配支持（int(\d+), word(\w+), re, string, all(.*?)，不写默认 word
 - [x] 支持三大全局 HanleFavicon, HandleNotFound, HandleOptions）  
 - [x] 强大的模块让你的代码模块化变得非常简单 
-- [x] 内嵌接口文档
 - [x] 数据绑定(请求和返回)
 - [x] 增加websocket， 可以学习， 如果其他的不好可以试试  
 - [x] 集成pprof， 通过 router.AddGroup(xmux.Pprof()) 挂载
 - [x] 支持权限控制
 - [x] 进入时和处理完成时的钩子函数 
+- [x] 高灵活性和高定制
 
 ### 安装
 ```
