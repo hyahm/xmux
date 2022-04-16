@@ -9,6 +9,10 @@ import (
 )
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+	if GetInstance(r).Get(STATUSCODE) != 200 {
+		w.WriteHeader(GetInstance(r).Get(STATUSCODE).(int))
+		return
+	}
 	var send []byte
 	var err error
 	if GetInstance(r).Response != nil {
