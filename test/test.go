@@ -34,6 +34,7 @@ func subgroup() *xmux.GroupRoute {
 	sub.Get("/sub/get", home)
 	sub.Post("/sub/post", home)
 	sub.Any("/sub/any", home)
+	sub.Any("/get", home)
 	sub.AddGroup(sub1group())
 	return sub
 }

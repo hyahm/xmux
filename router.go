@@ -532,13 +532,21 @@ func (r *Router) AddGroup(group *GroupRoute) *Router {
 		if len(args) == 0 {
 
 			r.merge(group, group.route[url])
-
+			if _, ok := r.route[url]; ok {
+				if method, ok := exsitMethod(r.route[url].methods, group.route[url].methods); ok {
+					log.Fatal("method : " + method + "  duplicate, url: " + url)
+				}
+			}
 			r.route[url] = group.route[url]
 
 		} else {
 
 			r.merge(group, group.tpl[url])
-
+			if _, ok := r.tpl[url]; ok {
+				if method, ok := exsitMethod(r.tpl[url].methods, group.route[url].methods); ok {
+					log.Fatal("method : " + method + "  duplicate, url: " + url)
+				}
+			}
 			r.tpl[url] = group.tpl[url]
 		}
 

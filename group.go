@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -258,12 +259,31 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 		g.params[url] = args
 		if len(args) == 0 {
 			g.merge(group, group.route[url])
+			if _, ok := g.route[url]; ok {
+				if method, ok := exsitMethod(g.route[url].methods, group.route[url].methods); ok {
+					log.Fatal("method : " + method + "  duplicate, url: " + url)
+				}
+			}
 			g.route[url] = group.route[url]
 
 		} else {
 			g.merge(group, group.tpl[url])
+			if _, ok := g.tpl[url]; ok {
+				if method, ok := exsitMethod(g.tpl[url].methods, group.route[url].methods); ok {
+					log.Fatal("method : " + method + "  duplicate, url: " + url)
+				}
+			}
 			g.tpl[url] = group.tpl[url]
 		}
 	}
 	return g
+}
+
+func exsitMethod(m1, m2 map[string]struct{}) (string, bool) {
+	for k := range m1 {
+		if _, ok := m2[k]; ok {
+			return k, true
+		}
+	}
+	return "", false
 }

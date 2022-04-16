@@ -37,13 +37,13 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	if ok {
 		// 正则匹配的
 		for _, method := range methods {
-			// 如果存在就判断是否存在method
-			if _, methodok := newRoute.methods[method]; methodok {
-				// 如果也存在， 那么method重复了
-				log.Fatal("method : " + method + "  duplicate, url: " + url)
-				return nil
-			}
 			newRoute.methods[method] = struct{}{}
+		}
+
+		if _, ok := r.tpl[url]; ok {
+			if method, ok := exsitMethod(r.tpl[url].methods, newRoute.methods); ok {
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
+			}
 		}
 		r.tpl[url] = newRoute
 		// 如果不存在就创建一个 route
@@ -52,12 +52,12 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		// 直接匹配
 		for _, method := range methods {
 			// 如果存在就判断是否存在method
-			if _, methodok := newRoute.methods[method]; methodok {
-				// 如果也存在， 那么method重复了
-				log.Fatal("method : " + method + "  duplicate, url: " + url)
-				return nil
-			}
 			newRoute.methods[method] = struct{}{}
+		}
+		if _, ok := r.route[url]; ok {
+			if method, ok := exsitMethod(r.route[url].methods, newRoute.methods); ok {
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
+			}
 		}
 		r.route[url] = newRoute
 	}
