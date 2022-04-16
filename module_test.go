@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"net/http"
+	"sync"
 	"testing"
 )
 
@@ -157,4 +158,34 @@ func sub4group() *GroupRoute {
 	sub1.Post("/sub4/post", nil).AddModule(m4)
 	sub1.Any("/sub4/any", nil)
 	return sub1
+}
+
+func TestClonseModule(t *testing.T) {
+	m := &module{
+		filter:    make(map[string]struct{}),
+		funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		mu:        sync.RWMutex{},
+	}
+
+	m.add(m1, m2)
+	mc := m.cloneMudule()
+	mc.add(m3, m4)
+	t.Log(m.filter)
+}
+
+func TestClonseModule2(t *testing.T) {
+	m := &module{
+		filter:    make(map[string]struct{}),
+		funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		mu:        sync.RWMutex{},
+	}
+
+	m.add(m1, m2)
+	mc := &module{
+		filter:    m.filter,
+		funcOrder: m.funcOrder,
+		mu:        sync.RWMutex{},
+	}
+	mc.add(m3, m4)
+	t.Log(m.filter)
 }

@@ -50,9 +50,7 @@ func main() {
 	// }
 
 	router := xmux.NewRouter().AddModule(home1)
-	group := xmux.NewGroupRoute()
-	group.Post("/post", home).AddModule()
-	group.AddGroup(subgroup())
+	router.AddGroup(subgroup())
 	router.Get("/get", home)
 	router.Post("/", home).DelModule(home1)
 	router.DebugAssignRoute("/")

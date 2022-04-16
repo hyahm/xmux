@@ -3,7 +3,6 @@ package xmux
 import (
 	"log"
 	"net/http"
-	"sync"
 )
 
 // get this route
@@ -21,13 +20,9 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		tempPages[k] = struct{}{}
 	}
 	newRoute := &Route{
-		handle:   http.HandlerFunc(handler),
-		pagekeys: tempPages,
-		module: &module{
-			filter:    r.module.filter,
-			funcOrder: r.module.funcOrder,
-			mu:        sync.RWMutex{},
-		},
+		handle:       http.HandlerFunc(handler),
+		pagekeys:     tempPages,
+		module:       r.module.cloneMudule(),
 		methods:      make(map[string]struct{}, len(methods)),
 		new:          true,
 		responseData: r.responseData,

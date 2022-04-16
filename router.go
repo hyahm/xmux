@@ -122,13 +122,6 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	if r.module == nil {
-		r.module = &module{
-			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-			filter:    make(map[string]struct{}),
-			mu:        sync.RWMutex{},
-		}
-	}
 	r.module.add(handles...)
 	return r
 }
