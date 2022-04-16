@@ -62,34 +62,13 @@ func (m *module) delete(delmodules map[string]struct{}) {
 	for name := range delmodules {
 		if _, ok := m.filter[name]; ok {
 			// 说明存在
-			tempFilter := make([]func(w http.ResponseWriter, r *http.Request) bool, 0, len(delmodules))
 			for index, value := range m.funcOrder {
 				if GetFuncName(value) == name {
-					tempFilter = append(m.funcOrder[:index], m.funcOrder[index+1:]...)
+					m.funcOrder = append(m.funcOrder[:index], m.funcOrder[index+1:]...)
 					delete(m.filter, name)
 					break
 				}
 			}
-			m.funcOrder = tempFilter
-		}
-	}
-}
-
-func (m *module) deleteKey(keys ...string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, name := range keys {
-		if _, ok := m.filter[name]; ok {
-			// 说明存在
-			tempFilter := make([]func(w http.ResponseWriter, r *http.Request) bool, 0, len(keys))
-			for index, value := range m.funcOrder {
-				if GetFuncName(value) == name {
-					tempFilter = append(m.funcOrder[:index], m.funcOrder[index+1:]...)
-					delete(m.filter, name)
-					break
-				}
-			}
-			m.funcOrder = tempFilter
 		}
 	}
 }
