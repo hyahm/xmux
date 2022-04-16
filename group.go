@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -46,6 +47,29 @@ func (g *GroupRoute) BindResponse(response interface{}) *GroupRoute {
 	g.responseData = response
 	g.bindResponseData = true
 	return g
+}
+
+func (g *GroupRoute) DebugAssignRoute(thisurl string) {
+	if !g.new {
+		panic("must be use get router by NewRouter()")
+	}
+	for url, mr := range g.route {
+		if thisurl == url {
+			debugPrint(url, mr)
+			return
+		}
+	}
+}
+
+func (g *GroupRoute) DebugIncludeTpl(pattern string) {
+	if !g.new {
+		panic("must be use get router by NewRouter()")
+	}
+	for url, mr := range g.tpl {
+		if strings.Contains(url, pattern) {
+			debugPrint(url, mr)
+		}
+	}
 }
 
 func (g *GroupRoute) AddPageKeys(pagekeys ...string) *GroupRoute {

@@ -29,7 +29,7 @@ func TestModule(t *testing.T) {
 	router.AddGroup(subgroup())
 	router.Get("/get", nil)
 	router.Post("/", nil).DelModule(m2)
-
+	router.AddGroup(sub3group())
 	{
 		s := router.route["/"].module.funcOrder
 		if GetFuncName(s[0]) != "github.com/hyahm/xmux.m1" || len(s) != 1 {
@@ -94,6 +94,26 @@ func TestModule(t *testing.T) {
 
 	}
 
+	{
+		sub4post := router.route["/sub4/post"].module.funcOrder
+		if len(sub4post) != 4 {
+			t.Fail()
+		}
+		if GetFuncName(sub4post[0]) != "github.com/hyahm/xmux.m1" {
+			t.Fail()
+		}
+		if GetFuncName(sub4post[1]) != "github.com/hyahm/xmux.m2" {
+			t.Fail()
+		}
+		if GetFuncName(sub4post[2]) != "github.com/hyahm/xmux.m3" {
+			t.Fail()
+		}
+		if GetFuncName(sub4post[3]) != "github.com/hyahm/xmux.m4" {
+			t.Fail()
+		}
+
+	}
+
 }
 
 func subgroup() *GroupRoute {
@@ -110,5 +130,31 @@ func sub1group() *GroupRoute {
 	sub1.Get("/sub1/get", nil).AddModule(m5)
 	sub1.Post("/sub1/post", nil).DelModule(m3)
 	sub1.Any("/sub1/any", nil)
+	sub1.AddGroup(sub2group())
+	return sub1
+}
+
+func sub2group() *GroupRoute {
+	sub1 := NewGroupRoute().AddModule(m5)
+	sub1.Get("/sub2/get", nil)
+	sub1.Post("/sub2/post", nil).DelModule(m3)
+	sub1.Any("/sub2/any", nil)
+	return sub1
+}
+
+func sub3group() *GroupRoute {
+	sub1 := NewGroupRoute()
+	sub1.Get("/sub3/get", nil)
+	sub1.Post("/sub3/post", nil)
+	sub1.Any("/sub3/any", nil)
+	sub1.AddGroup(sub4group())
+	return sub1
+}
+
+func sub4group() *GroupRoute {
+	sub1 := NewGroupRoute().AddModule(m3)
+	sub1.Get("/sub4/get", nil)
+	sub1.Post("/sub4/post", nil).AddModule(m4)
+	sub1.Any("/sub4/any", nil)
 	return sub1
 }
