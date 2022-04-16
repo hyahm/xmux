@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -9,44 +8,11 @@ import (
 )
 
 func home1(w http.ResponseWriter, r *http.Request) bool {
-	// b, err := io.ReadAll(r.Body)
-	// if err != nil {
-	// 	w.WriteHeader(404)
-	// 	return true
-	// }
-	// fmt.Println(string(b))
-	fmt.Println(r.FormValue("username"))
-	// err := r.ParseForm()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-
-	// fmt.Println(r.Form.Get("username"))
-	// fmt.Println(r.Form.Get("username"))
-	// ct := r.Header.Get("Content-Type")
-	// ct = strings.ToLower(ct)
-
-	// b, err := io.ReadAll(r.Body)
-	// if err != nil {
-	// 	w.WriteHeader(404)
-	// 	return true
-	// }
-	// fmt.Println(string(b))
-	// err = json.Unmarshal(b, xmux.GetInstance(r).Data)
-	// if err != nil {
-	// 	w.WriteHeader(404)
-	// 	return true
-	// }
-
 	return false
-
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
 	xmux.GetInstance(r).Set("aaaa", "bbb")
-
-	// user := xmux.GetInstance(r).Data.(*User)
-	// fmt.Printf("%#v\n", *user)
 }
 
 type Global struct {
@@ -61,6 +27,23 @@ type User struct {
 	Gender   bool   `json:"form" form:"gender"`
 }
 
+func subgroup() *xmux.GroupRoute {
+	sub := xmux.NewGroupRoute()
+	sub.Get("/sub/get", home)
+	sub.Post("/sub/post", home)
+	sub.Any("/sub/any", home)
+	sub.AddGroup(sub1group())
+	return sub
+}
+
+func sub1group() *xmux.GroupRoute {
+	sub1 := xmux.NewGroupRoute()
+	sub1.Get("/sub1/get", home)
+	sub1.Post("/sub1/post", home)
+	sub1.Any("/sub1/any", home)
+	return sub1
+}
+
 func main() {
 	// global := &Global{
 	// 	Code: 200,
@@ -68,7 +51,8 @@ func main() {
 
 	router := xmux.NewRouter().AddModule(home1)
 	group := xmux.NewGroupRoute()
-	group.Post("/post", home)
+	group.Post("/post", home).AddModule()
+	group.AddGroup(subgroup())
 	router.Get("/get", home)
 	router.Post("/", home).DelModule(home1)
 	router.DebugAssignRoute("/")
