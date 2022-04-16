@@ -13,8 +13,7 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	user := xmux.GetInstance(r).Data.(*User)
-	fmt.Printf("%#v\n", *user)
+	fmt.Printf("%T\n", r.Body)
 }
 
 type Global struct {
