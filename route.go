@@ -185,5 +185,6 @@ func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) b
 	for _, handle := range handles {
 		rt.delmodule[GetFuncName(handle)] = struct{}{}
 	}
+	rt.module.delete(rt.delmodule)
 	return rt
 }

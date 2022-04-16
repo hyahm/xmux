@@ -66,10 +66,11 @@ func main() {
 	// 	Code: 200,
 	// }
 
-	router := xmux.NewRouter()
+	router := xmux.NewRouter().AddModule(home1)
 	group := xmux.NewGroupRoute()
 	group.Post("/post", home)
 	router.Get("/get", home)
-	router.Post("/", home).AddModule(home1)
+	router.Post("/", home).DelModule(home1)
+	router.DebugAssignRoute("/")
 	router.Run(":8888")
 }
