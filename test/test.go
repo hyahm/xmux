@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -12,7 +13,8 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	xmux.GetInstance(r).Set("aaaa", "bbb")
+	user := xmux.GetInstance(r).Data.(*User)
+	fmt.Printf("%#v\n", *user)
 }
 
 type Global struct {
@@ -22,7 +24,7 @@ type Global struct {
 }
 
 type User struct {
-	UserName string `json:"username,require" form:"username,require"`
+	UserName string `json:"username" form:"username"`
 	PassWord string `json:"password" form:"password"`
 	Gender   bool   `json:"form" form:"gender"`
 }
@@ -45,14 +47,10 @@ func sub1group() *xmux.GroupRoute {
 }
 
 func main() {
-	// global := &Global{
-	// 	Code: 200,
-	// }
-
 	router := xmux.NewRouter().AddModule(home1)
 	router.AddGroup(subgroup())
-	router.Get("/get", home)
-	router.Post("/", home).DelModule(home1)
+	router.Get("/get", home).BindForm(User{})
+	router.Post("/", home).DelModule(home1).BindForm(User{})
 	router.DebugAssignRoute("/")
 	router.Run(":8888")
 }
