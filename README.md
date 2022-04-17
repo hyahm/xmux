@@ -2,6 +2,8 @@
 应该是基于原生net.http 极简并强大的路由
 专注前后端分离项目， 良好的设计可以大量减少代码冗余   
 
+[视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
+
 ### 特性
 - [x] 支持路由分组
 - [x] 支持全局请求头， 组请求头， 私有请求头
@@ -220,8 +222,12 @@ func main() {
 
 ```
 
-
 ### Enter, Exit 进入和退出的钩子
+
+- RequestBytes func([]byte, *http.Request)         ：      自定义内置解析的请求数据处理    
+- NotFoundRequireField                                          ： 必要字段验证失败的处理勾子
+- UnmarshalError                                                      ： 内置解析解析错误的勾子
+
 ```go
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
