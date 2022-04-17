@@ -116,9 +116,32 @@ func main() {
 2019/11/29 21:51:11 pattern duplicate for /get
 
 ```
+
+
+###  传值
+
+- 其中，这4个是内置的，请勿赋值, 这4个是全局的，
+  -   xmux.CONNECTID ：               连接的id（任何地方都可以使用）
+  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值）
+  -   xmux.PAGES：                        跟页面权限有关（从模块开始才有值）
+  -   xmux.STATUSCODE：            接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
+-  自定义的值是从模块开始才能赋值
+
+```
+# 设置值
+xmux.GetInstance(r).Set("key", "value")
+
+# 获取值
+xmux.GetInstance(r).Get("key")
+```
+
+
+
 ###  自动格式化url
+
 将任意多余的斜杠去掉例如
 /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
+
 ```go
 func main() {
 	router := xmux.NewRouter()
@@ -151,11 +174,16 @@ func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 
 ```
 
-###  模块 （主要用来做验证， 比如token验证， 权限验证， 数据解析<需搭配Bind()>）
-**核心理念： 任何逻辑都可以是一个模块， 最后组合而成的就是一个完整接口**
+###  模块 （代替其他框架的中间件功能，并且更灵活更简单）
+**核心理念： 任何逻辑都可以是一个模块， 最后组合而成的就是一个完整接口功能**
+
 - 模块类 优先级   
-全局路由 > 组路由 > 私有路由 (如果存在优先级大先执行，。 
-如果不想用可以在不想使用的路由点或路由组 DelModule 来单独删除)
+  全局路由 > 组路由 > 私有路由 (如果存在优先级大先执行，。 
+  如果不想用可以在不想使用的路由点或路由组 DelModule 来单独删除)
+
+> 模块返回值的含义： true： 直接返回给客户端，不做后面的处理， false就是继续向下执行
+
+
 ```go
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello world home"))
@@ -292,9 +320,22 @@ func main() {
 	router.Run()
 }
 ```
-### 数据绑定（Bind(), 可以与Module 一起使用）
-将数据结构绑定到此 Handle 里， 通过读取r.Body 来解析数据
-因为解析的代码都是一样的， 绑定后可以共用同一份代码
+### 数据绑定（绑定解析后的数据从模块之前开始生效）
+
+- BindJson:       绑定的是一个json
+- BindXml：     绑定是一个xml
+- BindForm：  绑定的是一个form
+- Bind：           自定义处理绑定（通过模块来进行处理）
+
+
+
+验证字段的必须存在
+
+
+
+router.PrintRequestStr：  是否打印接受请求体内容
+
+xmux.MaxPrintLength： 打印的form表单的大小如果超过指定的大小就不打印（默认2k）
 
 ```go
 func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
@@ -349,7 +390,21 @@ func main() {
 
 ```
 
+- 绑定返回值
+
+```
+    data := &Response{
+		Code: 200,
+	}
+	router := xmux.NewRouter().BindResponse(data)
+```
+
+- 通过.BindResponse(nil) 来设置取消使用全局绑定
+
+
+
 ### 自动修复请求的url
+
 例如： 请求的url 是这个样子的
 http://www.hyahm.com/mmm///af/af,  默认是请求不到的
 但是设置后
@@ -376,6 +431,7 @@ router.IgnoreSlash = true
 第三个: 参数名， 前面有多少对()， 后面就需要匹配多少个参数， 用逗号分割   
 例如： /aaa/adfaasf16sd  
 这个是匹配的， name: aa   age: 16  
+
 ```
 xmux.Var(r)["name"] 
 ```

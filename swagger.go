@@ -17,8 +17,17 @@ type MethodStrcut struct {
 	Consumes   []string            `json:"consumes,omitempty" yaml:"consumes"`
 }
 
+type ParameterType string
+
+const (
+	Query  ParameterType = "query"
+	In     ParameterType = "path"
+	Header ParameterType = "header"
+	Form   ParameterType = "form"
+)
+
 type Parameter struct {
-	In       string            `json:"in,omitempty" yaml:"in"`
+	In       ParameterType     `json:"in,omitempty" yaml:"in"`
 	Name     string            `json:"name,omitempty" yaml:"name"`
 	Required bool              `required:"in,omitempty" yaml:"required"`
 	Type     string            `json:"type,omitempty" yaml:"type"`
@@ -80,11 +89,11 @@ type SwaggerUIOpts struct {
 	Title string
 }
 
-func (r *Router) ShowSwagger(url, jsonPath, host string, schemes ...string) *GroupRoute {
-	if jsonPath == "" {
-		jsonPath = "/swagger.json"
-	}
-	swagger := NewGroupRoute().BindResponse(nil)
+func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
+	jsonPath := "/swagger.json"
+	swagger := NewGroupRoute().BindResponse(nil).SetHeader("Access-Control-Allow-Origin", "*")
+	swagger.SetHeader("Content-Type", "sec-ch-ua;sec-ch-ua-mobile;sec-ch-ua-platform")
+	swagger.SetHeader("Access-Control-Allow-Methods", "*")
 	swagger.Get(url, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		opts := DefaultEnsure(jsonPath)
@@ -102,6 +111,11 @@ func (r *Router) ShowSwagger(url, jsonPath, host string, schemes ...string) *Gro
 		swagger := Swagger{
 			Swagger: "2.0",
 			Host:    host,
+			Info: Info{
+				Title:       r.SwaggerTitle,
+				Version:     r.SwaggerVersion,
+				Description: r.SwaggerDescription,
+			},
 			Schemes: ss,
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
@@ -111,9 +125,19 @@ func (r *Router) ShowSwagger(url, jsonPath, host string, schemes ...string) *Gro
 			}
 			path := make(map[string]MethodStrcut)
 			for method := range v.methods {
-				path[strings.ToLower(method)] = MethodStrcut{
-					Summary: v.describe,
+				ms := MethodStrcut{
+					Summary:  "sdjflkjsdlf",
+					Produces: []string{"application/json"},
+					Responses: map[string]Response{"200": Response{
+						Description: "asdfsdf",
+					}},
 				}
+				if acc, ok := v.header["Content-Type"]; ok {
+					ms.Produces = strings.Split(acc, ";")
+				} else {
+					ms.Produces = []string{"application/json"}
+				}
+				path[strings.ToLower(method)] = ms
 			}
 			swagger.Paths[k] = path
 		}

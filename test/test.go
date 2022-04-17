@@ -34,7 +34,7 @@ func subgroup() *xmux.GroupRoute {
 	sub.Get("/sub/get", home)
 	sub.Post("/sub/post", home)
 	sub.Any("/sub/any", home)
-	sub.Any("/get", home)
+	sub.Any("/any/get", home)
 	sub.AddGroup(sub1group())
 	return sub
 }
@@ -48,11 +48,20 @@ func sub1group() *xmux.GroupRoute {
 }
 
 func main() {
-	router := xmux.NewRouter().AddModule(home1)
+	g := &Global{
+		Code: 200,
+	}
+	router := xmux.NewRouter().AddModule(home1).BindResponse(g)
+	router.SetHeader("Access-Control-Allow-Origin", "*")
+	router.SetHeader("Access-Control-Allow-Methods", "*")
+	// router.SetHeader("Content-Type", "sec-ch-ua;sec-ch-ua-mobile;sec-ch-ua-platform")
 	router.AddGroup(subgroup())
 	router.PrintRequestStr = true
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
 	router.DebugAssignRoute("/")
+	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
+
+	router.DebugAssignRoute("/swagger.json")
 	router.Run(":8888")
 }

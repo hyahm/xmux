@@ -165,12 +165,10 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 	return false
 }
 
-var MaxPrintLength uint64 = 2 << 10
-
 func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
 	cl := req.Header.Get("Content-Length")
 	length, err := strconv.ParseUint(cl, 10, 64)
-	if r.PrintRequestStr && err != nil && length >= MaxPrintLength {
+	if r.PrintRequestStr && err != nil && length >= r.PrintLength {
 		b, _ := io.ReadAll(req.Body)
 		if r.PrintRequestStr {
 			r.RequestBytes(b, req)

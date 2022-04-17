@@ -50,6 +50,7 @@ func requestBytes(reqbody []byte, r *http.Request) {
 }
 
 type Router struct {
+	MaxPrintLength       uint64
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool // 判断是否是通过newRouter 来初始化的
 	PrintRequestStr      bool
@@ -70,6 +71,10 @@ type Router struct {
 	module               *module             // 全局模块
 	responseData         interface{}
 	pagekeys             map[string]struct{}
+
+	SwaggerTitle       string
+	SwaggerDescription string
+	SwaggerVersion     string
 }
 
 func (r *Router) BindResponse(response interface{}) *Router {
@@ -388,13 +393,14 @@ func NewRouter(cache ...uint64) *Router {
 	}
 	InitCache(c)
 	return &Router{
-		new:          true,
-		route:        make(map[string]*Route),
-		tpl:          make(map[string]*Route),
-		header:       map[string]string{},
-		params:       make(map[string][]string),
-		RequestBytes: requestBytes,
-		Exit:         exit,
+		MaxPrintLength: 2 << 10, // 默认的form最大2k
+		new:            true,
+		route:          make(map[string]*Route),
+		tpl:            make(map[string]*Route),
+		header:         map[string]string{},
+		params:         make(map[string][]string),
+		RequestBytes:   requestBytes,
+		Exit:           exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),

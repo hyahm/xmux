@@ -87,7 +87,7 @@ func (g *GroupRoute) AddPageKeys(pagekeys ...string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) AddHeader(k, v string) *GroupRoute {
+func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
 	if !g.new {
 		panic("must be init by NewGroupRoute()")
 	}
