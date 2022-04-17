@@ -20,12 +20,11 @@ type Route struct {
 	header    map[string]string   // 请求头
 	delheader map[string]struct{} // 删除的请求头
 
-	describe         string      // 接口描述
 	responseData     interface{} // 接口返回实例
 	bindResponseData bool
-
-	bindType   bindType    // 数据绑定格式
-	dataSource interface{} // 数据源
+	summary          string
+	bindType         bindType    // 数据绑定格式
+	dataSource       interface{} // 数据源
 }
 
 func (rt *Route) GetHeader() map[string]string {
@@ -33,6 +32,15 @@ func (rt *Route) GetHeader() map[string]string {
 		panic("can not support init")
 	}
 	return rt.header
+}
+
+// 这个路由的注释, 使用swagger加上这个字段才能显示执行的窗口
+func (rt *Route) Summary(summary string) *Route {
+	if !rt.new {
+		panic("can not support init")
+	}
+	rt.summary = summary
+	return rt
 }
 
 func (rt *Route) BindResponse(response interface{}) *Route {

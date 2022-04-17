@@ -13,7 +13,7 @@ type MethodStrcut struct {
 	Summary    string              `json:"summary,omitempty" yaml:"summary"`
 	Parameters []Parameter         `json:"parameters,omitempty" yaml:"parameters"`
 	Responses  map[string]Response `json:"responses,omitempty" yaml:"responses"`
-	Produces   []string            `json:"produces,omitempty" yaml:"produces"`
+	Produces   []string            `json:"produces,omitempty" yaml:"produces" required:""`
 	Consumes   []string            `json:"consumes,omitempty" yaml:"consumes"`
 }
 
@@ -33,16 +33,18 @@ type Parameter struct {
 	Type     string            `json:"type,omitempty" yaml:"type"`
 	Schema   map[string]string `json:"schema,omitempty" yaml:"schema"`
 	Minimum  int64             `json:"minimum,omitempty" yaml:"minimum"`
+	Enum     []string          `json:"enum,omitempty" yaml:"enum"`
 }
 
 type Schema struct {
-	Type       string                     `json:"type" yaml:"type"`
-	Properties map[string]map[string]Type `json:"properties" yaml:"properties"`
+	Type       string          `json:"type" yaml:"type"`
+	Properties map[string]Type `json:"properties" yaml:"properties"` // key是字段名
+	Ref        string          `json:"$ref" yaml:"$ref"`             // $ref: '#/definitions/User'
 }
 
 type Type struct {
-	Type    string `json:"type" yaml:"type"`
-	Example string `json:"example" yaml:"example"`
+	Type        string `json:"type" yaml:"type"`
+	Description string `json:"description" yaml:"description"`
 }
 
 type Response struct {
@@ -126,9 +128,9 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 			path := make(map[string]MethodStrcut)
 			for method := range v.methods {
 				ms := MethodStrcut{
-					Summary:  "sdjflkjsdlf",
+					Summary:  v.summary,
 					Produces: []string{"application/json"},
-					Responses: map[string]Response{"200": Response{
+					Responses: map[string]Response{"200": {
 						Description: "asdfsdf",
 					}},
 				}

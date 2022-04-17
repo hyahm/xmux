@@ -192,6 +192,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// 这个是其他框架用的简单中间件， 只用来做对比的
 func mid() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -202,14 +203,11 @@ func mid() http.Handler {
 
 func hf(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("44444444444444444444444444")
-	r.Header.Set("name", "cander")
-	
 	return true
 }
 
 func hf1(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("66666")
-	fmt.Println(r.Header.Get("name"))
 	return false
 }
 
