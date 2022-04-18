@@ -903,5 +903,5 @@ Benchmark404Many-6                       9690430               123.1 ns/op      
 
 
 ### 流程图总结
-![xmux流程图](xmux.png)
+![xmux流程图](xmux.jpg)
 
