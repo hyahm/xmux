@@ -35,7 +35,7 @@ func (rt *Route) GetHeader() map[string]string {
 }
 
 // 这个路由的注释, 使用swagger加上这个字段才能显示执行的窗口
-func (rt *Route) Summary(summary string) *Route {
+func (rt *Route) SwaggerSummary(summary string) *Route {
 	if !rt.new {
 		panic("can not support init")
 	}

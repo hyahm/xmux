@@ -52,16 +52,13 @@ func main() {
 		Code: 200,
 	}
 	router := xmux.NewRouter().AddModule(home1).BindResponse(g)
-	router.SetHeader("Access-Control-Allow-Origin", "*")
-	router.SetHeader("Access-Control-Allow-Methods", "*")
-	// router.SetHeader("Content-Type", "sec-ch-ua;sec-ch-ua-mobile;sec-ch-ua-platform")
+	// router.SetHeader("Access-Control-Allow-Origin", "*")
+	// router.SetHeader("Access-Control-Allow-Methods", "*")
 	router.AddGroup(subgroup())
-	router.PrintRequestStr = true
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
-	router.DebugAssignRoute("/")
+
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
 
-	router.DebugAssignRoute("/swagger.json")
 	router.Run(":8888")
 }
