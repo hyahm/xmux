@@ -1,9 +1,5 @@
 package xmux
 
-func (r Router) Gostring() string {
-	return ""
-}
-
 // type routerTest struct {
 // 	title       string
 // 	method      string

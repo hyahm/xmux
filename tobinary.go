@@ -129,19 +129,6 @@ func fillBytes(bs []byte, n int) []byte {
 
 // ToHexString get string in Hexadecimal format according to input data.
 // The input data can be diffrent kinds of basic data type.
-func ToHexString(v interface{}) (s string) {
-	//TODO implements it
-
-	return
-}
-
-// ToOctalString get string in octal format according to input data.
-// The input data can be diffrent kinds of basic data type.
-func ToOctalString(v interface{}) (s string) {
-	//TODO implements it
-
-	return
-}
 
 // ByteToBinaryString get the string in binary format of a byte or uint8.
 func ByteToBinaryString(b byte) string {

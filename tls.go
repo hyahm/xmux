@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func CreateTLS() {
+func createTLS() {
 	fi, err := os.Stat("keys")
 	if err != nil {
 		os.MkdirAll("keys", 0755)
@@ -39,7 +39,7 @@ func CreateTLS() {
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 	}
 	privCa, _ := rsa.GenerateKey(rand.Reader, 1024)
-	CreateCertificateFile("ca", ca, privCa, ca, nil)
+	createCertificateFile("ca", ca, privCa, ca, nil)
 	server := &x509.Certificate{
 		SerialNumber: big.NewInt(sn),
 		Subject: pkix.Name{
@@ -71,7 +71,7 @@ func CreateTLS() {
 	}
 
 	privSer, _ := rsa.GenerateKey(rand.Reader, 1024)
-	CreateCertificateFile("server", server, privSer, ca, privCa)
+	createCertificateFile("server", server, privSer, ca, privCa)
 	// client := &x509.Certificate{
 	// 	SerialNumber: big.NewInt(sn),
 	// 	Subject: pkix.Name{
@@ -89,7 +89,7 @@ func CreateTLS() {
 
 }
 
-func CreateCertificateFile(name string, cert *x509.Certificate, key *rsa.PrivateKey, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
+func createCertificateFile(name string, cert *x509.Certificate, key *rsa.PrivateKey, caCert *x509.Certificate, caKey *rsa.PrivateKey) {
 	name = filepath.Join("keys", name)
 	priv := key
 	pub := &priv.PublicKey

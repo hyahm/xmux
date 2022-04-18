@@ -1,7 +1,6 @@
 package xmux
 
 // 分页用到的计算sql limit的数值
-
 func GetLimit(count, page, limit int) (int, int, int) {
 	// 如果limit是0， 那么返回 0 0
 	if limit <= 0 || count == 0 {

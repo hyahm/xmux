@@ -337,7 +337,7 @@ func (r *Router) RunUnsafeTLS(opt ...string) error {
 	_, err1 := os.Stat(keyfile)
 	_, err2 := os.Stat(pemfile)
 	if os.IsNotExist(err1) || os.IsNotExist(err2) {
-		CreateTLS()
+		createTLS()
 		if err := svc.ListenAndServeTLS(pemfile, keyfile); err != nil {
 			log.Fatal(err)
 		}
@@ -374,7 +374,7 @@ func (r *Router) RunTLS(keyfile, pemfile string, opt ...string) error {
 	_, err1 := os.Stat(keyfile)
 	_, err2 := os.Stat(pemfile)
 	if os.IsNotExist(err1) || os.IsNotExist(err2) {
-		CreateTLS()
+		createTLS()
 		if err := svc.ListenAndServeTLS(filepath.Join("keys", "server.pem"), filepath.Join("keys", "server.key")); err != nil {
 			log.Fatal(err)
 		}

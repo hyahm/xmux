@@ -1,9 +1,5 @@
 package xmux
 
-type AAA struct {
-	// m map[string]MethodsRoute
-}
-
 // func TestMap(t *testing.T) {
 // 	defer golog.Sync()
 // 	aaa := &AAA{}
