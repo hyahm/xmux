@@ -70,7 +70,7 @@ type Router struct {
 	header               map[string]string   // 全局路由头
 	module               *module             // 全局模块
 	responseData         interface{}
-	pagekeys             map[string]struct{}
+	pagekeys             mstringstruct
 
 	SwaggerTitle       string
 	SwaggerDescription string
@@ -455,23 +455,14 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
-	tempHeader.deleteHeader(group.delheader)
+	tempHeader.delete(group.delheader)
 	// 添加组路由的
-	tempHeader.addHeader(group.header)
+	tempHeader.add(group.header)
 
-	// 私有路由删除组合全局的
-	for k := range group.delheader {
-		delete(tempHeader, k)
-		route.delheader[k] = struct{}{}
-	}
+	// 私有路由删除组和全局的
+	tempHeader.delete(route.delheader)
 	// 添加个人路由
-	for k, v := range route.header {
-		tempHeader[k] = v
-	}
-	// 删除单路由
-	for k := range route.delheader {
-		delete(tempHeader, k)
-	}
+	tempHeader.add(route.header)
 	// 最终请求头
 	route.header = tempHeader
 
@@ -486,29 +477,18 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	}
 
 	// 合并 pagekeys
-	tempPages := make(map[string]struct{})
 	// 全局key
-	for k := range r.pagekeys {
-		tempPages[k] = struct{}{}
-	}
+	tempPages := r.pagekeys.clone()
+
 	// 组的删除为了删全局
-	for k := range group.delPageKeys {
-		delete(tempPages, k)
-		route.delPageKeys[k] = struct{}{}
-	}
+	tempPages.delete(group.delPageKeys)
 	// 添加组
-	for k := range group.pagekeys {
-		tempPages[k] = struct{}{}
-	}
+	tempPages.add(group.pagekeys)
 	// 个人的删除组
 	// 删除单路由
-	for k := range route.delPageKeys {
-		delete(tempPages, k)
-	}
+	tempPages.delete(route.delPageKeys)
 	// 添加个人
-	for k := range route.pagekeys {
-		tempPages[k] = struct{}{}
-	}
+	tempPages.add(route.pagekeys)
 	// 最终页面权限
 	route.pagekeys = tempPages
 
@@ -524,7 +504,6 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
 	// 与组的区别， 组里面这里是合并， 这里是删除
-	// 删除模块
 }
 
 // 组路由添加到router里面,
