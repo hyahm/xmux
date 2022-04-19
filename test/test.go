@@ -57,7 +57,6 @@ func main() {
 	router.AddGroup(subgroup())
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
-
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
 
 	router.Run(":8888")

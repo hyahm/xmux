@@ -32,11 +32,11 @@ func TestModule(t *testing.T) {
 	router.Post("/", nil).DelModule(m2)
 	router.AddGroup(sub3group())
 	{
-		s := router.route["/"].module.funcOrder
+		s := router.route["/"][http.MethodPost].module.funcOrder
 		if GetFuncName(s[0]) != "github.com/hyahm/xmux.m1" || len(s) != 1 {
 			t.Fail()
 		}
-		get := router.route["/get"].module.funcOrder
+		get := router.route["/get"][http.MethodGet].module.funcOrder
 		if len(get) != 2 {
 			t.Fail()
 		}
@@ -49,7 +49,7 @@ func TestModule(t *testing.T) {
 	}
 
 	{
-		subpost := router.route["/sub/post"].module.funcOrder
+		subpost := router.route["/sub/post"][http.MethodPost].module.funcOrder
 		if len(subpost) != 2 {
 			t.Fail()
 		}
@@ -62,7 +62,7 @@ func TestModule(t *testing.T) {
 	}
 
 	{
-		sub1get := router.route["/sub1/get"].module.funcOrder
+		sub1get := router.route["/sub1/get"][http.MethodGet].module.funcOrder
 		if len(sub1get) != 4 {
 			t.Fail()
 		}
@@ -82,7 +82,7 @@ func TestModule(t *testing.T) {
 	}
 
 	{
-		sub1post := router.route["/sub1/post"].module.funcOrder
+		sub1post := router.route["/sub1/post"][http.MethodPost].module.funcOrder
 		if len(sub1post) != 2 {
 			t.Fail()
 		}
@@ -96,7 +96,7 @@ func TestModule(t *testing.T) {
 	}
 
 	{
-		sub4post := router.route["/sub4/post"].module.funcOrder
+		sub4post := router.route["/sub4/post"][http.MethodPost].module.funcOrder
 		if len(sub4post) != 4 {
 			t.Fail()
 		}

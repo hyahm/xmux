@@ -11,9 +11,9 @@ import (
 type GroupRoute struct {
 	new bool
 	// 感觉还没到method， 应该先uri后缀的
-	route            map[string]*Route // 完全匹配的路由对应的methodsroute
+	route            UMR // 完全匹配的路由对应的methodsroute
 	header           map[string]string
-	tpl              map[string]*Route // 正则匹配的路由对应的methodsroute
+	tpl              UMR // 正则匹配的路由对应的methodsroute
 	module           *module
 	delmodule        map[string]struct{}
 	responseData     interface{}
@@ -36,8 +36,8 @@ func NewGroupRoute() *GroupRoute {
 		new:       true,
 		delmodule: make(map[string]struct{}),
 		params:    make(map[string][]string),
-		route:     make(map[string]*Route),
-		tpl:       make(map[string]*Route),
+		route:     make(UMR),
+		tpl:       make(UMR),
 	}
 }
 
@@ -258,20 +258,25 @@ func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
 	for url, args := range group.params {
 		g.params[url] = args
 		if len(args) == 0 {
-			g.merge(group, group.route[url])
-			if _, ok := g.route[url]; ok {
-				if method, ok := exsitMethod(g.route[url].methods, group.route[url].methods); ok {
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
+			for method := range group.route[url] {
+				if _, ok := g.route[url]; ok {
+					if _, gok := g.route[url][method]; gok {
+						log.Fatal("method : " + method + "  duplicate, url: " + url)
+					}
 				}
+				g.merge(group, group.route[url][method])
 			}
+
 			g.route[url] = group.route[url]
 
 		} else {
-			g.merge(group, group.tpl[url])
-			if _, ok := g.tpl[url]; ok {
-				if method, ok := exsitMethod(g.tpl[url].methods, group.route[url].methods); ok {
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
+			for method := range group.tpl[url] {
+				if _, ok := g.tpl[url]; ok {
+					if _, gok := g.tpl[url][method]; gok {
+						log.Fatal("method : " + method + "  duplicate, url: " + url)
+					}
 				}
+				g.merge(group, group.tpl[url][method])
 			}
 			g.tpl[url] = group.tpl[url]
 		}

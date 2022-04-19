@@ -9,8 +9,7 @@ import (
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
 	new       bool
-	handle    http.Handler // handle
-	methods   map[string]struct{}
+	handle    http.Handler        // handle
 	module    *module             // 增加的 modules
 	delmodule map[string]struct{} // 删除的modules
 

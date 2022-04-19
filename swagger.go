@@ -121,20 +121,20 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 			Schemes: ss,
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
-		for k, v := range r.route {
+		for k, mr := range r.route {
 			if k == url || k == jsonPath {
 				continue
 			}
 			path := make(map[string]MethodStrcut)
-			for method := range v.methods {
+			for method, route := range mr {
 				ms := MethodStrcut{
-					Summary:  v.summary,
+					Summary:  route.summary,
 					Produces: []string{"application/json"},
 					Responses: map[string]Response{"200": {
 						Description: "asdfsdf",
 					}},
 				}
-				if acc, ok := v.header["Content-Type"]; ok {
+				if acc, ok := route.header["Content-Type"]; ok {
 					ms.Produces = strings.Split(acc, ";")
 				} else {
 					ms.Produces = []string{"application/json"}
