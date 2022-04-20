@@ -12,7 +12,7 @@ type GroupRoute struct {
 	new bool
 	// 感觉还没到method， 应该先uri后缀的
 	route            UMR // 完全匹配的路由对应的methodsroute
-	header           map[string]string
+	header           mstringstring
 	tpl              UMR // 正则匹配的路由对应的methodsroute
 	module           *module
 	delmodule        map[string]struct{}
@@ -20,7 +20,7 @@ type GroupRoute struct {
 	bindResponseData bool
 	params           map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
 	delheader        map[string]struct{}
-	pagekeys         map[string]struct{} // 页面权限
+	pagekeys         mstringstruct // 页面权限
 
 	delPageKeys map[string]struct{}
 }
@@ -155,24 +155,22 @@ func (g *GroupRoute) makeRoute(pattern string) (string, []string, bool) {
 
 func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	// 合并head
-	tempHeader := make(map[string]string)
-	for k, v := range g.header {
-		tempHeader[k] = v
-	}
+	tempHeader := g.header.clone()
 
-	for k := range g.delheader {
+	for k := range g.delPageKeys {
 		route.delheader[k] = struct{}{}
 	}
-	// 组的删除是为了删全局
+	// 子组的删除是为了删父辈
 	for k := range group.delheader {
 		delete(tempHeader, k)
+		// 要删除的可能还在上上级， 所以要添加到子路由里面
 		route.delheader[k] = struct{}{}
 	}
 	// 添加组路由的
 	for k, v := range group.header {
 		tempHeader[k] = v
 	}
-	// 私有路由删除组合全局的
+	// 删除私有路由的
 	for k := range route.delheader {
 		delete(tempHeader, k)
 	}
@@ -194,25 +192,22 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	}
 
 	// 合并 pagekeys
-	tempPages := make(map[string]struct{})
 	// 全局key
-	for k := range g.pagekeys {
-		tempPages[k] = struct{}{}
-	}
+	tempPages := g.pagekeys.clone()
 
 	for k := range g.delPageKeys {
 		route.delPageKeys[k] = struct{}{}
 	}
+
 	// 组的删除为了删全局
 	for k := range group.delPageKeys {
 		delete(tempPages, k)
-		route.delheader[k] = struct{}{}
+		route.delPageKeys[k] = struct{}{}
 	}
 	// 添加组
 	for k := range group.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-	// 个人的删除组
 	// 删除单路由
 	for k := range route.delPageKeys {
 		delete(tempPages, k)
@@ -242,8 +237,6 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 	// 添加私有模块
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
-
-	// 与组的区别， 组里面这里是合并， 这里是删除
 }
 
 // 组路由添加到组路由

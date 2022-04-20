@@ -1,17 +1,14 @@
 package xmux
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strings"
-	"time"
 )
 
 var ErrToken = errors.New("jwt token error")
@@ -43,7 +40,7 @@ type Jwter interface {
 	// 	return tk.Exp
 	// }
 	Marshal() []byte
-	Expire() int64
+	Unmarshal([]byte) error
 }
 
 // 创建jwt
@@ -76,16 +73,13 @@ func GetJwt(jwt, salt string, token Jwter) error {
 	if err != nil {
 		return err
 	}
-
-	err = json.NewDecoder(bytes.NewReader(b)).Decode(token)
+	err = token.Unmarshal(b)
+	// err = json.NewDecoder(bytes.NewReader(b)).Decode(token)
 	if err != nil {
 		return err
 	}
 
-	if token.Expire() < time.Now().Unix() {
-		return ErrTokenExpired
-	}
-	// 检查过期时间
+	// // 检查过期时间
 	pre := js[0] + "." + js[1]
 	if getHc(pre, salt) == js[2] {
 		return nil
