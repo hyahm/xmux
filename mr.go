@@ -20,6 +20,55 @@ func (mr MethodsRoute) AddModule(handles ...func(http.ResponseWriter, *http.Requ
 	return mr
 }
 
+func (mr MethodsRoute) Bind(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].Bind(Clone(dest))
+	}
+	return mr
+}
+
+func (mr MethodsRoute) BindResponse(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].BindResponse(Clone(dest))
+	}
+	return mr
+}
+
+func (mr MethodsRoute) BindByContentType(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].BindByContentType(Clone(dest))
+	}
+	return mr
+}
+
+func (mr MethodsRoute) BindForm(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].BindForm(Clone(dest))
+	}
+	return mr
+}
+
+func (mr MethodsRoute) BindJson(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].BindJson(Clone(dest))
+	}
+	return mr
+}
+
+func (mr MethodsRoute) BindXml(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].BindXml(Clone(dest))
+	}
+	return mr
+}
+
+func (mr MethodsRoute) BindYaml(dest interface{}) MethodsRoute {
+	for method := range mr {
+		mr[method].BindYaml(Clone(dest))
+	}
+	return mr
+}
+
 func (mr MethodsRoute) AddPageKeys(pagekeys ...string) MethodsRoute {
 	for _, route := range mr {
 		route.AddPageKeys(pagekeys...)
