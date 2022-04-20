@@ -83,6 +83,14 @@ func (mr MethodsRoute) DelHeader(key string) MethodsRoute {
 	return mr
 }
 
+// get route by method. if not found will return nil
+func (mr MethodsRoute) GetRoute(method string) *Route {
+	if _, ok := mr[method]; ok {
+		return mr[method]
+	}
+	return nil
+}
+
 func (mr MethodsRoute) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) MethodsRoute {
 	for _, route := range mr {
 		route.DelModule(handles...)
