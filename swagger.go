@@ -104,7 +104,12 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 		_ = tmpl.Execute(buf, &opts)
 		w.Write(buf.Bytes())
 	})
-	swagger.Get(jsonPath, func(w http.ResponseWriter, req *http.Request) {
+	swagger.Get(jsonPath, JsonFile(jsonPath, url, host, r, schemes...))
+	return swagger
+}
+
+func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		// 拿到路由
 		ss := schemes
 		if len(schemes) == 0 {
@@ -114,14 +119,14 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 			Swagger: "2.0",
 			Host:    host,
 			Info: Info{
-				Title:       r.SwaggerTitle,
-				Version:     r.SwaggerVersion,
-				Description: r.SwaggerDescription,
+				Title:       router.SwaggerTitle,
+				Version:     router.SwaggerVersion,
+				Description: router.SwaggerDescription,
 			},
 			Schemes: ss,
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
-		for k, mr := range r.route {
+		for k, mr := range router.route {
 			if k == url || k == jsonPath {
 				continue
 			}
@@ -148,8 +153,7 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 			log.Println(err)
 		}
 		w.Write(send)
-	})
-	return swagger
+	}
 }
 
 func DefaultEnsure(jsonPath string) *SwaggerUIOpts {

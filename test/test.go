@@ -12,6 +12,13 @@ func home1(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+func homeargs(name string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.Header.Get("Content-Length"))
+		fmt.Println("name", name)
+	}
+}
+
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Header.Get("Content-Length"))
 	fmt.Printf("%T\n", r.Body)
@@ -43,7 +50,7 @@ func sub1group() *xmux.GroupRoute {
 	sub1 := xmux.NewGroupRoute()
 	sub1.Get("/sub1/get", home)
 	sub1.Post("/sub1/post", home)
-	sub1.Any("/sub1/any", home)
+	sub1.Any("/sub1/any", homeargs("sub1"))
 	return sub1
 }
 

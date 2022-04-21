@@ -195,7 +195,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	if r.Exit != nil {
+	if r.Exit == nil {
+		defer exit(start, w, req)
+	} else {
 		defer r.Exit(start, w, req)
 	}
 	if stop {
@@ -403,7 +405,6 @@ func NewRouter(cache ...uint64) *Router {
 		header:         map[string]string{},
 		params:         make(map[string][]string),
 		RequestBytes:   requestBytes,
-		Exit:           exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
