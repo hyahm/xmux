@@ -3,10 +3,14 @@ package xmux
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 type MethodStrcut struct {
@@ -21,19 +25,21 @@ type ParameterType string
 
 const (
 	Query  ParameterType = "query"
-	In     ParameterType = "path"
+	Path   ParameterType = "path"
 	Header ParameterType = "header"
-	Form   ParameterType = "form"
+	Form   ParameterType = "formData"
 )
 
 type Parameter struct {
-	In       ParameterType     `json:"in,omitempty" yaml:"in"`
-	Name     string            `json:"name,omitempty" yaml:"name"`
-	Required bool              `required:"in,omitempty" yaml:"required"`
-	Type     string            `json:"type,omitempty" yaml:"type"`
-	Schema   map[string]string `json:"schema,omitempty" yaml:"schema"`
-	Minimum  int64             `json:"minimum,omitempty" yaml:"minimum"`
-	Enum     []string          `json:"enum,omitempty" yaml:"enum"`
+	In          ParameterType     `json:"in,omitempty" yaml:"in"`
+	Name        string            `json:"name,omitempty" yaml:"name"`
+	Required    bool              `required:"in,omitempty" yaml:"required"`
+	Type        string            `json:"type,omitempty" yaml:"type"`
+	Schema      map[string]string `json:"schema,omitempty" yaml:"schema"`
+	Minimum     int64             `json:"minimum,omitempty" yaml:"minimum"`
+	Enum        []string          `json:"enum,omitempty" yaml:"enum"`
+	Default     any               `json:"default,omitempty" yaml:"default"`
+	Description string            `json:"description,omitempty" yaml:"description"`
 }
 
 type Schema struct {
@@ -104,6 +110,26 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 		_ = tmpl.Execute(buf, &opts)
 		w.Write(buf.Bytes())
 	})
+	swagger.Get("/test.json", func(w http.ResponseWriter, r *http.Request) {
+		f, err := os.Open("test.yaml")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		s := &Swagger{}
+		err = yaml.NewDecoder(f).Decode(s)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		b, err := json.Marshal(s)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		w.Write(b)
+	})
+
 	swagger.Get(jsonPath, JsonFile(jsonPath, url, host, r, schemes...))
 	return swagger
 }
@@ -126,6 +152,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 			Schemes: ss,
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
+		// 合并请求
 		for k, mr := range router.route {
 			if k == url || k == jsonPath {
 				continue
@@ -139,16 +166,68 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 						Description: "asdfsdf",
 					}},
 				}
+
 				if acc, ok := route.header["Content-Type"]; ok {
 					ms.Produces = strings.Split(acc, ";")
 				} else {
 					ms.Produces = []string{"application/json"}
 				}
+				ms.Parameters = route.query
 				path[strings.ToLower(method)] = ms
 			}
 			swagger.Paths[k] = path
 		}
-		send, err := json.MarshalIndent(swagger, "", "\t")
+		// 合并正则请求
+		for _, mr := range router.tpl {
+			path := make(map[string]MethodStrcut)
+			for method, route := range mr {
+				ms := MethodStrcut{
+					Summary:  route.summary,
+					Produces: []string{"application/json"},
+					Responses: map[string]Response{"200": {
+						Description: "asdfsdf",
+					}},
+				}
+
+				if acc, ok := route.header["Content-Type"]; ok {
+					ms.Produces = strings.Split(acc, ";")
+				} else {
+					ms.Produces = []string{"application/json"}
+				}
+				ms.Parameters = route.query
+
+				// 正则请求还需要合并path, 自定义正则必须每个组都以^开头 $结尾， 不然无法自动生成
+				url := ""
+				for _, name := range route.params {
+					// url 进行填充
+					// 将url的^ 替换成 { 将url的$ 替换成  }
+
+					url = route.url[1 : len(route.url)-1]
+					fmt.Println(url)
+					start := strings.Index(url, "(")
+					end := strings.Index(url, ")")
+					t := "string"
+					if url[start+1:end] == interger {
+						t = "interger"
+					}
+					// 将里面的值替换
+					url = url[:start] + "{" + name + "}" + url[end+1:]
+					p := Parameter{
+						In:       Path,
+						Name:     name,
+						Required: true,
+						Type:     t,
+					}
+					ms.Parameters = append(ms.Parameters, p)
+				}
+
+				path[strings.ToLower(method)] = ms
+				swagger.Paths[url] = path
+			}
+
+		}
+
+		send, err := json.MarshalIndent(swagger, "", "  ")
 		if err != nil {
 			log.Println(err)
 		}

@@ -33,12 +33,10 @@ type Jwter interface {
 	// 	if err != nil {
 	// 		return nil
 	// 	}
-	// 	return payload
+	// func (tk *Token) Unmarshal(b []byte) error {
+	// 	return json.Unmarshal(b, tk)
 	// }
 
-	// func (tk *Token) Expire() int64 {
-	// 	return tk.Exp
-	// }
 	Marshal() []byte
 	Unmarshal([]byte) error
 }

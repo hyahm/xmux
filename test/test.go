@@ -54,6 +54,18 @@ func sub1group() *xmux.GroupRoute {
 	return sub1
 }
 
+func query() xmux.Parameter {
+	return xmux.Parameter{
+		In:          xmux.Query,
+		Name:        "user",
+		Required:    true,
+		Type:        "string",
+		Default:     "9",
+		Minimum:     0,
+		Description: "这是一个测试",
+	}
+}
+
 func main() {
 	g := &Global{
 		Code: 200,
@@ -64,7 +76,14 @@ func main() {
 	router.AddGroup(subgroup())
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
+	router.Get("/testparms", param).SwaggerAddQuery(query())
+	router.Post("/aaaa/{name}", param).SwaggerAddQuery(query())
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
 
 	router.Run(":8888")
+}
+
+func param(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	xmux.GetInstance(r).Response.(*Global).Msg = name
 }

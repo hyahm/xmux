@@ -46,6 +46,8 @@ func (gr *GroupRoute) any(pattern string, handler func(http.ResponseWriter, *htt
 				gr.tpl[url] = make(MethodsRoute)
 			}
 			// newRoute.methods[method] = struct{}{}
+			newRoute.url = url
+			newRoute.params = vars
 			gr.tpl[url][method] = newRoute
 		}
 		return gr.tpl[url]
@@ -63,6 +65,7 @@ func (gr *GroupRoute) any(pattern string, handler func(http.ResponseWriter, *htt
 			if gr.route[url] == nil {
 				gr.route[url] = make(MethodsRoute)
 			}
+			newRoute.url = url
 			gr.route[url][method] = newRoute
 		}
 		// 如果不存在就创建一个 route
@@ -112,6 +115,8 @@ func (gr *GroupRoute) defindMethod(pattern string, handler func(http.ResponseWri
 				gr.tpl[url] = make(MethodsRoute)
 			}
 			// newRoute.methods[method] = struct{}{}
+			newRoute.url = url
+			newRoute.params = vars
 			gr.tpl[url][method] = newRoute
 		}
 
@@ -125,6 +130,7 @@ func (gr *GroupRoute) defindMethod(pattern string, handler func(http.ResponseWri
 				// 如果也存在， 那么method重复了
 				log.Fatal("method : " + method + "  duplicate, url: " + url)
 			}
+			newRoute.url = url
 			gr.route[url][method] = newRoute
 		}
 		// 如果不存在就创建一个 route

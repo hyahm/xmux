@@ -8,11 +8,12 @@ import (
 // 初始化临时使用， 最后会合并到 router
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	new       bool
-	handle    http.Handler        // handle
-	module    *module             // 增加的 modules
-	delmodule map[string]struct{} // 删除的modules
-
+	new         bool
+	handle      http.Handler        // handle
+	module      *module             // 增加的 modules
+	delmodule   map[string]struct{} // 删除的modules
+	url         string              // 路由的path
+	params      []string            // path正则名
 	pagekeys    map[string]struct{} // 页面权限
 	delPageKeys map[string]struct{} // 删除的权限
 
@@ -24,6 +25,8 @@ type Route struct {
 	summary          string
 	bindType         bindType    // 数据绑定格式
 	dataSource       interface{} // 数据源
+
+	query []Parameter
 }
 
 func (rt *Route) GetHeader() map[string]string {
@@ -193,5 +196,20 @@ func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) b
 		rt.delmodule[GetFuncName(handle)] = struct{}{}
 	}
 	rt.module.delete(rt.delmodule)
+	return rt
+}
+
+func (rt *Route) SwaggerAddQuery(pt Parameter) *Route {
+	if !rt.new {
+		panic("can not support init")
+	}
+	rt.query = append(rt.query, pt)
+	// if rt.delmodule == nil {
+	// 	rt.delmodule = make(map[string]struct{})
+	// }
+	// for _, handle := range handles {
+	// 	rt.delmodule[GetFuncName(handle)] = struct{}{}
+	// }
+	// rt.module.delete(rt.delmodule)
 	return rt
 }

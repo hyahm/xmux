@@ -45,6 +45,8 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 			if r.tpl[url] == nil {
 				r.tpl[url] = make(MethodsRoute)
 			}
+			newRoute.url = url
+			newRoute.params = vars
 			r.tpl[url][method] = newRoute
 		}
 
@@ -62,6 +64,7 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 			if r.route[url] == nil {
 				r.route[url] = make(MethodsRoute)
 			}
+			newRoute.url = url
 			r.route[url][method] = newRoute
 		}
 
@@ -111,6 +114,8 @@ func (r *Router) any(pattern string, handler func(http.ResponseWriter, *http.Req
 			if r.tpl[url] == nil {
 				r.tpl[url] = make(MethodsRoute)
 			}
+			newRoute.url = url
+			newRoute.params = vars
 			r.tpl[url][method] = newRoute
 		}
 
@@ -132,6 +137,7 @@ func (r *Router) any(pattern string, handler func(http.ResponseWriter, *http.Req
 			if r.route[url] == nil {
 				r.route[url] = make(MethodsRoute)
 			}
+			newRoute.url = url
 			r.route[url][method] = newRoute
 		}
 		return r.route[url]
