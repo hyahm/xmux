@@ -11,6 +11,7 @@ import (
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	var send []byte
 	var err error
+	r.Body.Close()
 	if GetInstance(r).Response != nil && GetInstance(r).Get(STATUSCODE).(int) == 200 {
 		send, err = json.Marshal(GetInstance(r).Response)
 		if err != nil {
