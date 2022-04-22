@@ -49,7 +49,7 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 	}
 	// permMap := make(map[string]bool)
 	result := GetPerm(pl, perm[page])
-	handleName := GetInstance(r).Get(CURRFUNCNAME).(string)
+	handleName := GetInstance(r).GetFuncName()
 	// 这个值就是判断有没有这个操作权限
 	if !result[permissionMap[handleName]] {
 		w.Write([]byte("没有权限"))
