@@ -199,7 +199,7 @@ func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return rt
 }
 
-func (rt *Route) SwaggerAddQuery(pt Parameter) *Route {
+func (rt *Route) SwaggerAddParameter(pt Parameter) *Route {
 	if !rt.new {
 		panic("can not support init")
 	}
