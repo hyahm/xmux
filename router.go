@@ -256,8 +256,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 			re := regexp.MustCompile(reUrl)
 			req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
-
-				route, ok := r.tpl[req.URL.Path][req.Method]
+				route, ok := r.tpl[reUrl][req.Method]
 				if ok {
 					ap := make(map[string]string)
 					vl := re.FindStringSubmatch(req.URL.Path)

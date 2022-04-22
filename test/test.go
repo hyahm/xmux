@@ -76,10 +76,12 @@ func main() {
 	router.AddGroup(subgroup())
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
-	router.Get("/testparms", param).SwaggerAddQuery(query())
-	router.Post("/aaaa/{name}", param).SwaggerAddQuery(query())
+	router.Get("/test/{name}", func(w http.ResponseWriter, r *http.Request) {
+		name := xmux.Var(r)["name"]
+		w.Write([]byte("9898989" + name))
+	})
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
-
+	router.DebugIncludeTpl("/test/")
 	router.Run(":8888")
 }
 
