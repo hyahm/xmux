@@ -123,8 +123,10 @@ func main() {
 ###  传值
 
 - 其中，这4个是内置的，请勿赋值, 这4个是全局的，
-  -   xmux.CONNECTID ：               连接的id（任何地方都可以使用）
-  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值）
+  -   xmux.CONNECTID() ：               连接的id（任何地方都可以使用）
+      新版替换成了 xmux.GetInstance(r).GetConnectId()
+  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值） 
+      新版替换成了 xmux.GetInstance(r).GetCurrFuncName()
   -   xmux.PAGES：                        跟页面权限有关（从模块开始才有值）
   -   xmux.STATUSCODE：            接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
 -  自定义的值是从模块开始才能赋值
@@ -136,6 +138,7 @@ xmux.GetInstance(r).Set("key", "value")
 # 获取值
 xmux.GetInstance(r).Get("key")
 ```
+
 
 
 
@@ -732,7 +735,7 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 	}
 	// permMap := make(map[string]bool)
 	result := GetPerm(pl, perm[page])
-	handleName := GetInstance(r).Get(CURRFUNCNAME).(string)
+	handleName := GetInstance(r).getfun
 	// 这个值就是判断有没有这个操作权限
 	if !result[permissionMap[handleName]] {
 		w.Write([]byte("没有权限"))

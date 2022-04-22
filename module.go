@@ -20,7 +20,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 		w.Write(send)
 	}
 	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, body: %v\n",
-		GetInstance(r).Get(CONNECTID),
+		GetInstance(r).GetConnectId(),
 		r.Method,
 		r.URL.Path, time.Since(start).Seconds(), GetInstance(r).Get(STATUSCODE),
 		string(send))

@@ -3,5 +3,5 @@ package xmux
 // value is int
 const STATUSCODE = "status_code"
 
-// value is int64
+// Deprecated, please use xmux.GetInstance(r).GetConnectId()
 const CONNECTID = "connect_id"

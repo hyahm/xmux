@@ -17,7 +17,6 @@ import (
 
 var connections int32
 
-const CURRFUNCNAME = "CURRFUNCNAME"
 const PAGES = "PAGES"
 
 var stop bool
@@ -46,7 +45,7 @@ type rt struct {
 }
 
 func requestBytes(reqbody []byte, r *http.Request) {
-	log.Printf("connect_id: %d\tdata: %s", GetInstance(r).Get(CONNECTID), string(reqbody))
+	log.Printf("connect_id: %d\tdata: %s", GetInstance(r).GetConnectId(), string(reqbody))
 }
 
 type Router struct {
@@ -165,7 +164,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 	// 当前函数名去掉目录层级后的
 	name := runtime.FuncForPC(reflect.ValueOf(route.Handle).Pointer()).Name()
 	n := strings.LastIndex(name, ".")
-	fd.Set(CURRFUNCNAME, name[n+1:])
+	fd.funcName = name[n+1:]
 	// 请求模块
 	for _, module := range route.module {
 		ok := module(w, req)
@@ -181,14 +180,15 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+	ci := time.Now().UnixNano()
 	fd := &FlowData{
-		ctx: make(map[string]interface{}),
-		mu:  &sync.RWMutex{},
+		ctx:       make(map[string]interface{}),
+		mu:        &sync.RWMutex{},
+		connectId: ci,
 	}
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
 	fd.Set(STATUSCODE, 200)
-	fd.Set(CONNECTID, time.Now().UnixNano())
 	start := time.Now()
 	if r.Enter != nil {
 		if r.Enter(w, req) {
