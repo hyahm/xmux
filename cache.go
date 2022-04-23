@@ -64,7 +64,7 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 			default:
 				time.Sleep(time.Millisecond)
 				if !IsUpdate(cacheKey) {
-					w.Write(cb)
+					w.Write(GetCache(cacheKey))
 					return true
 				}
 			}
