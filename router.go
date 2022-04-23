@@ -229,7 +229,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// 正在寻址中的话， 就等待寻址完成
 	// 先进行路由表缓存寻找
-	route, ok := Get(req.URL.Path + req.Method)
+	route, ok := getUrlCache(req.URL.Path + req.Method)
 	if ok {
 		r.readFromCache(start, route, w, req, fd)
 	} else {
@@ -286,7 +286,7 @@ endloop:
 		responseData: thisRoute.responseData,
 	}
 	// 设置缓存
-	Set(req.URL.Path+req.Method, thisRouter)
+	setUrlCache(req.URL.Path+req.Method, thisRouter)
 	r.readFromCache(start, thisRouter, w, req, fd)
 }
 
@@ -395,7 +395,7 @@ func NewRouter(cache ...uint64) *Router {
 	if len(cache) > 0 {
 		c = cache[0]
 	}
-	InitCache(c)
+	initUrlCache(c)
 	return &Router{
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
 		new:            true,

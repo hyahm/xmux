@@ -66,22 +66,30 @@ func query() xmux.Parameter {
 	}
 }
 
+func SetKey(w http.ResponseWriter, r *http.Request) bool {
+	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
+	return false
+}
+
 func main() {
 	g := &Global{
 		Code: 200,
 	}
-	router := xmux.NewRouter().AddModule(home1).BindResponse(g)
+
+	router := xmux.NewRouter().AddModule(home1, SetKey, xmux.DefaultCacheTemplateCacheWithResponse).BindResponse(g)
 	// router.SetHeader("Access-Control-Allow-Origin", "*")
 	// router.SetHeader("Access-Control-Allow-Methods", "*")
 	router.AddGroup(subgroup())
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
 	router.Get("/test/{name}", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(1111)
 		name := xmux.Var(r)["name"]
-		w.Write([]byte("9898989" + name))
+		xmux.GetInstance(r).Response.(*Global).Data = name
 	})
+
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
-	router.DebugIncludeTpl("/test/")
+	xmux.InitResponseCache()
 	router.Run(":8888")
 }
 

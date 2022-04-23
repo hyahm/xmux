@@ -9,20 +9,43 @@ import (
 )
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	var send []byte
-	var err error
 	r.Body.Close()
+	var send []byte
 	if GetInstance(r).Response != nil && GetInstance(r).Get(STATUSCODE).(int) == 200 {
-		send, err = json.Marshal(GetInstance(r).Response)
-		if err != nil {
-			log.Println(err)
+
+		ck := GetInstance(r).Get(CacheKey)
+
+		if ck != nil {
+			cacheKey := ck.(string)
+			if IsUpdate(cacheKey) {
+				// 如果没有设置缓存，还是以前的处理方法
+				send, err := json.Marshal(GetInstance(r).Response)
+				if err != nil {
+					log.Println(err)
+				}
+
+				// 如果之前是更新的状态，那么就修改
+				SetCache(cacheKey, send)
+				w.Write(send)
+			} else {
+				// 如果不是更新的状态， 那么就不用更新，而是直接从缓存取值
+				send = GetCache(cacheKey)
+				w.Write(send)
+			}
+		} else {
+			send, err := json.Marshal(GetInstance(r).Response)
+			if err != nil {
+				log.Println(err)
+			}
+			w.Write(send)
 		}
-		w.Write(send)
+
 	}
 	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, body: %v\n",
 		GetInstance(r).GetConnectId(),
 		r.Method,
-		r.URL.Path, time.Since(start).Seconds(), GetInstance(r).Get(STATUSCODE),
+		r.URL.Path, time.Since(start).Seconds(),
+		GetInstance(r).Get(STATUSCODE),
 		string(send))
 }
 
