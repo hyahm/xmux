@@ -132,6 +132,8 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
+const Body = "body"
+
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 
 	if route.dataSource != nil {
@@ -147,6 +149,8 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 			if r.bind(route, w, req, fd) {
 				return
 			}
+		} else {
+			GetInstance(req).Set(Body, []byte(""))
 		}
 
 	}
