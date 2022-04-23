@@ -17,17 +17,14 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 		return false
 	}
 	cacheKey := ck.(string)
-	cb, ok := GetCacheIfUpdating(cacheKey)
-	if cb == nil && !ok {
-		SetUpdate(cacheKey)
-		return false
-	}
-	if ok {
-		// 如果在更新， 那么等待更新完毕
+	_, cacheStatus := GetCacheIfUpdating(cacheKey)
+	switch cacheStatus {
+	case CacheHit:
+		return true
+	case CacheIsUpdateing:
 		for {
 			select {
-			case <-time.After(time.Second * 10):
-				SetUpdate(cacheKey)
+			case <-time.After(time.Second):
 				return false
 			default:
 				time.Sleep(time.Millisecond)
@@ -37,8 +34,15 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 			}
 
 		}
+	case CacheNeedUpdate:
+		SetNeedUpdateToUpdate(cacheKey)
+		return false
+	case NotFoundCache:
+		SetUpdate(cacheKey)
+		return false
+	default:
+		return false
 	}
-	return true
 }
 
 func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Request) bool {
@@ -47,16 +51,16 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 	// 先要判断一下是否存在缓存
 	ck := GetInstance(r).Get(CacheKey)
 	if ck == nil {
+		// 没有启用缓存
 		return false
 	}
 	cacheKey := ck.(string)
-	cb, ok := GetCacheIfUpdating(cacheKey)
-	if cb == nil && !ok {
-		SetUpdate(cacheKey)
-		return false
-	}
-	if ok {
-		// 如果在更新， 那么等待更新完毕
+	cb, cacheStatus := GetCacheIfUpdating(cacheKey)
+	switch cacheStatus {
+	case CacheHit:
+		w.Write(cb)
+		return true
+	case CacheIsUpdateing:
 		for {
 			select {
 			case <-time.After(time.Second):
@@ -70,9 +74,16 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 			}
 
 		}
+	case CacheNeedUpdate:
+		SetNeedUpdateToUpdate(cacheKey)
+		return false
+	case NotFoundCache:
+		SetUpdate(cacheKey)
+		return false
+	default:
+		return false
 	}
-	w.Write(cb)
-	return true
+
 }
 
 // cache 是一个接口
@@ -95,6 +106,14 @@ func SetCache(key string, cache []byte) {
 	rc.store[key].response = cache
 	rc.store[key].isUpdate = false
 	rc.store[key].update = time.Now()
+}
+
+func SetNeedUpdateToUpdate(key string) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+	if _, ok := rc.store[key]; ok {
+		rc.store[key].response = []byte("")
+	}
 }
 
 // 如果key存在，就设置缓存
@@ -128,17 +147,35 @@ func GetCacheIfExsits(key string) ([]byte, bool) {
 	return nil, false
 }
 
+type CacheStatus string
+
+const (
+	NotFoundCache    CacheStatus = "Not found cache"
+	CacheIsUpdateing CacheStatus = "Cache is Updating"
+	CacheNeedUpdate  CacheStatus = "Cache need Updating"
+	CacheHit         CacheStatus = "cache hit"
+)
+
 // 获取缓存，如果正在更新
-// 如果返回 nil, false    说明不存在这个缓存
-// 如果返回 []byte, true  说明当前还在更新中， 还不是最新的缓存
-// 如果返回 []byte, false 说明是最新的，可以直接返回
-func GetCacheIfUpdating(key string) ([]byte, bool) {
+// 如果返回 NotFoundCache    说明不存在这个缓存
+// 如果返回 CacheIsUpdateing  说明当前还在更新中， 还不是最新的缓存
+// 如果返回 CacheNeedUpdate  说明缓存需要更新
+// 如果返回 NotFoundCache 说明是最新的，可以直接返回
+func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 	if _, ok := rc.store[key]; ok {
-		return rc.store[key].response, rc.store[key].isUpdate
+		if rc.store[key].isUpdate {
+			if rc.store[key].response == nil {
+				return nil, CacheNeedUpdate
+			} else {
+				return rc.store[key].response, CacheIsUpdateing
+			}
+		}
+		return rc.store[key].response, CacheHit
 	}
-	return nil, false
+
+	return nil, NotFoundCache
 }
 
 // 是否存在缓存
@@ -159,6 +196,14 @@ func IsUpdate(key string) bool {
 	return false
 }
 
+func NeedUpdate(key string) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+	if _, ok := rc.store[key]; ok {
+		rc.store[key].response = nil
+	}
+}
+
 func SetUpdate(key string) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
@@ -173,9 +218,10 @@ func SetUpdate(key string) {
 }
 
 type cacheStruct struct {
-	response []byte
-	update   time.Time // 最后一次更新的时间， 用来判断最后更新的时间
-	isUpdate bool      // 判断是否在刷新缓存中
+	response   []byte
+	update     time.Time // 最后一次更新的时间， 用来判断最后更新的时间
+	isUpdate   bool      // 判断是否在刷新缓存中
+	needUpdate bool      // 设置需要更新
 }
 
 var rc *responseCache
