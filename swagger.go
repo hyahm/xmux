@@ -3,14 +3,10 @@ package xmux
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strings"
-
-	yaml "gopkg.in/yaml.v2"
 )
 
 type MethodStrcut struct {
@@ -110,25 +106,6 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
 		_ = tmpl.Execute(buf, &opts)
 		w.Write(buf.Bytes())
 	})
-	swagger.Get("/test.json", func(w http.ResponseWriter, r *http.Request) {
-		f, err := os.Open("test.yaml")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		s := &Swagger{}
-		err = yaml.NewDecoder(f).Decode(s)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		b, err := json.Marshal(s)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		w.Write(b)
-	})
 
 	swagger.Get(jsonPath, JsonFile(jsonPath, url, host, r, schemes...))
 	return swagger
@@ -173,6 +150,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 					ms.Produces = []string{"application/json"}
 				}
 				ms.Parameters = route.query
+
 				path[strings.ToLower(method)] = ms
 			}
 			swagger.Paths[k] = path
@@ -203,7 +181,6 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 					// 将url的^ 替换成 { 将url的$ 替换成  }
 
 					url = route.url[1 : len(route.url)-1]
-					fmt.Println(url)
 					start := strings.Index(url, "(")
 					end := strings.Index(url, ")")
 					t := "string"

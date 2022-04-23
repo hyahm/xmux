@@ -210,7 +210,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.IgnoreSlash {
 		req.URL.Path = prettySlash(req.URL.Path)
 	}
-	// /favicon.ico  和 Option 请求， 不支持自定义请求头和模块
+	// /favicon.ico 请求
 	if req.URL.Path == "/favicon.ico" {
 		for k, v := range r.header {
 			w.Header().Set(k, v)
@@ -254,7 +254,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 	} else {
 		for reUrl := range r.tpl {
 			re := regexp.MustCompile(reUrl)
-			req.URL.Path = strings.Trim(req.URL.Path, " ")
+			// req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
 				route, ok := r.tpl[reUrl][req.Method]
 				if ok {
