@@ -135,7 +135,9 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 const Body = "body"
 
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
-
+	if route.responseData != nil {
+		fd.Response = Clone(route.responseData)
+	}
 	if route.dataSource != nil {
 		base := reflect.TypeOf(route.dataSource)
 		// 支持bind 指针和结构体
@@ -153,9 +155,6 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 			GetInstance(req).Set(Body, []byte(""))
 		}
 
-	}
-	if route.responseData != nil {
-		fd.Response = Clone(route.responseData)
 	}
 
 	for k, v := range route.Header {
