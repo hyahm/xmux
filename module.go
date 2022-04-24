@@ -11,6 +11,7 @@ import (
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	r.Body.Close()
 	var send []byte
+	var err error
 	if GetInstance(r).Response != nil && GetInstance(r).Get(STATUSCODE).(int) == 200 {
 
 		ck := GetInstance(r).Get(CacheKey)
@@ -19,7 +20,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 			cacheKey := ck.(string)
 			if IsUpdate(cacheKey) {
 				// 如果没有设置缓存，还是以前的处理方法
-				send, err := json.Marshal(GetInstance(r).Response)
+				send, err = json.Marshal(GetInstance(r).Response)
 				if err != nil {
 					log.Println(err)
 				}
@@ -33,7 +34,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 				w.Write(send)
 			}
 		} else {
-			send, err := json.Marshal(GetInstance(r).Response)
+			send, err = json.Marshal(GetInstance(r).Response)
 			if err != nil {
 				log.Println(err)
 			}
