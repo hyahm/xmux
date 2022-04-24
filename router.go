@@ -132,8 +132,6 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
-const Body = "body"
-
 func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	if route.responseData != nil {
 		fd.Response = Clone(route.responseData)
@@ -152,9 +150,8 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 				return
 			}
 		} else {
-			GetInstance(req).Set(Body, []byte(""))
+			GetInstance(req).Set(BODY, []byte(""))
 		}
-
 	}
 
 	for k, v := range route.Header {
