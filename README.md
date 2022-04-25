@@ -507,7 +507,7 @@ func main() {
 
 <body>
     <script type="text/javascript">
-        var wsUri = "ws://localhost:8888/3";
+        var wsUri = "ws://localhost:8080/3";
         var output;
         var connect = false;
    
