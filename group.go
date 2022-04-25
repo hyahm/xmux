@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/hyahm/xmux/helper"
 )
 
 // 服务启动前的操作， 所以里面的map 都是单线程不需要加锁的
@@ -134,7 +136,7 @@ func (g *GroupRoute) DelModule(handles ...func(http.ResponseWriter, *http.Reques
 		panic("must be init by NewGroupRoute()")
 	}
 	for _, handle := range handles {
-		g.delmodule[GetFuncName(handle)] = struct{}{}
+		g.delmodule[helper.GetFuncName(handle)] = struct{}{}
 	}
 	return g
 }

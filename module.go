@@ -1,53 +1,11 @@
 package xmux
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 	"sync"
-	"time"
+
+	"github.com/hyahm/xmux/helper"
 )
-
-func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	r.Body.Close()
-	var send []byte
-	if GetInstance(r).Response != nil && GetInstance(r).Get(STATUSCODE).(int) == 200 {
-
-		ck := GetInstance(r).Get(CacheKey)
-
-		if ck != nil {
-			cacheKey := ck.(string)
-			if IsUpdate(cacheKey) {
-				// 如果没有设置缓存，还是以前的处理方法
-				send, err := json.Marshal(GetInstance(r).Response)
-				if err != nil {
-					log.Println(err)
-				}
-
-				// 如果之前是更新的状态，那么就修改
-				SetCache(cacheKey, send)
-				w.Write(send)
-			} else {
-				// 如果不是更新的状态， 那么就不用更新，而是直接从缓存取值
-				send = GetCache(cacheKey)
-				w.Write(send)
-			}
-		} else {
-			send, err := json.Marshal(GetInstance(r).Response)
-			if err != nil {
-				log.Println(err)
-			}
-			w.Write(send)
-		}
-
-	}
-	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, body: %v\n",
-		GetInstance(r).GetConnectId(),
-		r.Method,
-		r.URL.Path, time.Since(start).Seconds(),
-		GetInstance(r).Get(STATUSCODE),
-		string(send))
-}
 
 func DefaultModuleTemplate(w http.ResponseWriter, r *http.Request) bool {
 	return false
@@ -83,7 +41,7 @@ func (m *module) delete(delmodules map[string]struct{}) {
 		if _, ok := m.filter[name]; ok {
 			// 说明存在
 			for index, value := range m.funcOrder {
-				if GetFuncName(value) == name {
+				if helper.GetFuncName(value) == name {
 					m.funcOrder = append(m.funcOrder[:index], m.funcOrder[index+1:]...)
 					delete(m.filter, name)
 					break
@@ -105,7 +63,7 @@ func (m *module) add(mds ...func(w http.ResponseWriter, r *http.Request) bool) {
 	defer m.mu.Unlock()
 	// 添加, 不会重复添加 module
 	for _, md := range mds {
-		name := GetFuncName(md)
+		name := helper.GetFuncName(md)
 		if _, ok := m.filter[name]; !ok {
 			m.funcOrder = append(m.funcOrder, md)
 			m.filter[name] = struct{}{}

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+
+	"github.com/hyahm/xmux/helper"
 )
 
 func m1(w http.ResponseWriter, r *http.Request) bool {
@@ -33,17 +35,17 @@ func TestModule(t *testing.T) {
 	router.AddGroup(sub3group())
 	{
 		s := router.route["/"][http.MethodPost].module.funcOrder
-		if GetFuncName(s[0]) != "github.com/hyahm/xmux.m1" || len(s) != 1 {
+		if helper.GetFuncName(s[0]) != "github.com/hyahm/xmux.m1" || len(s) != 1 {
 			t.Fail()
 		}
 		get := router.route["/get"][http.MethodGet].module.funcOrder
 		if len(get) != 2 {
 			t.Fail()
 		}
-		if GetFuncName(get[0]) != "github.com/hyahm/xmux.m1" {
+		if helper.GetFuncName(get[0]) != "github.com/hyahm/xmux.m1" {
 			t.Fail()
 		}
-		if GetFuncName(get[1]) != "github.com/hyahm/xmux.m2" {
+		if helper.GetFuncName(get[1]) != "github.com/hyahm/xmux.m2" {
 			t.Fail()
 		}
 	}
@@ -53,10 +55,10 @@ func TestModule(t *testing.T) {
 		if len(subpost) != 2 {
 			t.Fail()
 		}
-		if GetFuncName(subpost[0]) != "github.com/hyahm/xmux.m2" {
+		if helper.GetFuncName(subpost[0]) != "github.com/hyahm/xmux.m2" {
 			t.Fail()
 		}
-		if GetFuncName(subpost[1]) != "github.com/hyahm/xmux.m3" {
+		if helper.GetFuncName(subpost[1]) != "github.com/hyahm/xmux.m3" {
 			t.Fail()
 		}
 	}
@@ -66,16 +68,16 @@ func TestModule(t *testing.T) {
 		if len(sub1get) != 4 {
 			t.Fail()
 		}
-		if GetFuncName(sub1get[0]) != "github.com/hyahm/xmux.m2" {
+		if helper.GetFuncName(sub1get[0]) != "github.com/hyahm/xmux.m2" {
 			t.Fail()
 		}
-		if GetFuncName(sub1get[1]) != "github.com/hyahm/xmux.m3" {
+		if helper.GetFuncName(sub1get[1]) != "github.com/hyahm/xmux.m3" {
 			t.Fail()
 		}
-		if GetFuncName(sub1get[2]) != "github.com/hyahm/xmux.m4" {
+		if helper.GetFuncName(sub1get[2]) != "github.com/hyahm/xmux.m4" {
 			t.Fail()
 		}
-		if GetFuncName(sub1get[3]) != "github.com/hyahm/xmux.m5" {
+		if helper.GetFuncName(sub1get[3]) != "github.com/hyahm/xmux.m5" {
 			t.Fail()
 		}
 
@@ -86,10 +88,10 @@ func TestModule(t *testing.T) {
 		if len(sub1post) != 2 {
 			t.Fail()
 		}
-		if GetFuncName(sub1post[0]) != "github.com/hyahm/xmux.m2" {
+		if helper.GetFuncName(sub1post[0]) != "github.com/hyahm/xmux.m2" {
 			t.Fail()
 		}
-		if GetFuncName(sub1post[1]) != "github.com/hyahm/xmux.m4" {
+		if helper.GetFuncName(sub1post[1]) != "github.com/hyahm/xmux.m4" {
 			t.Fail()
 		}
 
@@ -100,16 +102,16 @@ func TestModule(t *testing.T) {
 		if len(sub4post) != 4 {
 			t.Fail()
 		}
-		if GetFuncName(sub4post[0]) != "github.com/hyahm/xmux.m1" {
+		if helper.GetFuncName(sub4post[0]) != "github.com/hyahm/xmux.m1" {
 			t.Fail()
 		}
-		if GetFuncName(sub4post[1]) != "github.com/hyahm/xmux.m2" {
+		if helper.GetFuncName(sub4post[1]) != "github.com/hyahm/xmux.m2" {
 			t.Fail()
 		}
-		if GetFuncName(sub4post[2]) != "github.com/hyahm/xmux.m3" {
+		if helper.GetFuncName(sub4post[2]) != "github.com/hyahm/xmux.m3" {
 			t.Fail()
 		}
-		if GetFuncName(sub4post[3]) != "github.com/hyahm/xmux.m4" {
+		if helper.GetFuncName(sub4post[3]) != "github.com/hyahm/xmux.m4" {
 			t.Fail()
 		}
 

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+
+	"github.com/hyahm/xmux/helper"
 )
 
 func BenchmarkOneRoute(B *testing.B) {
@@ -72,7 +74,7 @@ func BenchmarkOneRouteJSON(B *testing.B) {
 func BenchmarkOneRouteString(B *testing.B) {
 	router := NewRouter()
 	router.Get("/text", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(StringToBytes("this is a plain text"))
+		w.Write(helper.StringToBytes("this is a plain text"))
 	})
 	runRequest(B, router, "Get", "/text")
 }

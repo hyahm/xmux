@@ -6,6 +6,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/hyahm/xmux"
+	"github.com/hyahm/xmux/cache"
 )
 
 func home1(w http.ResponseWriter, r *http.Request) bool {
@@ -67,7 +68,7 @@ func query() xmux.Parameter {
 }
 
 func SetKey(w http.ResponseWriter, r *http.Request) bool {
-	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
+	xmux.GetInstance(r).Set(cache.CacheKey, r.URL.Path)
 	return false
 }
 
@@ -89,7 +90,7 @@ func main() {
 	})
 
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
-	xmux.InitResponseCache()
+	cache.InitResponseCache()
 	router.Run(":8888")
 }
 

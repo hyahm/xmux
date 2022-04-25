@@ -3,6 +3,8 @@ package xmux
 import (
 	"net/http"
 	"sync"
+
+	"github.com/hyahm/xmux/helper"
 )
 
 // 初始化临时使用， 最后会合并到 router
@@ -193,7 +195,7 @@ func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) b
 		rt.delmodule = make(map[string]struct{})
 	}
 	for _, handle := range handles {
-		rt.delmodule[GetFuncName(handle)] = struct{}{}
+		rt.delmodule[helper.GetFuncName(handle)] = struct{}{}
 	}
 	rt.module.delete(rt.delmodule)
 	return rt

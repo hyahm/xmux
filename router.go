@@ -13,6 +13,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/hyahm/xmux/helper"
 )
 
 var connections int32
@@ -559,7 +561,7 @@ func debugPrint(url string, mr MethodsRoute) {
 	for method, route := range mr {
 		names := make([]string, 0)
 		for _, v := range route.module.funcOrder {
-			names = append(names, GetFuncName(v))
+			names = append(names, helper.GetFuncName(v))
 		}
 		log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
 			url, method, route.header, names, route.pagekeys)
