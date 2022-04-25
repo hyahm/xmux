@@ -72,7 +72,7 @@ func main() {
 open http://localhost:8080 in brower you can see hello world!
 
 ### Multiple request method<a id="method"></a>
-```
+```go
 package main
 
 import (
@@ -83,18 +83,19 @@ import (
 
 func main() {
 	router := xmux.NewRouter()
-	// 只是例子不建议下面的写法， 而是使用   router.Reqeust("/",nil, "POST", "GET")
-	router.Get("/",nil)  // get请求
-	router.Post("/",nil)  // post请求
-	router.Request("/getpost",nil, "POST", "GET")  // 同时支持get，post请求
-	router.Any("/any",nil)  // 支持除了options 之外的所有请求
+	//Just for example, the following writing method is not recommended, but route.Reqeust("/",nil, "POST", "GET")
+	router.Get("/", nil) // get request
+	router.Post("/", nil) // post request
+	router.Request("/ getpost", nil, "post", "get") // both get and post requests are supported
+	router.Any("/any", nil) // supports all requests except options
 	router.Run()
 }
 ```
 
 ### Route Group<a id="group"></a>
 
-> aritclegroup.go
+> aritclegroup.go  
+
 ```go
 func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(xmux.Var(r)["id"])
@@ -228,10 +229,10 @@ func main() {
 - Custom values can only be assigned from the module
 
 ```
-# set key value
+// set key value
 xmux.GetInstance(r).Set("key", "value")
 
-# get value
+// get value
 xmux.GetInstance(r).Get("key")
 ```
 
@@ -294,7 +295,7 @@ type User struct {
 
 ```go
 func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
-	// 任何报错信息， 直接return true， 就是此handle 直接执行完毕了， 不继续向后面走了
+	// If any error message is reported, return true directly, which means that the handle has been executed directly and does not continue to go back
 	if goconfig.ReadBool("debug", false) {
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -430,7 +431,6 @@ func sendMsg() {
 			}
 			fmt.Println(c.msg)
 			
-			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
 			//The length of the sent MSG cannot exceed 1 < < 31, otherwise the content will be lost and subcontracting is recommended
 			p.SendMessage([]byte(c.msg), ps[p])
 		}
@@ -691,7 +691,7 @@ Judging by a given array
 
   > xmux Corresponding writing
 
-  ```
+  ```go
   
   func AddName(w http.ResponseWriter, r *http.Request) {
   	fmt.Printf("%v", "AddName")
@@ -924,7 +924,6 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := xmux.NewRouter()
 	router.Post("/", nil)
-	// 也可以直接使用内置的
 	router.AddGroup(xmux.Pprof())
 	router.Run()
 }
