@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hyahm/xmux/cache"
@@ -13,7 +14,7 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
-	ck := GetInstance(r).Get(cache.CacheKey)
+	ck := GetInstance(r).Get(CacheKey)
 	if ck == nil {
 		return false
 	}
@@ -36,7 +37,7 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 
 		}
 	case cache.CacheNeedUpdate:
-		cache.SetNeedUpdateToUpdate(cacheKey)
+		cache.SetUpdate(cacheKey)
 		return false
 	case cache.NotFoundCache:
 		cache.SetUpdate(cacheKey)
@@ -50,7 +51,7 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
-	ck := GetInstance(r).Get(cache.CacheKey)
+	ck := GetInstance(r).Get(CacheKey)
 	if ck == nil {
 		// 没有启用缓存
 		return false
@@ -76,7 +77,7 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 
 		}
 	case cache.CacheNeedUpdate:
-		cache.SetNeedUpdateToUpdate(cacheKey)
+		cache.SetUpdate(cacheKey)
 		return false
 	case cache.NotFoundCache:
 		cache.SetUpdate(cacheKey)
@@ -88,11 +89,11 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 }
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	r.Body.Close()
+	// r.Body.Close()
 	var send []byte
 	var err error
 	if GetInstance(r).Response != nil && GetInstance(r).Get(STATUSCODE).(int) == 200 {
-		ck := GetInstance(r).Get(cache.CacheKey)
+		ck := GetInstance(r).Get(CacheKey)
 
 		if ck != nil {
 			cacheKey := ck.(string)
@@ -126,4 +127,69 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 		r.URL.Path, time.Since(start).Seconds(),
 		GetInstance(r).Get(STATUSCODE),
 		string(send))
+}
+
+func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
+	// 如果是管理员的，直接就过
+	// if uid == <adminId> {
+	// 	retrun false
+	// }
+
+	pages := GetInstance(r).Get(PAGES).(map[string]struct{})
+	// 如果长度为0的话，说明任何人都可以访问
+	if len(pages) == 0 {
+		return false
+	}
+	// todo: get user.role
+	role := ""
+	if _, ok := pages[role]; !ok {
+		return true
+	}
+
+	// roles := []string{"env", "important"}
+	// 内置的方法最大支持8种权限，如果想要更多可以通过 GetPerm 实现
+	// 设置权限列表
+	var pl = []string{"Read", "Create", "Update", "Delete"}
+	// map 的key 对应页面的value  value 对应二进制位置(从右到左)
+	permissionMap := make(map[string]int)
+	for k, v := range pl {
+		permissionMap[v] = k
+	}
+	// todo: perm  type uint8
+	perm := 14
+	result := GetPerm(pl, uint8(perm))
+	for index, ok := range result {
+		currFuncName := GetInstance(r).GetFuncName()
+		if ok && strings.Contains(currFuncName, pl[index]) {
+			return false
+		}
+	}
+	// no permission
+	return true
+	// 假如权限拿到二进制对应的10进制数据是下面
+	// perm = 14       // 00001110   {"Delete", "Create", "Update"}
+	// perm = 10       // 00001010   {"Create", "Delete"}
+	// perm = 4        // 00000100   {"Update"}
+
+	//
+
+	//  请求/project/read     map[admin:{} project:{}]
+	// 判断 pages 是否存在 perm
+	// 注意点： 这里的页面权限本应该只会匹配到一个， 这个是对于的页面权限的值
+
+	// permMap := make(map[string]bool)
+
+	// 先拿到pl 对应名称的 索引
+	//         8        4        2          1
+	//		 delete	 update	 create		read
+	//  bit   0        0       0         0
+	/*
+		用户表
+		id
+		1
+		权限表
+		id      uid   roles                       perm
+		1       1     "env"                       0-15
+		2       1     "important"
+	*/
 }

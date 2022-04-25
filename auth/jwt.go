@@ -1,4 +1,4 @@
-package xmux
+package auth
 
 import (
 	"crypto/hmac"

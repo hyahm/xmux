@@ -197,9 +197,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	if r.Exit == nil {
-		defer exit(start, w, req)
-	} else {
+	if r.Exit != nil {
 		defer r.Exit(start, w, req)
 	}
 	if stop {
@@ -405,6 +403,7 @@ func NewRouter(cache ...uint64) *Router {
 		tpl:            make(UMR),
 		header:         map[string]string{},
 		params:         make(map[string][]string),
+		Exit:           exit,
 		RequestBytes:   requestBytes,
 		module: &module{
 			filter:    make(map[string]struct{}),
@@ -453,7 +452,7 @@ func (r *Router) cloneHeader() mstringstring {
 }
 
 // 组路由合并到每个单路由里面
-func (r *Router) merge(group *GroupRoute, route *Route) {
+func (r *Router) merge(group *RouteGroup, route *Route) {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
@@ -510,7 +509,7 @@ func (r *Router) merge(group *GroupRoute, route *Route) {
 
 // 组路由添加到router里面,
 // 挂载到group之前， 全局的变量已经挂载到route 里面了， 所以不用再管组变量了
-func (r *Router) AddGroup(group *GroupRoute) *Router {
+func (r *Router) AddGroup(group *RouteGroup) *Router {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}

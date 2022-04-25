@@ -1,29 +1,34 @@
-# xmux， go语言 路由(router)
-应该是基于原生net.http 极简并强大的路由
-专注前后端分离项目， 良好的设计可以大量减少代码冗余   
+# xmux
+基于原生net.http 极简高灵活性 专注前后端分离项目
 
 [视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
 
-### 特性
-- [x] 支持路由分组
-- [x] 支持全局请求头， 组请求头， 私有请求头
-- [x] 正则匹配支持（int(\d+), word(\w+), re, string, all(.*?)，不写默认 word
-- [x] 支持三大全局 HanleFavicon, HandleNotFound, HandleOptions）  
-- [x] 强大的模块让你的代码模块化变得非常简单 
-- [x] 数据绑定(请求和返回)
-- [x] 增加websocket， 可以学习， 如果其他的不好可以试试  
-- [x] 集成pprof， 通过 router.AddGroup(xmux.Pprof()) 挂载
-- [x] 支持权限控制
-- [x] 进入时和处理完成时的钩子函数 
-- [x] 高灵活性和高定制
-- [x] 内置缓存
+### 导航
+- [安装](#install)
+- [快速开始](#start)
+- [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
+- [路由组](#group)
+- [自动检测重复项](#check)
+- [上下文传值](#variable)
+- [自动忽略斜杠](#slash)
+- [模块](#module)
+- [钩子函数](#hook)
+- [设置请求头](#header)
+- [数据绑定](#bind)
+- [url正则匹配](#regex)
+- [websocket](#websocket)
+- [权限控制模块](#permission)
+- [缓存模块](#cache)
+- [pprof组](#pprof)
 
-### 安装
+
+### 安装<a id="install"></a>  
 ```
 go get github.com/hyahm/xmux
 ```
 
-### 最简单的运行
+### 快速开始<a id="start"></a>  
+
 ```
 package main
 
@@ -42,9 +47,9 @@ func main() {
 }
 ```
 
-打开 localhost:8080 就能看到 hello world!
+打开 http://localhost:8080 就能看到 hello world!
 
-### 请求方式
+### 请求方式<a id="method"></a>
 ```
 package main
 
@@ -65,7 +70,7 @@ func main() {
 }
 ```
 
-### 添加了组的概念
+### <a id="group">路由组</a>
 
 > aritclegroup.go
 ```go
@@ -75,10 +80,10 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-var Article *xmux.GroupRoute
+var Article *xmux.RouteGroup
 
 func init() {
-	Article = xmux.NewGroupRoute()
+	Article = xmux.NewRouteGroup()
 	Article.Get("/{int:id}", hello)
 
 }
@@ -90,60 +95,25 @@ func main() {
 	router.AddGroup(aritclegroup.Article)
 }
 ```
-### 更灵活的匹配
-```go
-func main() {
-	router := xmux.NewRouter()
-	router.Get("/foo/{all:age}", foo)
-	router.Get("/{all:age}", show)   // 这个可以匹配任何路由
-	router.Post("/{all:age}", Who)   // 这个可以匹配任何路由
-	router.Run()
-}
-```
 
-记住， 是100%，  此路由优先匹配完全匹配规则， 匹配不到再寻找 正则匹配， 加快了寻址速度  
-访问 /foo/get  get -> 识别 foo 
-访问 /foo/get  get -> 识别 show   
-访问 /foo/post  post   -> 识别 Who  
 
-### 自动检测重复项,
+### 自动检测重复项 <a id="check"></a>
 ```go
 func main() {
 	router := xmux.NewRouter()
 	router.Get("/get",show) // 不同请求分别处理
-	router.Get("/get",show) // 不同请求分别处理
+	router.Get("/get",nil) // 不同请求分别处理
 	router.Run()
 }
 写一大堆路由，  有没有重复的都不知道  
 运行上面将会报错， 如下  
-2019/11/29 21:51:11 pattern duplicate for /get
+2019/11/29 21:51:11 GET pattern duplicate for /get
 
 ```
 
 
-###  传值
 
-- 其中，这4个是内置的，请勿赋值, 这4个是全局的，
-  -   xmux.CONNECTID() ：               连接的id（任何地方都可以使用）
-      新版替换成了 xmux.GetInstance(r).GetConnectId()
-  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值） 
-      新版替换成了 xmux.GetInstance(r).GetCurrFuncName()
-  -   xmux.PAGES：                        跟页面权限有关（从模块开始才有值）
-  -   xmux.STATUSCODE：            接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
--  自定义的值是从模块开始才能赋值
-
-```
-# 设置值
-xmux.GetInstance(r).Set("key", "value")
-
-# 获取值
-xmux.GetInstance(r).Get("key")
-```
-
-
-
-
-###  自动格式化url
+###  忽略url斜杠 <a id="slash"></a>
 
 将任意多余的斜杠去掉例如
 /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
@@ -180,7 +150,7 @@ func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 
 ```
 
-###  模块 （代替其他框架的中间件功能，并且更灵活更简单）
+###  模块 （代替其他框架的中间件功能，并且更灵活更简单）<a id="module"></a>
 **核心理念： 任何逻辑都可以是一个模块， 最后组合而成的就是一个完整接口功能**
 
 - 模块类 优先级   
@@ -196,14 +166,6 @@ func home(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// 这个是其他框架用的简单中间件， 只用来做对比的
-func mid() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Println("77777")
-		return
-	})
-}
 
 func hf(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("44444444444444444444444444")
@@ -224,12 +186,72 @@ func main() {
 
 ```
 
-### Enter, Exit 进入和退出的钩子
 
-- RequestBytes func([]byte, *http.Request)         ：      自定义内置解析的请求数据处理    
-- NotFoundRequireField                                          ： 必要字段验证失败的处理勾子
-- UnmarshalError                                                      ： 内置解析解析错误的勾子
+###  上下文传值<a id="variable"></a>
 
+- 其中，这4个是内置的，请勿赋值, 这4个是全局的，
+  -   xmux.CONNECTID() ：               连接的id（任何地方都可以使用）
+      新版替换成了 xmux.GetInstance(r).GetConnectId()
+  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值） 
+      新版替换成了 xmux.GetInstance(r).GetCurrFuncName()
+  -   xmux.PAGES：                        跟页面权限有关（从模块开始才有值）
+  -   xmux.STATUSCODE：            接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
+-  自定义的值是从模块开始才能赋值
+
+```
+# 设置值
+xmux.GetInstance(r).Set("key", "value")
+
+# 获取值
+xmux.GetInstance(r).Get("key")
+```
+
+```go
+func hf1(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("login mw")
+	xmux.GetInstance(r).Set("name","xmux")
+	r.Header.Set("bbb", "ccc")
+	return false
+}
+
+func hf(w http.ResponseWriter, r *http.Request) bool {
+	name := xmux.GetInstance(r).Get("name").(string)
+    fmt.Println(name)
+	w.Write([]byte("hello world " + name))
+	return false
+}
+
+func home(w http.ResponseWriter, r *http.Request)  {
+    fmt.Println(name)
+}
+
+func main() {
+	router := xmux.NewRouter().AddModule(hf).SetHeader("name", "cander")
+	router.Exit = exit
+	router.Enter = enter
+	router.Get("/home/{test}",home).AddModule(hf1)  // 此处会先执行 hf -> hf1 -> home
+	router.Get("/test/{test}",home).DelModule(hf)  // 此处直接执行 home
+	router.Run()
+}
+
+
+```
+
+> curl http://localhost:8080/aaa/name
+
+```
+login mw
+name
+```
+
+
+### 钩子<a id="hook"></a>
+
+- RequestBytes func([]byte, *http.Request)                         :      自定义内置解析的请求数据处理    
+- NotFoundRequireField                                             : 必要字段验证失败的处理勾子
+- UnmarshalError                                                   : 内置解析解析错误的勾子
+- Exit (start time.Time, w http.ResponseWriter, r *http.Request)   : 
+- Enter( w http.ResponseWriter, r *http.Request) bool              : 
 ```go
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
@@ -245,17 +267,10 @@ func enter( w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 
-func main() {
-	router := xmux.NewRouter().AddModule(hf).SetHeader("name", "cander")
-	router.Exit = exit
-	router.Enter = enter
-	router.Get("/home/{test}",home).AddModule(hf1)  // 此处会先执行 hf -> hf1 -> home
-	router.Get("/test/{test}",home).DelModule(hf)  // 此处直接执行 home
-	router.Run()
-}
+
 ```
 
-### SetHeader 
+### 设置请求头 <a id="header"></a>
 跨域主要是添加请求头的问题, 其余框架一般都是借助中间件来设置   
 但是本路由借助上面请求头设置 大大简化跨域配置  
 
@@ -275,60 +290,9 @@ func main() {
 }
 ```
 
-### 生命周期内的传递值   
-> 生命周期从定义开始， 到此handle执行完毕将被释放
-```go
-func filter(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("login mw")
-	xmux.GetInstance(r).Set("name","xmux")
-	r.Header.Set("bbb", "ccc")
-	return false
-}
-
-func name(w http.ResponseWriter, r *http.Request) {
-	name := xmux.GetInstance(r).Get("name").(string)
-    fmt.Println(name)
-	w.Write([]byte("hello world " + name))
-	return
-}
-
-func main() {
-	router := xmux.NewRouter()
-	router.Get("/aaa/{name}", name).AddModule(filter)  // 通过 xmux.GetInstance(r) 可以再在module handle 进行值的传递
-	router.Run()
-}
 
 
-```
-
-> /aaa/name
-
-```
-login mw
-name
-```
-
-
-
-
-
-### 获取正则匹配的参数
-
-```go
-func Who(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(xmux.Var(r)["name"])
-	fmt.Println(xmux.Var(r)["age"])
-	w.Write([]byte("yes is mine"))
-	return
-}
-
-func main() {
-	router := xmux.NewRouter()
-	router.Get("/aaa/{name}/{int:age}", Who)
-	router.Run()
-}
-```
-### 数据绑定（绑定解析后的数据从模块之前开始生效）
+### 数据绑定（绑定解析后的数据从模块之前开始生效）<a id="bind"></a>
 
 - BindJson:       绑定的是一个json
 - BindXml：     绑定是一个xml
@@ -407,22 +371,11 @@ func main() {
 	router := xmux.NewRouter().BindResponse(data)
 ```
 
-- 通过.BindResponse(nil) 来设置取消使用全局绑定
+ 通过.BindResponse(nil) 来设置取消使用全局绑定  
 
 
 
-### 自动修复请求的url
-
-例如： 请求的url 是这个样子的
-http://www.hyahm.com/mmm///af/af,  默认是请求不到的
-但是设置后
-```go
-router := xmux.NewRouter()
-router.IgnoreSlash = true  
-```
-是可以直接访问 http://www.hyahm.com/mmm/af/af 这个地址的请求
-
-### 匹配路由
+### 匹配路由 <a id="regex"></a>  
 支持以下5种   
  word   只匹配数字和字母下划线（默认）    
  string  匹配所有不含/的字符    
@@ -446,7 +399,8 @@ xmux.Var(r)["name"]
 后面会增加自定义正则匹配
 
 
-### 内置websocket, 下面是一个完整的例子
+### websocket <a id="websocket"></a>
+下面是一个完整的例子
 ```go
 package main
 
@@ -543,6 +497,105 @@ func main() {
 
 ```
 
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>go websocket</title>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <script type="text/javascript">
+        var wsUri = "ws://localhost:8888/3";
+        var output;
+        var connect = false;
+   
+        function init() {
+            output = document.getElementById("output");
+            testWebSocket();
+        }
+
+        function testWebSocket() {
+            websocket = new WebSocket(wsUri, WebSocket.binaryType);
+            websocket.onopen = function(evt) {
+                onOpen(evt)
+            };
+            websocket.onclose = function(evt) {
+                onClose(evt)
+            };
+            websocket.onmessage = function(evt) {
+                onMessage(evt)
+            };
+            websocket.onerror = function(evt) {
+                onError(evt)
+            };
+        }
+
+        function onOpen(evt) {
+            writeToScreen("CONNECTED");
+            connect = true
+                // doSend("WebSocket rocks");
+        }
+
+        function onClose(evt) {
+            connect = false
+            writeToScreen("DISCONNECTED");
+        }
+
+        function onMessage(evt) {
+
+            msg = String.fromCharCode(evt.data)
+            console.log(msg)
+            writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data + '</span>');
+            // websocket.close();
+        }
+
+        function onError(evt) {
+            writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+        }
+
+        function doSend(message) {
+            if (!connect) {
+                console.log("connect error")
+                return
+            }
+            writeToScreen("SENT: " + message);
+            websocket.send(message);
+        }
+
+        function writeToScreen(message) {
+            var pre = document.createElement("p");
+            pre.style.wordWrap = "break-word";
+
+            pre.innerHTML = message;
+            output.appendChild(pre);
+        }
+
+        window.addEventListener("load", init, false);
+
+        function sendBtnClick() {
+            var msg = document.getElementById("input").value;
+            doSend(msg);
+            document.getElementById("input").value = '';
+        }
+
+        function closeBtnClick() {
+            websocket.close();
+        }
+    </script>
+    <h2>WebSocket Test</h2>
+    <input type="text" id="input"></input>
+    <button onclick="sendBtnClick()">send</button>
+    <button onclick="closeBtnClick()">close</button>
+    <div id="output"></div>
+
+</body>
+
+</html>
+```
+
 ### 获取当前的连接数
 ```go
 xmux.GetConnents()
@@ -560,7 +613,7 @@ xmux.StopService()
 xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不写默认缓存10000， 请根据情况自己修改
 ```
 
-###  权限控制
+###  权限控制 <a id="permission"></a>
 - 页面权限
   思路来自前端框架路由组件 meta 的 roles  
   通过给定数组来判断
@@ -678,96 +731,123 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
 - 更加细致的增删改查权限但不限于 增删改查
   想过最简单的是根据 handle 的函数名 来判断， 
 
-  以下内容来自xmuxd的权限模板  xmux.DefaultPermissionTemplate
-
-```go
-// 页面权限示例 类似 setheader
-// 
-// AddPageKeys("admin", "me", "xxx")  // 添加 roles 角色， 类似 前端路由的的roles字段
-// DelPageKeys("admin")  // 某些节点或组删除掉这些角色权限
+  可以参考xmux的权限模板  xmux.DefaultPermissionTemplate
 
 
-// CURD 权限， 需要统一handle 函数命令才可以，  比如增删改查对应的 handle 就是
-// Create  Update Delete List
-// 通过 module 来过滤细致权限
-
-func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
-	// 如果是管理员的，直接就过
-	// if uid == <adminId> {
-	// 	retrun false
-	// }
-
-	// roles := []string{"env", "important"}
-	// 内置的方法最大支持8种权限，如果想要更多可以自己实现
-	var pl = []string{"Read", "Create", "Update", "Delete"}
-	// map 的key 对应页面的value  value 对应二进制位置(从右到左)
-	permissionMap := make(map[string]int)
-	for k, v := range pl {
-		permissionMap[v] = k
-	}
-	// 假如权限拿到二进制对应的10进制数据是下面
-	perm := make(map[string]uint8)
-	perm["env"] = 14       // 00001110   {"Delete", "Create", "Update"}
-	perm["important"] = 10 // 00001010   {"Create", "Delete"}
-	perm["project"] = 4    // 00000100   {"Update"}
-
-	//
-	pages := GetInstance(r).Get(PAGES).(map[string]struct{})
-	// 如果长度为0的话，说明任何人都可以访问
-	if len(pages) == 0 {
-		return false
-	}
-	//  请求/project/read     map[admin:{} project:{}]
-	// 判断 pages 是否存在 perm
-	// 注意点： 这里的页面权限本应该只会匹配到一个， 这个是对于的页面权限的值
-	page := ""
-	// 判断页面权限的
-	hasPerm := false
-	for role := range perm {
-		if _, ok := pages[role]; ok {
-			hasPerm = true
-			page = role
-			break
-		}
-	}
-	if !hasPerm {
-		w.Write([]byte("没有页面权限"))
-		return true
-	}
-	// permMap := make(map[string]bool)
-	result := GetPerm(pl, perm[page])
-	handleName := GetInstance(r).getfun
-	// 这个值就是判断有没有这个操作权限
-	if !result[permissionMap[handleName]] {
-		w.Write([]byte("没有权限"))
-		return true
-	}
-	// 先拿到pl 对应名称的 索引
-	//         8        4        2          1
-	//		 delete	 update	 create		read
-	//  bit   0        0       0         0
-	/*
-		用户表
-		id
-		1
-		权限表
-		id      uid   roles                       perm
-		1       1     "env"                       0-15
-		2       1     "important"
-	*/
-	return false
-}
-
-```
-
-### 缓存
+### 缓存 <a id="cache"></a>
 
 - 初始化缓存  xmux.InitResponseCache()
 - 需要设置缓存的 key 的模块（核心的模块， 如果没设置的话， 就不用缓存）
   - 为了设置 CacheKey的值 xmux.GetInstance(r).Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
 - 需要挂载缓存模块 
 
+> 没有绑定返回数据的例子
+```go
+package main
 
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/hyahm/xmux"
+	"github.com/hyahm/xmux/cache"
+)
+
+func c(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming c")
+	now := time.Now().String()
+	cache.SetCache("/aaa", []byte(now))
+	w.Write([]byte(now))
+}
+
+func noCache(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("update c")
+	cache.NeedUpdate("/aaa")
+	w.Write([]byte("update"))
+}
+
+func noCache1(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming noCache1")
+	now := time.Now().String()
+	w.Write([]byte(now))
+}
+
+func setKey(w http.ResponseWriter, r *http.Request) bool {
+	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
+	fmt.Print(r.URL.Path + " is cached")
+	return false
+}
+
+type Response struct {
+	Code int         `json:"code"`
+	Data interface{} `json:"data"`
+}
+
+func main() {
+	cache.InitResponseCache()
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) // 设置所有路由都缓存
+	router.Get("/aaa", c)                                  // 缓存了
+	router.Get("/update/aaa", noCache).DelModule(setKey)   // 更新/aaa 缓存
+	router.Get("/no/cache1", noCache1).DelModule(setKey)   // 没缓存
+	router.Run()
+}
+
+```
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/hyahm/xmux"
+	"github.com/hyahm/xmux/cache"
+)
+
+func c(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming c")
+	now := time.Now().String()
+	xmux.GetInstance(r).Response.(*Response).Data = now
+}
+
+func noCache(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("update c")
+	cache.NeedUpdate("/aaa")
+}
+
+func noCache1(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming noCache1")
+	now := time.Now().String()
+	xmux.GetInstance(r).Response.(*Response).Data = now
+}
+
+func setKey(w http.ResponseWriter, r *http.Request) bool {
+	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
+	fmt.Print(r.URL.Path + " is cached")
+	return false
+}
+
+type Response struct {
+	Code int         `json:"code"`
+	Data interface{} `json:"data"`
+}
+
+func main() {
+	r := &Response{
+		Code: 0,
+	}
+	cache.InitResponseCache()
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 设置所有路由都缓存
+	router.BindResponse(r)
+	router.Get("/aaa", c)                                // 缓存了
+	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存
+	router.Get("/no/cache1", noCache1).DelModule(setKey) // 没缓存
+	router.Run()
+}
+```
 
 ### 客户端文件下载（官方内置方法 mp4文件为例）
 
@@ -810,20 +890,6 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 
 
 
->  接口请求参数tag 示例
-```
-type Home struct {
-	Addr   string `json:"addr" type:"string" need:"是" default:"深圳" information:"家庭住址"`
-	People int    `json:"people" type:"int" need:"是" default:"1" information:"有多少个人"`
-}
-```
->  接口接收参数tag 示例, 比请求示例少了 default
-```
-type Call struct {
-	Code int    `json:"code" type:"int" need:"是" information:"错误返回码"`
-	Msg  string `json:"msg" type:"string" need:"否" information:"错误信息"`
-}
-```
 ### 性能分析
 
 ```

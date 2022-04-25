@@ -119,8 +119,8 @@ func TestModule(t *testing.T) {
 
 }
 
-func subgroup() *GroupRoute {
-	sub := NewGroupRoute().AddModule(m2, m3).DelModule(m1)
+func subgroup() *RouteGroup {
+	sub := NewRouteGroup().AddModule(m2, m3).DelModule(m1)
 	sub.Get("/sub/get", nil)
 	sub.Post("/sub/post", nil)
 	sub.Any("/sub/any", nil)
@@ -128,8 +128,8 @@ func subgroup() *GroupRoute {
 	return sub
 }
 
-func sub1group() *GroupRoute {
-	sub1 := NewGroupRoute().AddModule(m4)
+func sub1group() *RouteGroup {
+	sub1 := NewRouteGroup().AddModule(m4)
 	sub1.Get("/sub1/get", nil).AddModule(m5)
 	sub1.Post("/sub1/post", nil).DelModule(m3)
 	sub1.Any("/sub1/any", nil)
@@ -137,16 +137,16 @@ func sub1group() *GroupRoute {
 	return sub1
 }
 
-func sub2group() *GroupRoute {
-	sub1 := NewGroupRoute().AddModule(m5)
+func sub2group() *RouteGroup {
+	sub1 := NewRouteGroup().AddModule(m5)
 	sub1.Get("/sub2/get", nil)
 	sub1.Post("/sub2/post", nil).DelModule(m3)
 	sub1.Any("/sub2/any", nil)
 	return sub1
 }
 
-func sub3group() *GroupRoute {
-	sub1 := NewGroupRoute()
+func sub3group() *RouteGroup {
+	sub1 := NewRouteGroup()
 	sub1.Get("/sub3/get", nil)
 	sub1.Post("/sub3/post", nil)
 	sub1.Any("/sub3/any", nil)
@@ -154,8 +154,8 @@ func sub3group() *GroupRoute {
 	return sub1
 }
 
-func sub4group() *GroupRoute {
-	sub1 := NewGroupRoute().AddModule(m3)
+func sub4group() *RouteGroup {
+	sub1 := NewRouteGroup().AddModule(m3)
 	sub1.Get("/sub4/get", nil)
 	sub1.Post("/sub4/post", nil).AddModule(m4)
 	sub1.Any("/sub4/any", nil)

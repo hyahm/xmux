@@ -10,8 +10,9 @@ import (
 
 func BenchmarkOneRoute(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {})
-	runRequest(B, router, "Get", "/ping")
+	runRequest(B, router, http.MethodGet, "/ping")
 }
 
 func BenchmarkRecoveryMiddleware(B *testing.B) {

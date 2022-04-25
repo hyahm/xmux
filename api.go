@@ -77,11 +77,11 @@ package xmux
 // 	w.Write(send)
 // }
 
-// func (r *Router) ShowApi(pattern string) *GroupRoute {
+// func (r *Router) ShowApi(pattern string) *RouteGroup {
 // 	if !r.new {
 // 		panic("must be use get router by NewRouter()")
 // 	}
-// 	api := NewGroupRoute()
+// 	api := NewRouteGroup()
 // 	NewDocs(r)
 // 	api.Get("/-/js/{name}.js", js).SetHeader("Content-Type", "application/javascript; charset=utf8")
 // 	api.Get("/-/css/{name}.css", css).SetHeader("Content-Type", "text/css; charset=utf8")

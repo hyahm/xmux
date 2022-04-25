@@ -2,9 +2,11 @@ package xmux
 
 import "github.com/hyahm/xmux/cache"
 
-func ResponseCache() *GroupRoute {
+const CacheKey = "CacheKey"
+
+func ResponseCache() *RouteGroup {
 	cache.InitResponseCache()
-	cache := NewGroupRoute()
+	cache := NewRouteGroup()
 	// cache.Post("/-/cache/size", list)
 	// cache.Post("/-/cache/add", list)
 	// cache.Post("/-/cache/del", list)

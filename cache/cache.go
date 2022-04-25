@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-const CacheKey = "CacheKey"
-
 // cache 是一个接口
 type cacher interface {
 	SetCache(key string, cache []byte) // 设置缓存保存的结构体
@@ -29,14 +27,6 @@ func SetCache(key string, cache []byte) {
 	rc.store[key].update = time.Now()
 }
 
-func SetNeedUpdateToUpdate(key string) {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-	if _, ok := rc.store[key]; ok {
-		rc.store[key].response = []byte("")
-	}
-}
-
 // 如果key存在，就设置缓存
 func SetCacheIfExsits(key string, cache []byte) {
 	rc.mu.RLock()
@@ -48,7 +38,7 @@ func SetCacheIfExsits(key string, cache []byte) {
 	}
 }
 
-// 获取缓存值
+// 获取缓存值, 如果不存在返回nil
 func GetCache(key string) []byte {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
@@ -56,16 +46,6 @@ func GetCache(key string) []byte {
 		return rc.store[key].response
 	}
 	return nil
-}
-
-// 获取缓存，如果存在
-func GetCacheIfExsits(key string) ([]byte, bool) {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-	if _, ok := rc.store[key]; ok {
-		return rc.store[key].response, true
-	}
-	return nil, false
 }
 
 type CacheStatus string
@@ -81,7 +61,7 @@ const (
 // 如果返回 NotFoundCache    说明不存在这个缓存
 // 如果返回 CacheIsUpdateing  说明当前还在更新中， 还不是最新的缓存
 // 如果返回 CacheNeedUpdate  说明缓存需要更新
-// 如果返回 NotFoundCache 说明是最新的，可以直接返回
+// 如果返回 CacheHit 说明是最新的，可以直接返回
 func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
@@ -117,11 +97,19 @@ func IsUpdate(key string) bool {
 	return false
 }
 
+// need update cache
 func NeedUpdate(key string) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	if _, ok := rc.store[key]; ok {
+		rc.store[key].isUpdate = true
 		rc.store[key].response = nil
+	} else {
+		rc.store[key] = &cacheStruct{
+			isUpdate: true,
+			update:   time.Now(),
+			response: nil,
+		}
 	}
 }
 
@@ -130,19 +118,21 @@ func SetUpdate(key string) {
 	defer rc.mu.Unlock()
 	if _, ok := rc.store[key]; ok {
 		rc.store[key].isUpdate = true
+		rc.store[key].response = []byte("")
 	} else {
 		rc.store[key] = &cacheStruct{
 			isUpdate: true,
 			update:   time.Now(),
+			response: []byte(""),
 		}
 	}
 }
 
 type cacheStruct struct {
-	response   []byte
-	update     time.Time // 最后一次更新的时间， 用来判断最后更新的时间
-	isUpdate   bool      // 判断是否在刷新缓存中
-	needUpdate bool      // 设置需要更新
+	response []byte
+	update   time.Time // 最后一次更新的时间， 用来判断最后更新的时间
+	isUpdate bool      // 判断是否在刷新缓存中
+	// needUpdate bool      // 设置需要更新
 }
 
 var rc *responseCache

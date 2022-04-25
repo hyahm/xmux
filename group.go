@@ -10,7 +10,7 @@ import (
 )
 
 // 服务启动前的操作， 所以里面的map 都是单线程不需要加锁的
-type GroupRoute struct {
+type RouteGroup struct {
 	new bool
 	// 感觉还没到method， 应该先uri后缀的
 	route            UMR // 完全匹配的路由对应的methodsroute
@@ -27,8 +27,8 @@ type GroupRoute struct {
 	delPageKeys map[string]struct{}
 }
 
-func NewGroupRoute() *GroupRoute {
-	return &GroupRoute{
+func NewRouteGroup() *RouteGroup {
+	return &RouteGroup{
 		header: make(map[string]string),
 		module: &module{
 			filter:    make(map[string]struct{}),
@@ -43,16 +43,16 @@ func NewGroupRoute() *GroupRoute {
 	}
 }
 
-func (g *GroupRoute) BindResponse(response interface{}) *GroupRoute {
+func (g *RouteGroup) BindResponse(response interface{}) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	g.responseData = response
 	g.bindResponseData = true
 	return g
 }
 
-func (g *GroupRoute) DebugAssignRoute(thisurl string) {
+func (g *RouteGroup) DebugAssignRoute(thisurl string) {
 	if !g.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -64,7 +64,7 @@ func (g *GroupRoute) DebugAssignRoute(thisurl string) {
 	}
 }
 
-func (g *GroupRoute) DebugIncludeTpl(pattern string) {
+func (g *RouteGroup) DebugIncludeTpl(pattern string) {
 	if !g.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -75,9 +75,9 @@ func (g *GroupRoute) DebugIncludeTpl(pattern string) {
 	}
 }
 
-func (g *GroupRoute) AddPageKeys(pagekeys ...string) *GroupRoute {
+func (g *RouteGroup) AddPageKeys(pagekeys ...string) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	// 接口的请求头
 	for _, v := range pagekeys {
@@ -89,17 +89,17 @@ func (g *GroupRoute) AddPageKeys(pagekeys ...string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) SetHeader(k, v string) *GroupRoute {
+func (g *RouteGroup) SetHeader(k, v string) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	g.header[k] = v
 	return g
 }
 
-func (g *GroupRoute) DelHeader(headers ...string) *GroupRoute {
+func (g *RouteGroup) DelHeader(headers ...string) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	if g.delheader == nil {
 		g.delheader = make(map[string]struct{})
@@ -110,9 +110,9 @@ func (g *GroupRoute) DelHeader(headers ...string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) DelPageKeys(pagekeys ...string) *GroupRoute {
+func (g *RouteGroup) DelPageKeys(pagekeys ...string) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	if g.delPageKeys == nil {
 		g.delPageKeys = make(map[string]struct{})
@@ -123,17 +123,17 @@ func (g *GroupRoute) DelPageKeys(pagekeys ...string) *GroupRoute {
 	return g
 }
 
-func (g *GroupRoute) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
+func (g *RouteGroup) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	g.module.add(handles...)
 	return g
 }
 
-func (g *GroupRoute) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *GroupRoute {
+func (g *RouteGroup) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	for _, handle := range handles {
 		g.delmodule[helper.GetFuncName(handle)] = struct{}{}
@@ -145,7 +145,7 @@ func (g *GroupRoute) DelModule(handles ...func(http.ResponseWriter, *http.Reques
 // 根据路径来判断是不是正则表达式， 分别挂载到组路由的tpl 和 route 中
 // 路径对应的 params 全部都在 pattern 中
 // 返回url 和 是否是正则表达式
-func (g *GroupRoute) makeRoute(pattern string) (string, []string, bool) {
+func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
 	// 格式路径
 	if v, listvar := match(pattern); len(listvar) > 0 {
 		return v, listvar, true
@@ -155,7 +155,7 @@ func (g *GroupRoute) makeRoute(pattern string) (string, []string, bool) {
 	}
 }
 
-func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
+func (g *RouteGroup) merge(group *RouteGroup, route *Route) {
 	// 合并head
 	tempHeader := g.header.clone()
 
@@ -242,9 +242,9 @@ func (g *GroupRoute) merge(group *GroupRoute, route *Route) {
 }
 
 // 组路由添加到组路由
-func (g *GroupRoute) AddGroup(group *GroupRoute) *GroupRoute {
+func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 	if !g.new {
-		panic("must be init by NewGroupRoute()")
+		panic("must be init by NewRouteGroup()")
 	}
 	// 将路由的所有变量全部移交到route
 	if group == nil || (group.params == nil && group.route == nil) {

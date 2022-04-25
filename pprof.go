@@ -18,8 +18,8 @@ import (
 	"time"
 )
 
-func Pprof() *GroupRoute {
-	pprof := NewGroupRoute()
+func Pprof() *RouteGroup {
+	pprof := NewRouteGroup()
 	pprof.Get("/debug/pprof", index).SetHeader("Content-Type", "text/html; charset=utf-8")
 	pprof.Get("/debug/pprof/", index).SetHeader("Content-Type", "text/html; charset=utf-8")
 	pprof.Get("/debug/{name}", debug).SetHeader("Content-Type", "text/plain; charset=utf-8")

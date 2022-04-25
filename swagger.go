@@ -93,9 +93,9 @@ type SwaggerUIOpts struct {
 	Title string
 }
 
-func (r *Router) ShowSwagger(url, host string, schemes ...string) *GroupRoute {
+func (r *Router) ShowSwagger(url, host string, schemes ...string) *RouteGroup {
 	jsonPath := "/swagger.json"
-	swagger := NewGroupRoute().BindResponse(nil).SetHeader("Access-Control-Allow-Origin", "*")
+	swagger := NewRouteGroup().BindResponse(nil).SetHeader("Access-Control-Allow-Origin", "*")
 	swagger.SetHeader("Content-Type", "sec-ch-ua;sec-ch-ua-mobile;sec-ch-ua-platform")
 	swagger.SetHeader("Access-Control-Allow-Methods", "*")
 	swagger.Get(url, func(w http.ResponseWriter, r *http.Request) {
