@@ -44,12 +44,12 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 - [swagger group](#swagger)
 
 
-### Install<a id="install"></a>  
+# Install<a id="install"></a>  
 ```
 go get github.com/hyahm/xmux
 ```
 
-### Quick Start<a id="start"></a>  
+# Quick Start<a id="start"></a>  
 
 ```
 package main
@@ -71,7 +71,7 @@ func main() {
 
 open http://localhost:8080 in brower you can see hello world!
 
-### Multiple request method<a id="method"></a>
+# Multiple request method<a id="method"></a>
 ```go
 package main
 
@@ -92,7 +92,7 @@ func main() {
 }
 ```
 
-### Route Group<a id="group"></a>
+# Route Group<a id="group"></a>
 
 > aritclegroup.go  
 
@@ -120,7 +120,7 @@ func main() {
 ```
 
 
-### Automatically detect duplicates <a id="check"></a>
+# Automatically detect duplicates <a id="check"></a>
 Write a lot of routes. I don't know if there are duplicates  
 An error will be reported when running the above, as follows   
 ```go
