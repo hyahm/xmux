@@ -174,7 +174,10 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 			return
 		}
 	}
-	route.Handle.ServeHTTP(w, req)
+
+	if route.Handle.(http.HandlerFunc) != nil {
+		route.Handle.ServeHTTP(w, req)
+	}
 
 }
 

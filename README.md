@@ -20,6 +20,7 @@
 - [权限控制模块](#permission)
 - [缓存模块](#cache)
 - [pprof组](#pprof)
+- [swagger组](#swagger)
 
 
 ### 安装<a id="install"></a>  
@@ -595,6 +596,10 @@ func main() {
 
 </html>
 ```
+
+### 集成swagger <a id="swagger"></a>
+
+
 
 ### 获取当前的连接数
 ```go
