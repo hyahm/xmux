@@ -16,6 +16,7 @@
 - [x] 支持权限控制
 - [x] 进入时和处理完成时的钩子函数 
 - [x] 高灵活性和高定制
+- [x] 内置缓存
 
 ### 安装
 ```
@@ -759,7 +760,17 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 
 ```
 
+### 缓存
+
+- 初始化缓存  xmux.InitResponseCache()
+- 需要设置缓存的 key 的模块（核心的模块， 如果没设置的话， 就不用缓存）
+  - 为了设置 CacheKey的值 xmux.GetInstance(r).Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
+- 需要挂载缓存模块 
+
+
+
 ### 客户端文件下载（官方内置方法 mp4文件为例）
+
 ```go
 func PlayVideo(w http.ResponseWriter, r *http.Request) {
 	filename := xmux.Var(r)["filename"]
@@ -797,27 +808,8 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-### 编写接口文档， 
-> 使用接口文档,  第一个参数是组路由名， 第二个参数是挂载的路由uri
-== 组路由里面的静态文件 默认挂在 /-/css/xxx.css 和  /-/js/xxx.js 下 ==
-== 动态路由   /-/api/{int}.html  ==
 
-```go
-// 所有的文档相关的方法都以Api开头， 文档只支持单路由的单请求方式， 多请求方式会乱, 调用的时候只会显示到当前位置以上的路由
-router := xmux.NewRouter()
-api := router.ShowApi("/doc")
-router.ShowApi(api).
-ApiCreateGroup("test", "api test", "apitest").  //增加了侧边栏 所有组路由或单路由必须加上这个才会显示, 第一个参数是组key, 第二个是组的标题， 第三个是侧边栏url显示的文字 ， 或者添加到某个组上 ApiAddGroup(key), 组路由添加的key 会被子路由继承， 如果不想显示可以ApiAddGroup 挂载到其他路由或者 ApiExitGroup， 移除此组
-ApiDescribe("这是home接口的测试").  // 接口的简述
-ApiReqHeader("content-type", "application/json"). // 接口请求头
-ApiReqStruct(&Home{}).    // 接口请求参数， 由struct tag 提供（可以是结构体，也可以是结构体指针）
-ApiRequestTemplate(`{"addr": "shenzhen", "people": 5}`).   // 接口请求示例
-ApiResStruct(Call{}).     // 接口返回参数， 由struct tag 提供 （可以是结构体，也可以是结构体指针）
-ApiResponseTemplate(`{"code": 0, "msg": ""}`).  // 接口返回示例
-ApiSupplement("这个是接口的说明补充， 没补充就不填"). // 接口补充
-ApiCodeField("133").    // 错误码字段
-ApiCodeMsg("1", "56").ApiCodeMsg("3", "akhsdklfhl")   // 错误码说明， 多次调用添加多次
-```
+
 >  接口请求参数tag 示例
 ```
 type Home struct {

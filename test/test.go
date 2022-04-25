@@ -88,7 +88,6 @@ func main() {
 		name := xmux.Var(r)["name"]
 		xmux.GetInstance(r).Response.(*Global).Data = name
 	})
-
 	router.AddGroup(router.ShowSwagger("/docs", "127.0.0.1:8888"))
 	cache.InitResponseCache()
 	router.Run(":8888")

@@ -17,6 +17,8 @@ import (
 
 type bindType int
 
+const BODY = "body"
+
 const (
 	jsonT bindType = 1
 	yamlT bindType = 2
