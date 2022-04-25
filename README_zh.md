@@ -1,55 +1,37 @@
 # xmux
+基于原生net.http 极简高灵活性 专注前后端分离项目的路由   
+功能自己做主  
 
-Based on native net HTTP is extremely simple and flexible, focusing on the routing of front and back-end separation projects
+[视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
 
-Function is up to you
+简体中文 | [English](./README.md) | [简体中文](./README_zh.md) 
 
-[video tutorial](https://www.bilibili.com/video/BV1Ji4y1D7o3/ )
-
-English | [English](./README.md) | [简体中文](./README_zh.md) 
-### Navigation
-
-- [install](#install)
-
-- [quick start](#start)
-
+### 导航
+- [安装](#install)
+- [快速开始](#start)
 - [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
-
-- [routing group](#group)
-
-- [auto detect duplicates](#check)
-
-- [context value transfer](#variable)
-
-- [auto ignore slash](#slash)
-
-- [module](#module)
-
-- [hook function](#hook)
-
-- [set request header](#header)
-
-- [data binding](#bind)
-
-- [url regular match](#regex)
-
+- [路由组](#group)
+- [自动检测重复项](#check)
+- [上下文传值](#variable)
+- [自动忽略斜杠](#slash)
+- [模块](#module)
+- [钩子函数](#hook)
+- [设置请求头](#header)
+- [数据绑定](#bind)
+- [url正则匹配](#regex)
 - [websocket](#websocket)
-
-- [permission control module](#permission)
-
-- [cache module](#cache)
-
-- [pprof group](#pprof)
-
-- [swagger group](#swagger)
+- [权限控制模块](#permission)
+- [缓存模块](#cache)
+- [pprof组](#pprof)
+- [swagger组](#swagger)
 
 
-### Install<a id="install"></a>  
+### 安装<a id="install"></a>  
 ```
 go get github.com/hyahm/xmux
 ```
 
-### Quick Start<a id="start"></a>  
+### 快速开始<a id="start"></a>  
 
 ```
 package main
@@ -69,9 +51,9 @@ func main() {
 }
 ```
 
-open http://localhost:8080 in brower you can see hello world!
+打开 http://localhost:8080 就能看到 hello world!
 
-### Multiple request method<a id="method"></a>
+### 请求方式<a id="method"></a>
 ```
 package main
 
@@ -92,7 +74,7 @@ func main() {
 }
 ```
 
-### Route Group<a id="group"></a>
+### <a id="group">路由组</a>
 
 > aritclegroup.go
 ```go
@@ -119,26 +101,26 @@ func main() {
 ```
 
 
-### Automatically detect duplicates <a id="check"></a>
-Write a lot of routes. I don't know if there are duplicates  
-An error will be reported when running the above, as follows   
+### 自动检测重复项 <a id="check"></a>
 ```go
 func main() {
 	router := xmux.NewRouter()
-	router.Get("/get",show) // 
-	router.Get("/get",nil) // 
+	router.Get("/get",show) // 不同请求分别处理
+	router.Get("/get",nil) // 不同请求分别处理
 	router.Run()
 }
+写一大堆路由，  有没有重复的都不知道  
+运行上面将会报错， 如下  
+2019/11/29 21:51:11 GET pattern duplicate for /get
 
-
-2019/11/29 21:51:11 GET pattern duplicate for /get  
 ```
 
-#  ignore url path slash <a id="slash"></a>
 
 
-Remove any unnecessary slashes, for example  
-/asdf/sadf//asdfsadf/asdfsdaf////as/// -> /asdf/sadf/asdfsadf/asdfsdaf/as
+###  忽略url斜杠 <a id="slash"></a>
+
+将任意多余的斜杠去掉例如
+/asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
 
 ```go
 func main() {
@@ -149,46 +131,37 @@ func main() {
 	router.Run()
 }
 
-
+如果 router.IgnoreSlash = false
+那么运行上面将会报错，/get/被转为 /get 如下  
+2019/11/29 21:51:11 pattern duplicate for /get
 
 ```
 
-if 
-router.IgnoreSlash = false  
-Then an error will be reported when running the above, and / get / will be changed to / get as follows  
 
-**2019/11/29 21:51:11 pattern duplicate for /get**
-
-
-# Three Global handle
+### 三大全局handle
 ```go
-// This is the global options request processing. The front-end pre request is exempted. You have to write a pre request processing every time. By default, it will return OK, which can also be customized
-HandleOptions:        handleoptions(),  
-//404 is returned by default. You can also customize it
-HandleNotFound: 	  handleNotFound(),  
-// /favicon
-HanleFavicon：        methodNotAllowed(),   
+HandleOptions:        handleoptions(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理, 默认会返回ok， 也可以自定义
+HandleNotFound: 	  handleNotFound(),   // 默认返回404 ， 也可以自定义
+HanleFavicon：        methodNotAllowed(),    // 默认请求 favicon
 
-// The default method called is as follows. No route was found
+// 默认调用的方法如下， 没有找到路由
 func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	// Note: which is to pass the status code to exit and print the status code
+	// 注意这一行， 这是为了将状态码传递到exit中打印状态码
 	GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
 	w.WriteHeader(http.StatusNotFound)
 }
 
 ```
 
-#  Module which replaces the middleware functions of other frameworks and is more flexible and simple<a id="module"></a>
+###  模块 （代替其他框架的中间件功能，并且更灵活更简单）<a id="module"></a>
+**核心理念： 任何逻辑都可以是一个模块， 最后组合而成的就是一个完整接口功能**
 
-- Priority module
+- 模块类 优先级   
+  全局路由 > 组路由 > 私有路由 (如果存在优先级大先执行，。 
+  如果不想用可以在不想使用的路由点或路由组 DelModule 来单独删除)
 
-Global routing > group routing > private routing   
-if there is a high priority, execute first.
-
-If you don't want to use it, you can delete it separately at the route point or route group you don't want to use delmodule  
-
-**Note: Meaning of module return value: true: directly return to the client without subsequent processing. False means continue to execute downward**
+> 模块返回值的含义： true： 直接返回给客户端，不做后面的处理， false就是继续向下执行
 
 
 ```go
@@ -210,61 +183,112 @@ func hf1(w http.ResponseWriter, r *http.Request)  bool {
 
 func main() {
 	router := xmux.NewRouter().AddModule(hf).SetHeader("name", "cander")
-	router.Get("/home/{test}",home).AddModule(hf1)  // Module sequence hf -> hf1 -> home
-	router.Get("/test/{test}",home).DelModule(hf)  //  home
+	router.Get("/home/{test}",home).AddModule(hf1)  // 此处会先执行 hf -> hf1 -> home
+	router.Get("/test/{test}",home).DelModule(hf)  // 此处直接执行 home
 	router.Run()
 }
 
 ```
 
 
-#  Context value transfer<a id="variable"></a>
+###  上下文传值<a id="variable"></a>
 
 - 其中，这4个是内置的，请勿赋值, 这4个是全局的，
-  -   xmux.GetInstance(r).GetConnectId():     connect id（can run it anywhere）
-  -   xmux.GetInstance(r).GetCurrFuncName()：       Its value is always the function name of the processing function (can use until module)
-  -   xmux.PAGES：         It is related to page permission(can use until module)
-  -   xmux.STATUSCODE：  status code
-- Custom values can only be assigned from the module
+  -   xmux.CONNECTID() ：               连接的id（任何地方都可以使用）
+      新版替换成了 xmux.GetInstance(r).GetConnectId()
+  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值） 
+      新版替换成了 xmux.GetInstance(r).GetCurrFuncName()
+  -   xmux.PAGES：                        跟页面权限有关（从模块开始才有值）
+  -   xmux.STATUSCODE：            接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
+-  自定义的值是从模块开始才能赋值
 
 ```
-# set key value
+# 设置值
 xmux.GetInstance(r).Set("key", "value")
 
-# get value
+# 获取值
 xmux.GetInstance(r).Get("key")
 ```
 
-# Hook<a id="hook"></a>
+```go
+func hf1(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("login mw")
+	xmux.GetInstance(r).Set("name","xmux")
+	r.Header.Set("bbb", "ccc")
+	return false
+}
 
-- RequestBytes func([]byte, *http.Request)                         :      Custom built-in parsing request data processing    
-- NotFoundRequireField                                             : Processing tick for failed verification of require fields
-- UnmarshalError                                                   : Built in Unmarshal error hook
-- Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :  handle exit
-- Enter( w http.ResponseWriter, r *http.Request) bool              :  handle enter
+func hf(w http.ResponseWriter, r *http.Request) bool {
+	name := xmux.GetInstance(r).Get("name").(string)
+    fmt.Println(name)
+	w.Write([]byte("hello world " + name))
+	return false
+}
+
+func home(w http.ResponseWriter, r *http.Request)  {
+    fmt.Println(name)
+}
+
+func main() {
+	router := xmux.NewRouter().AddModule(hf).SetHeader("name", "cander")
+	router.Exit = exit
+	router.Enter = enter
+	router.Get("/home/{test}",home).AddModule(hf1)  // 此处会先执行 hf -> hf1 -> home
+	router.Get("/test/{test}",home).DelModule(hf)  // 此处直接执行 home
+	router.Run()
+}
 
 
+```
 
-# Set Header <a id="header"></a>
-Cross origin is mainly about adding request headers. Other frameworks are generally set up with the help of middleware
+> curl http://localhost:8080/aaa/name
 
-However, this route greatly simplifies the cross origin configuration with the help of the above request header settings
+```
+login mw
+name
+```
 
-Priority
 
-Private route > group route > global route (if there is one with high priority, the one with low priority will be overwritten)
+### 钩子<a id="hook"></a>
+
+- RequestBytes func([]byte, *http.Request)                         :      自定义内置解析的请求数据处理    
+- NotFoundRequireField                                             : 必要字段验证失败的处理勾子
+- UnmarshalError                                                   : 内置解析解析错误的勾子
+- Exit (start time.Time, w http.ResponseWriter, r *http.Request)   : 
+- Enter( w http.ResponseWriter, r *http.Request) bool              : 
+```go
+
+func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+	// 主要为了打印执行的时间
+	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
+}
+
+// 与module一样的效果， return true 就是直接返回， return false 就是继续 但是不支持 xmux.GetInstence(r)传参  
+// 主要用来过滤请求和调试
+func enter( w http.ResponseWriter, r *http.Request) bool {
+	// 任何请求都会进入到这里，比如过滤ip， 域名
+	
+	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
+}
+
+
+```
+
+### 设置请求头 <a id="header"></a>
+跨域主要是添加请求头的问题, 其余框架一般都是借助中间件来设置   
+但是本路由借助上面请求头设置 大大简化跨域配置  
+
+优先级  
+私有路由 > 组路由 > 全局路由  (如果存在优先级大的就覆盖优先级小的)
 
 ```go
-// For the example of cross origin processing, after setting the following request header, all routes will be attached to the request header,
-
-// If some routes have separate request headers, they can be set separately
+// 跨域处理的例子， 设置下面的请求头后， 所有路由都将挂载上请求头， 
+// 如果某些路由有单独请求头， 可以单独设置
 func main() {
 	router := xmux.NewRouter()
 	router.IgnoreSlash = true
-	// The main solution is cross origin. Because it is a global request header, all the routes added later support cross origin
-	router.SetHeader("Access-Control-Allow-Origin", "*")  
-	// Allowed request headers
-	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,Access-Token,X-Token,Origin,smail,authorization") 
+	router.SetHeader("Access-Control-Allow-Origin", "*")  // 主要的解决跨域, 因为是全局的请求头， 所以后面增加的路由全部支持跨域
+	router.SetHeader("Access-Control-Allow-Headers", "Content-Type,Access-Token,X-Token,Origin,smail,authorization")  // 新增加的请求头
 	router.Get("/", index)
 	router.Run()
 }
@@ -272,25 +296,22 @@ func main() {
 
 
 
-# Data binding (the data after binding analysis takes effect before the module) < a id = "bind" ></a>
+### 数据绑定（绑定解析后的数据从模块之前开始生效）<a id="bind"></a>
 
--Bindjason: bound is a JSON  
--Bindxml: binding is an XML  
--Bindform: a form is bound  
--Bind: custom processing binding (processed by module)  
+- BindJson:       绑定的是一个json
+- BindXml：     绑定是一个xml
+- BindForm：  绑定的是一个form
+- Bind：           自定义处理绑定（通过模块来进行处理）
 
 
 
-Validation field must required
-```
-type User struct {
-	Username string "json:"username,require"
-}
-```
+验证字段的必须存在
 
-- router.PrintRequestStr：  Print the content of the acceptance request body
 
-- xmux.MaxPrintLength： If the size of the printed form exceeds the specified size, it will not be printed (default 2K)
+
+router.PrintRequestStr：  是否打印接受请求体内容
+
+xmux.MaxPrintLength： 打印的form表单的大小如果超过指定的大小就不打印（默认2k）
 
 ```go
 func JsonToStruct(w http.ResponseWriter, r *http.Request) bool {
@@ -338,15 +359,14 @@ func main() {
 	router.Post("/important/name", AddName).Bind(&DataName{}).AddModule(JsonToStruct)
 	router.Post("/important/std", AddStd).Bind(&DataStd{}).AddModule(JsonToStruct)
 	router.Post("/important/foo", AddFoo).Bind(&DataFoo{}).AddModule(JsonToStruct)
-	// You can also directly use the built-in
-	// If it is in JSON format, you can directly bind JSON. The effect is similar to that above
-	router.Post("/important/foo/by/json", AddFoo).BindJson(&DataFoo{}) 
+	// 也可以直接使用内置的
+	router.Post("/important/foo/by/json", AddFoo).BindJson(&DataFoo{}) // 如果是json格式的可以直接 BindJson 与上面是类似的效果
 	router.Run()
 }
 
 ```
 
-- Binding return value
+- 绑定返回值
 
 ```
     data := &Response{
@@ -355,49 +375,36 @@ func main() {
 	router := xmux.NewRouter().BindResponse(data)
 ```
 
-Pass Bind response (nil) to set and cancel a route using global binding
+ 通过.BindResponse(nil) 来设置取消使用全局绑定  
 
 
 
-# Matching route <a id="regex"></a>  
-The following five types are supported
-
-Word matches only numbers and letter underscores (default)
-
-- string matches all characters without /
-
-- int match integer
-
-- all: match all, including/
-
-- re: Custom regular
-
-example: 
-- /aaa/{name} is the same as the following one, omitting the type, and the default is word  
-- /aaa/{string: name} This is the same as above. The string type  
-- /aaa/{int: name} matches the int type  
-- /aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age} This is a paragraph that matches two parameters name, age, 
-
-Curly braces indicate a matching rule, in which two colons are divided into three parts
-
-The first one: re indicates the use of custom rules. Only re has two colon divisions,
-
-The second: regular expression, which cannot appear: the parameters to be extracted are enclosed by (),
-
-Third: parameter name. The number of pairs () in the front and the number of parameters to be matched in the back are separated by commas
-
-For example:
-/aaa/adfaasf16sd
-
-This is a match. Name: aa age: 16
+### 匹配路由 <a id="regex"></a>  
+支持以下5种   
+ word   只匹配数字和字母下划线（默认）    
+ string  匹配所有不含/的字符    
+ int  匹配整数    
+ all： 匹配所有的包括/   
+ re： 自定义正则   
+/aaa/{name}          这个和下面一个一样， 省略类型， 默认是word  
+/aaa/{string:name}   这个和上面一样， string类型  
+/aaa/{int:name}       这个匹配int类型   
+/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd:name,age}  这个是一段里面匹配了2个参数 name, age，   
+大括号表示是个匹配规则，里面2个冒号分割了3部分 起头的  
+第一个: re表示用到自定义正则，只有re才会有2个冒号分割,   
+第二个： 正则表达式， 里面不能出现: 需要提取的参数用()括起来，   
+第三个: 参数名， 前面有多少对()， 后面就需要匹配多少个参数， 用逗号分割   
+例如： /aaa/adfaasf16sd  
+这个是匹配的， name: aa   age: 16  
 
 ```
 xmux.Var(r)["name"] 
 ```
+后面会增加自定义正则匹配
 
 
-# websocket <a id="websocket"></a>
-Here is a complete example
+### websocket <a id="websocket"></a>
+下面是一个完整的例子
 ```go
 package main
 
@@ -425,13 +432,11 @@ func sendMsg() {
 		c := <-msgchan
 		for p := range ps {
 			if c.c == p {
-				// Don't send it to yourself
+				// 不发给自己
 				continue
 			}
 			fmt.Println(c.msg)
-			
 			// 发送的msg的长度不能超过 1<<31, 否则掉内容， 建议分包
-			//The length of the sent MSG cannot exceed 1 < < 31, otherwise the content will be lost and subcontracting is recommended
 			p.SendMessage([]byte(c.msg), ps[p])
 		}
 	}
@@ -460,11 +465,11 @@ func ws(w http.ResponseWriter, r *http.Request) {
 		if p.Conn == nil {
 			return
 		}
-		// Package
+		// 封包
 		msgType, msg, err := p.ReadMessage()
 		if err != nil {
 			fmt.Println(err.Error())
-			// Disconnected
+			// 连接断开
 			wsmu.Lock()
 			delete(ps, p)
 			wsmu.Unlock()
@@ -595,9 +600,9 @@ func main() {
 </html>
 ```
 
-# swagger <a id="swagger"></a>
+### 集成swagger <a id="swagger"></a>
 
-> All applicable functions start with swagger, and the data structure is the same as [swagger]（ https://swagger.io/docs/specification/2-0/basic-structure/ ）The same as that of the document, please refer to the swagger data structure  
+> 适用的函数全部以Swagger开头， 数据结构与[swagger](https://swagger.io/docs/specification/2-0/basic-structure/  )文档的一样，请swagger数据结构  
     
 ```
 package main
@@ -613,37 +618,34 @@ func main() {
 
 ```
 
-# Gets the current number of connections
+### 获取当前的连接数
 ```go
 xmux.GetConnents()
 ```
 
-# Graceful stop
+### 优雅的停止
 ```
 xmux.StopService()
 ```
 
 
-# Built in routing cache
+### 内置路由缓存
 ```go
 
-xmux.NewRouter(cache ...uint64) // Cache is a built-in LRU path cache. The default cache 10000 is not written. Please modify it yourself according to the situation
+xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不写默认缓存10000， 请根据情况自己修改
 ```
 
-#  Permission control < a id = "permission" ></a>
+###  权限控制 <a id="permission"></a>
+- 页面权限
+  思路来自前端框架路由组件 meta 的 roles  
+  通过给定数组来判断
 
-- Page permissions
-
-The idea comes from the roles of the front-end framework routing component meta
-Judging by a given array
-
-
-> Take the Vue backend project with the largest number of front-end stars in GitHub as an example https://github.com/PanJiaChen/vue-element-admin
+  > 以github前端star最多的vue后端项目为例子    https://github.com/PanJiaChen/vue-element-admin
 
   
 
   ```
-  src/router/index.js Page permission routing inside
+  src/router/index.js 里面的页面权限路由
   
   
   {
@@ -689,7 +691,7 @@ Judging by a given array
     },
   ```
 
-  > xmux Corresponding writing
+  > xmux 对应的写法
 
   ```
   
@@ -711,22 +713,22 @@ Judging by a given array
   
   func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
   
-  	// Get the permission of the corresponding URI, which is set by addpagekeys and delpagekeys
+  	// 拿到对应uri的权限， 也就是AddPageKeys和DelPageKeys所设置的
   	pages := xmux.GetInstance(r).Get(xmux.PAGES).(map[string]struct{})
-  	// If the length is 0, it means that anyone can access it
+  	// 如果长度为0的话，说明任何人都可以访问
   	if len(pages) == 0 {
   		return false
   	}
   
-  	// Get the corresponding role of the user and judge that it is all in
-  	roles := []string{"admin"} //Obtain the user's permission from the database or redis
+  	// 拿到用户对应的 role，判断是都在
+  	roles := []string{"admin"} //从数据库中获取或redis获取用户的权限
   	for _, role := range roles {
   		if _, ok := pages[role]; ok {
-  			//What matches here is the existence of this permission. Continue to follow for so long
+  			// 这里匹配的是存在这个权限， 那么久继续往后面的走
   			return false
   		}
   	}
-  	// no permission
+  	// 没有权限
   	w.Write([]byte("no permission"))
   	return true
   }
@@ -739,7 +741,7 @@ Judging by a given array
   	router.Post("/permission", AddName)
   	router.Post("/permission/page", AddStd).DelPageKeys("editor")
   	router.Post("/permission/directive", AddFoo)
-  	// You can also directly use the built-in
+  	// 也可以直接使用内置的
   	router.Post("/permission/role", role).DelPageKeys("editor")
   	router.Run()
   }
@@ -748,28 +750,20 @@ Judging by a given array
 
   
 
-- More detailed addition, deletion, modification and query authority, but not limited to addition, deletion, modification and query
+- 更加细致的增删改查权限但不限于 增删改查
+  想过最简单的是根据 handle 的函数名 来判断， 
 
-I think the simplest thing is to judge according to the function name of handle,
-
-
-
-You can refer to the permission template of xmux DefaultPermissionTemplate
+  可以参考xmux的权限模板  xmux.DefaultPermissionTemplate
 
 
-# Cache <a id="cache"></a>
+### 缓存 <a id="cache"></a>
 
-- Initialize cache xmux InitResponseCache()
+- 初始化缓存  xmux.InitResponseCache()
+- 需要设置缓存的 key 的模块（核心的模块， 如果没设置的话， 就不用缓存）
+  - 为了设置 CacheKey的值 xmux.GetInstance(r).Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
+- 需要挂载缓存模块 
 
-- The module that needs to set the cached key (the core module does not need to be cached if it is not set)
-
-- To set the value of cachekey xmux GetInstance(r). Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
-
-- The cache module needs to be mounted
-
-
-
-> example of not bind return data
+> 没有绑定返回数据的例子
 ```go
 package main
 
@@ -814,10 +808,10 @@ type Response struct {
 
 func main() {
 	cache.InitResponseCache()
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) // Set cache for all routes
-	router.Get("/aaa", c)                                  // cached
-	router.Get("/update/aaa", noCache).DelModule(setKey)   // update /aaa cache
-	router.Get("/no/cache1", noCache1).DelModule(setKey)   // no cache
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) // 设置所有路由都缓存
+	router.Get("/aaa", c)                                  // 缓存了
+	router.Get("/update/aaa", noCache).DelModule(setKey)   // 更新/aaa 缓存
+	router.Get("/no/cache1", noCache1).DelModule(setKey)   // 没缓存
 	router.Run()
 }
 
@@ -868,16 +862,16 @@ func main() {
 		Code: 0,
 	}
 	cache.InitResponseCache()
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 设置所有路由都缓存
 	router.BindResponse(r)
-	router.Get("/aaa", c)                                // 
-	router.Get("/update/aaa", noCache).DelModule(setKey) // 
-	router.Get("/no/cache1", noCache1).DelModule(setKey) // 
+	router.Get("/aaa", c)                                // 缓存了
+	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存
+	router.Get("/no/cache1", noCache1).DelModule(setKey) // 没缓存
 	router.Run()
 }
 ```
 
-# Client file download (official built-in method MP4 file as an example)
+### 客户端文件下载（官方内置方法 mp4文件为例）
 
 ```go
 func PlayVideo(w http.ResponseWriter, r *http.Request) {
@@ -894,12 +888,12 @@ func PlayVideo(w http.ResponseWriter, r *http.Request) {
 
 ```
 
-# Client file upload (official built-in method)
+### 客户端文件上传(官方内置方法)
 ```go
 func UploadFile(w http.ResponseWriter, r *http.Request) {
-	// The maximum size of the official default uploaded file is 32m. You can set a new size through this method
+	// 官方默认上传文件的大小最大是32M， 可以通过方法设置新的大小
 	r.ParseMultipartForm(100 << 20)   // 100M
-	// read file
+	// 读取文件
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		return
@@ -918,7 +912,7 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 
 
 
-# performance analysis  Pprof
+### 性能分析
 
 ```
 func main() {
@@ -936,16 +930,16 @@ func main() {
 
 
 
-# View the detailed middleware module and other information of a Handel
+### 查看某handel详细的中间件模块等信息
 
 ```
-//View the details of a specified route
-router. DebugAssignRoute("/user/info")
-//Check the fixed URI of a regular fire matching route to obtain the details of a route
-router. DebugIncludeTpl("")
-//Show all, not recommended,
-router. DebugRoute()
-router. DebugTpl()
+// 查看某个指定路由的详细信息
+router.DebugAssignRoute("/user/info")  
+// 查看某个正则火匹配路由的固定uri来获取某路由的详细
+router.DebugIncludeTpl("")
+// 显示全部的， 不建议使用，
+router.DebugRoute()
+router.DebugTpl()
 ```
 
 > out
@@ -956,7 +950,7 @@ router. DebugTpl()
 
 
 
-# Bench test
+### 压力测试
 
 ```
 PS D:\myproject\xmux> go.exe test -benchmem -run=^$ -bench . github.com/hyahm/xmux -v                        
@@ -987,10 +981,10 @@ Benchmark404Many
 Benchmark404Many-6                       9690430               123.1 ns/op             0 B/op          0 allocs/op
 ```
 
-# plow 
+### plow 压力测试预览(因cpu满载中，效果不是真实的)
 ![plow](plow.png)
 
 
-# Life cycle flow chart
-![cycle](xmux.jpg)
+### 流程图总结
+![xmux流程图](xmux.jpg)
 
