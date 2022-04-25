@@ -84,7 +84,6 @@ func main() {
 	router.Post("/get", home)
 	router.Post("/", home).DelModule(home1).BindForm(User{})
 	router.Get("/test/{name}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(1111)
 		name := xmux.Var(r)["name"]
 		xmux.GetInstance(r).Response.(*Global).Data = name
 	})
