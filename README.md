@@ -599,7 +599,21 @@ func main() {
 
 ### 集成swagger <a id="swagger"></a>
 
+> 适用的函数全部以Swagger开头， 数据结构与[swagger](https://swagger.io/docs/specification/2-0/basic-structure/  )文档的一样，请swagger数据结构  
+    
+```
+package main
 
+import "github.com/hyahm/xmux"
+
+func main() {
+	router := xmux.NewRouter()
+	router.Get("/", nil)
+	router.AddGroup(router.ShowSwagger("/docs", "localhost:8080"))
+	router.Run()
+}
+
+```
 
 ### 获取当前的连接数
 ```go
