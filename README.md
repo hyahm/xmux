@@ -277,7 +277,7 @@ func main() {
 
 -Bindjason: bound is a JSON  
 -Bindxml: binding is an XML  
--Bindform: a form is bound  
+-Bindform: a form is bound, can not bind file , you need get file from from r.FormFile()
 -Bind: custom processing binding (processed by module)  
 
 
@@ -754,16 +754,16 @@ I think the simplest thing is to judge according to the function name of handle,
 
 
 
-You can refer to the permission template of xmux DefaultPermissionTemplate
+You can refer to the permission template of xmux.DefaultPermissionTemplate
 
 
 # Cache <a id="cache"></a>
 
-- Initialize cache xmux InitResponseCache()
+- Initialize cache cache.InitResponseCache()
 
 - The module that needs to set the cached key (the core module does not need to be cached if it is not set)
 
-- To set the value of cachekey xmux GetInstance(r). Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
+- To set the value of cachekey cache.GetInstance(r).Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
 
 - The cache module needs to be mounted
 

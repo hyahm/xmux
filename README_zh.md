@@ -300,7 +300,7 @@ func main() {
 
 - BindJson:       绑定的是一个json
 - BindXml：     绑定是一个xml
-- BindForm：  绑定的是一个form
+- BindForm：  绑定的是一个form, file文件无法获取， 需要额外通过 r.FormFile() 获取
 - Bind：           自定义处理绑定（通过模块来进行处理）
 
 
@@ -758,7 +758,7 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
 
 ### 缓存 <a id="cache"></a>
 
-- 初始化缓存  xmux.InitResponseCache()
+- 初始化缓存  cache.InitResponseCache()
 - 需要设置缓存的 key 的模块（核心的模块， 如果没设置的话， 就不用缓存）
   - 为了设置 CacheKey的值 xmux.GetInstance(r).Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
 - 需要挂载缓存模块 

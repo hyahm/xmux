@@ -11,6 +11,7 @@ import (
 
 func c(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("comming c")
+
 	now := time.Now().String()
 	xmux.GetInstance(r).Response.(*Response).Data = now
 }
