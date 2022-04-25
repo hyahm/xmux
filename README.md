@@ -1,5 +1,6 @@
 # xmux
-基于原生net.http 极简高灵活性 专注前后端分离项目的路由
+基于原生net.http 极简高灵活性 专注前后端分离项目的路由   
+功能自己做主  
 
 [视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
 
