@@ -1,49 +1,57 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
 
-// cache 是一个接口
-type cacher interface {
-	SetCache(key string, cache []byte) // 设置缓存保存的结构体
-	ClearCache(key string)             // 清除某个key的缓存
-	ClearAll()                         // 清除所有key
-}
+var rc *responseCache
 
 // 返回的缓存
 type responseCache struct {
-	store map[string]*cacheStruct
-	mu    sync.RWMutex
+	store  Cacher
+	status map[string]int // 0 说明是缓存   1  说明是正在更新   2： 说明需要更新
+	mu     sync.RWMutex
+}
+type Cacher interface {
+	Add(string, []byte) (string, bool)
+	Len() int
+	Get(string) ([]byte, bool)
+	GetUpdate(string) time.Time
 }
 
 // 设置缓存值
-func SetCache(key string, cache []byte) {
+func SetCache(key string, value []byte) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
-	rc.store[key].response = cache
-	rc.store[key].isUpdate = false
-	rc.store[key].update = time.Now()
+	if _, ok := rc.status[key]; ok {
+		rc.status[key] = 0
+	}
+	rk, ok := rc.store.Add(key, value)
+	if ok {
+		// 如果删除了值， 也要删除对应的update
+		delete(rc.status, rk)
+	}
 }
 
 // 如果key存在，就设置缓存
-func SetCacheIfExsits(key string, cache []byte) {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-	if _, ok := rc.store[key]; ok {
-		rc.store[key].response = cache
-		rc.store[key].isUpdate = false
-		rc.store[key].update = time.Now()
-	}
-}
+// func SetCacheIfExsits(key string, value []byte) {
+// 	rc.mu.RLock()
+// 	defer rc.mu.RUnlock()
+// 	if _, ok := rc.status[key]; ok {
+// 		rc.status[key] = false
+// 		rc.store.Add(key, value)
+// 	}
+// }
 
 // 获取缓存值, 如果不存在返回nil
 func GetCache(key string) []byte {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	if _, ok := rc.store[key]; ok {
-		return rc.store[key].response
+	value, ok := rc.store.Get(key)
+	if ok {
+		return value
 	}
 	return nil
 }
@@ -65,25 +73,33 @@ const (
 func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	if _, ok := rc.store[key]; ok {
-		if rc.store[key].isUpdate {
-			if rc.store[key].response == nil {
-				return nil, CacheNeedUpdate
-			} else {
-				return rc.store[key].response, CacheIsUpdateing
-			}
+
+	if status, ok := rc.status[key]; ok {
+		// 判断是否存在，存在， 如果正在更新，并且值是nil
+		value, gok := rc.store.Get(key)
+		if !gok {
+			fmt.Println("somthing wrong")
 		}
-		return rc.store[key].response, CacheHit
+		switch status {
+		case 0:
+			return value, CacheHit
+		case 1:
+			return nil, CacheIsUpdateing
+		default:
+			return nil, CacheNeedUpdate
+		}
+
+	} else {
+		return nil, NotFoundCache
 	}
 
-	return nil, NotFoundCache
 }
 
 // 是否存在缓存
 func ExsitsCache(key string) bool {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	_, ok := rc.store[key]
+	_, ok := rc.status[key]
 	return ok
 }
 
@@ -91,8 +107,8 @@ func ExsitsCache(key string) bool {
 func IsUpdate(key string) bool {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	if _, ok := rc.store[key]; ok {
-		return rc.store[key].isUpdate
+	if v, ok := rc.status[key]; ok {
+		return v == 1
 	}
 	return false
 }
@@ -101,45 +117,21 @@ func IsUpdate(key string) bool {
 func NeedUpdate(key string) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
-	if _, ok := rc.store[key]; ok {
-		rc.store[key].isUpdate = true
-		rc.store[key].response = nil
-	} else {
-		rc.store[key] = &cacheStruct{
-			isUpdate: true,
-			update:   time.Now(),
-			response: nil,
-		}
-	}
+	rc.status[key] = 2
+	rc.store.Add(key, nil)
 }
 
 func SetUpdate(key string) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
-	if _, ok := rc.store[key]; ok {
-		rc.store[key].isUpdate = true
-		rc.store[key].response = []byte("")
-	} else {
-		rc.store[key] = &cacheStruct{
-			isUpdate: true,
-			update:   time.Now(),
-			response: []byte(""),
-		}
-	}
+	rc.status[key] = 1
+	rc.store.Add(key, []byte(""))
 }
 
-type cacheStruct struct {
-	response []byte
-	update   time.Time // 最后一次更新的时间， 用来判断最后更新的时间
-	isUpdate bool      // 判断是否在刷新缓存中
-	// needUpdate bool      // 设置需要更新
-}
-
-var rc *responseCache
-
-func InitResponseCache() {
+func InitResponseCache(cache Cacher) {
 	rc = &responseCache{
-		store: make(map[string]*cacheStruct),
-		mu:    sync.RWMutex{},
+		store:  cache,
+		status: make(map[string]int),
+		mu:     sync.RWMutex{},
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hyahm/cache"
 	"github.com/hyahm/xmux"
-	"github.com/hyahm/xmux/cache"
 )
 
 func c(w http.ResponseWriter, r *http.Request) {
@@ -42,8 +42,10 @@ func main() {
 	r := &Response{
 		Code: 0,
 	}
-	cache.InitResponseCache()
+
+	// xmux.InitResponseCache()
 	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 设置所有路由都缓存
+	// router.Cache = cache.NewCache(10000, cache.LRU)
 	router.BindResponse(r)
 	router.Get("/aaa", c)                                // 缓存了
 	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存

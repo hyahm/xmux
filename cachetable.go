@@ -1,21 +1,24 @@
 package xmux
 
-import "github.com/hyahm/lru"
+import (
+	"github.com/hyahm/cache"
+)
 
-var urlCache *lru.List
+var urlCache cache.Cacher
 
-func initUrlCache(count uint64) {
+func initUrlCache(count int) {
 	if count == 0 {
 		count = 10000
 	}
-	urlCache = lru.Init(count)
+	urlCache = cache.NewCache(count, cache.LRU)
 }
 
 func getUrlCache(key string) (*rt, bool) {
-	if urlCache.Exsit(key) {
-		return urlCache.Get(key).(*rt), true
+	value := urlCache.Get(key)
+	if value == nil {
+		return nil, false
 	}
-	return nil, false
+	return value.(*rt), true
 }
 
 func setUrlCache(key string, value *rt) {
