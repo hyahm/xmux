@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/hyahm/xmux/cache"
 )
 
 func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Request) bool {
@@ -19,28 +17,29 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 		return false
 	}
 	cacheKey := ck.(string)
-	_, cacheStatus := cache.GetCacheIfUpdating(cacheKey)
+	_, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
-	case cache.CacheHit:
+	case CacheHit:
+
 		return true
-	case cache.CacheIsUpdateing:
+	case CacheIsUpdateing:
 		for {
 			select {
 			case <-time.After(time.Second):
 				return false
 			default:
-				time.Sleep(time.Millisecond)
-				if !cache.IsUpdate(cacheKey) {
+				time.Sleep(time.Millisecond * 10)
+				if !IsUpdate(cacheKey) {
 					return true
 				}
 			}
 
 		}
-	case cache.CacheNeedUpdate:
-		cache.SetUpdate(cacheKey)
+	case CacheNeedUpdate:
+		SetUpdate(cacheKey)
 		return false
-	case cache.NotFoundCache:
-		cache.SetUpdate(cacheKey)
+	case NotFoundCache:
+		SetUpdate(cacheKey)
 		return false
 	default:
 		return false
@@ -57,30 +56,30 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 		return false
 	}
 	cacheKey := ck.(string)
-	cb, cacheStatus := cache.GetCacheIfUpdating(cacheKey)
+	cb, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
-	case cache.CacheHit:
+	case CacheHit:
 		w.Write(cb)
 		return true
-	case cache.CacheIsUpdateing:
+	case CacheIsUpdateing:
+		// 如果在更新中，那么等待更新完毕再返回缓存， 如果等待1秒了还没返回就不等待缓存
 		for {
 			select {
 			case <-time.After(time.Second):
 				return false
 			default:
-				time.Sleep(time.Millisecond)
-				if !cache.IsUpdate(cacheKey) {
-					w.Write(cache.GetCache(cacheKey))
+				time.Sleep(time.Millisecond * 10)
+				if !IsUpdate(cacheKey) {
+					w.Write(GetCache(cacheKey))
 					return true
 				}
 			}
-
 		}
-	case cache.CacheNeedUpdate:
-		cache.SetUpdate(cacheKey)
+	case CacheNeedUpdate:
+		SetUpdate(cacheKey)
 		return false
-	case cache.NotFoundCache:
-		cache.SetUpdate(cacheKey)
+	case NotFoundCache:
+		SetUpdate(cacheKey)
 		return false
 	default:
 		return false
@@ -97,21 +96,19 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 
 		if ck != nil {
 			cacheKey := ck.(string)
-			if cache.IsUpdate(cacheKey) {
+			if IsUpdate(cacheKey) {
 				// 如果没有设置缓存，还是以前的处理方法
 				send, err = json.Marshal(GetInstance(r).Response)
 				if err != nil {
 					log.Println(err)
 				}
-
 				// 如果之前是更新的状态，那么就修改
-				cache.SetCache(cacheKey, send)
-				w.Write(send)
 			} else {
 				// 如果不是更新的状态， 那么就不用更新，而是直接从缓存取值
-				send = cache.GetCache(cacheKey)
-				w.Write(send)
+				send = GetCache(cacheKey)
 			}
+			SetCache(cacheKey, send)
+			w.Write(send)
 		} else {
 			send, err := json.Marshal(GetInstance(r).Response)
 			if err != nil {
