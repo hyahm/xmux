@@ -759,8 +759,14 @@ You can refer to the permission template of xmux.DefaultPermissionTemplate
 
 # Cache <a id="cache"></a>
 
-- Initialize cache cache.InitResponseCache()
-
+- Initialize cache cache.InitResponseCache(Cacher)  Cacher is a interface
+	```
+	type Cacher interface {
+		Add(string, []byte) (string, bool)
+		Get(string) ([]byte, bool)
+	}
+	```
+	**if you want use lru or lfu or alfu cache. you can use github.com/hyahm/gocache**
 - The module that needs to set the cached key (the core module does not need to be cached if it is not set)
 
 - To set the value of cachekey cache.GetInstance(r).Set(xmux.CacheKey, fmt.Sprintf("%s_%v", r.URL.Path, uid))
@@ -785,65 +791,12 @@ import (
 func c(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("comming c")
 	now := time.Now().String()
-	cache.SetCache("/aaa", []byte(now))
-	w.Write([]byte(now))
-}
-
-func noCache(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("update c")
-	cache.NeedUpdate("/aaa")
-	w.Write([]byte("update"))
-}
-
-func noCache1(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("comming noCache1")
-	now := time.Now().String()
-	w.Write([]byte(now))
-}
-
-func setKey(w http.ResponseWriter, r *http.Request) bool {
-	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
-	fmt.Print(r.URL.Path + " is cached")
-	return false
-}
-
-type Response struct {
-	Code int         `json:"code"`
-	Data interface{} `json:"data"`
-}
-
-func main() {
-	cache.InitResponseCache()
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) // Set cache for all routes
-	router.Get("/aaa", c)                                  // cached
-	router.Get("/update/aaa", noCache).DelModule(setKey)   // update /aaa cache
-	router.Get("/no/cache1", noCache1).DelModule(setKey)   // no cache
-	router.Run()
-}
-
-```
-
-```go
-package main
-
-import (
-	"fmt"
-	"net/http"
-	"time"
-
-	"github.com/hyahm/xmux"
-	"github.com/hyahm/xmux/cache"
-)
-
-func c(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("comming c")
-	now := time.Now().String()
 	xmux.GetInstance(r).Response.(*Response).Data = now
 }
 
 func noCache(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("update c")
-	cache.NeedUpdate("/aaa")
+	xmux.NeedUpdate("/aaa")
 }
 
 func noCache1(w http.ResponseWriter, r *http.Request) {
@@ -867,14 +820,71 @@ func main() {
 	r := &Response{
 		Code: 0,
 	}
-	cache.InitResponseCache()
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 
+	cth := cache.NewCache(100)
+	xmux.InitResponseCache(cth)
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 设置所有路由都缓存
+	// router.Cache = cache.NewCache(10000, cache.LRU)
 	router.BindResponse(r)
-	router.Get("/aaa", c)                                // 
-	router.Get("/update/aaa", noCache).DelModule(setKey) // 
-	router.Get("/no/cache1", noCache1).DelModule(setKey) // 
+	router.Get("/aaa", c)                                // 缓存了
+	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存
+	router.Get("/no/cache1", noCache1).DelModule(setKey) // 没缓存
 	router.Run()
 }
+
+
+```
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/hyahm/xmux"
+	"github.com/hyahm/xmux/cache"
+)
+
+func c(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming c")
+	now := time.Now().String()
+	xmux.GetInstance(r).Response.(*Response).Data = now
+}
+
+func noCache(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("update c")
+	xmux.NeedUpdate("/aaa")
+}
+
+func noCache1(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming noCache1")
+	now := time.Now().String()
+	xmux.GetInstance(r).Response.(*Response).Data = now
+}
+
+func setKey(w http.ResponseWriter, r *http.Request) bool {
+	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
+	fmt.Print(r.URL.Path + " is cached")
+	return false
+}
+
+type Response struct {
+	Code int         `json:"code"`
+	Data interface{} `json:"data"`
+}
+
+func main() {
+	cth := cache.NewCache(100)
+	xmux.InitResponseCache(cth)
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) // 设置所有路由都缓存
+	// router.Cache = cache.NewCache(10000, cache.LRU)
+	router.Get("/aaa", c)                                // 缓存了
+	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存
+	router.Get("/no/cache1", noCache1).DelModule(setKey) // 没缓存
+	router.Run()
+}
+
 ```
 
 # Client file download (official built-in method MP4 file as an example)

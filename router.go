@@ -393,10 +393,10 @@ func (r *Router) RunTLS(keyfile, pemfile string, opt ...string) error {
 	return nil
 }
 
-func NewRouter(cache ...uint64) *Router {
-	var c uint64
-	if len(cache) > 0 {
-		c = cache[0]
+func NewRouter(cacheSize ...int) *Router {
+	var c int
+	if len(cacheSize) > 0 {
+		c = cacheSize[0]
 	}
 	initUrlCache(c)
 	return &Router{
