@@ -1,24 +1,20 @@
 package xmux
 
 import (
-	"github.com/hyahm/cache"
+	"github.com/hyahm/gocache"
 )
 
-var urlCache cache.Cacher
+var urlCache gocache.Cacher[string, *rt]
 
 func initUrlCache(count int) {
 	if count == 0 {
 		count = 10000
 	}
-	urlCache = cache.NewCache(count, cache.LRU)
+	urlCache = gocache.NewCache[string, *rt](count, gocache.LRU)
 }
 
 func getUrlCache(key string) (*rt, bool) {
-	value := urlCache.Get(key)
-	if value == nil {
-		return nil, false
-	}
-	return value.(*rt), true
+	return urlCache.Get(key)
 }
 
 func setUrlCache(key string, value *rt) {
