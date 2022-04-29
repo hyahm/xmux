@@ -822,12 +822,12 @@ func main() {
 	}
 	cth := cache.NewCache(100)
 	xmux.InitResponseCache(cth)
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) // 设置所有路由都缓存
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) 
 	// router.Cache = cache.NewCache(10000, cache.LRU)
 	router.BindResponse(r)
-	router.Get("/aaa", c)                                // 缓存了
-	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存
-	router.Get("/no/cache1", noCache1).DelModule(setKey) // 没缓存
+	router.Get("/aaa", c)                               
+	router.Get("/update/aaa", noCache).DelModule(setKey)
+	router.Get("/no/cache1", noCache1).DelModule(setKey)
 	router.Run()
 }
 
@@ -877,11 +877,11 @@ type Response struct {
 func main() {
 	cth := cache.NewCache(100)
 	xmux.InitResponseCache(cth)
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) // 设置所有路由都缓存
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) 
 	// router.Cache = cache.NewCache(10000, cache.LRU)
-	router.Get("/aaa", c)                                // 缓存了
-	router.Get("/update/aaa", noCache).DelModule(setKey) // 更新/aaa缓存
-	router.Get("/no/cache1", noCache1).DelModule(setKey) // 没缓存
+	router.Get("/aaa", c)                               
+	router.Get("/update/aaa", noCache).DelModule(setKey) 
+	router.Get("/no/cache1", noCache1).DelModule(setKey)
 	router.Run()
 }
 
