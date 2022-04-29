@@ -221,11 +221,11 @@ func main() {
 
 #  Context value transfer<a id="variable"></a>
 
-- 其中，这4个是内置的，请勿赋值, 这4个是全局的，
-  -   xmux.GetInstance(r).GetConnectId():     connect id（can run it anywhere）
-  -   xmux.GetInstance(r).GetCurrFuncName()：       Its value is always the function name of the processing function (can use until module)
-  -   xmux.PAGES：         It is related to page permission(can use until module)
-  -   xmux.STATUSCODE：  status code
+
+-   xmux.GetInstance(r).GetConnectId():     connect id（can run it anywhere）
+-   xmux.GetInstance(r).GetCurrFuncName()：       Its value is always the function name of the processing function (can use until module)
+-   xmux.PAGES：         It is related to page permission(can use until module)
+-   xmux.STATUSCODE：  status code
 - Custom values can only be assigned from the module
 
 ```
