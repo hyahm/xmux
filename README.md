@@ -784,8 +784,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hyahm/gocache"
 	"github.com/hyahm/xmux"
-	"github.com/hyahm/xmux/cache"
 )
 
 func c(w http.ResponseWriter, r *http.Request) {
@@ -820,12 +820,12 @@ func main() {
 	r := &Response{
 		Code: 0,
 	}
-	cth := cache.NewCache(100)
+	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
 	xmux.InitResponseCache(cth)
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse) 
-	// router.Cache = cache.NewCache(10000, cache.LRU)
+	// If not bind response use xmux.DefaultCacheTemplateCacheWithoutResponse instead of xmux.DefaultCacheTemplateCacheWithResponse
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
 	router.BindResponse(r)
-	router.Get("/aaa", c)                               
+	router.Get("/aaa", c)
 	router.Get("/update/aaa", noCache).DelModule(setKey)
 	router.Get("/no/cache1", noCache1).DelModule(setKey)
 	router.Run()
@@ -834,58 +834,6 @@ func main() {
 
 ```
 
-```go
-package main
-
-import (
-	"fmt"
-	"net/http"
-	"time"
-
-	"github.com/hyahm/xmux"
-	"github.com/hyahm/xmux/cache"
-)
-
-func c(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("comming c")
-	now := time.Now().String()
-	xmux.GetInstance(r).Response.(*Response).Data = now
-}
-
-func noCache(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("update c")
-	xmux.NeedUpdate("/aaa")
-}
-
-func noCache1(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("comming noCache1")
-	now := time.Now().String()
-	xmux.GetInstance(r).Response.(*Response).Data = now
-}
-
-func setKey(w http.ResponseWriter, r *http.Request) bool {
-	xmux.GetInstance(r).Set(xmux.CacheKey, r.URL.Path)
-	fmt.Print(r.URL.Path + " is cached")
-	return false
-}
-
-type Response struct {
-	Code int         `json:"code"`
-	Data interface{} `json:"data"`
-}
-
-func main() {
-	cth := cache.NewCache(100)
-	xmux.InitResponseCache(cth)
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse) 
-	// router.Cache = cache.NewCache(10000, cache.LRU)
-	router.Get("/aaa", c)                               
-	router.Get("/update/aaa", noCache).DelModule(setKey) 
-	router.Get("/no/cache1", noCache1).DelModule(setKey)
-	router.Run()
-}
-
-```
 
 # Client file download (official built-in method MP4 file as an example)
 
