@@ -3,7 +3,7 @@ module github.com/hyahm/xmux
 go 1.18
 
 require (
-	github.com/hyahm/gocache v0.0.0-20220429041848-4e53187a96ab
+	github.com/hyahm/gocache v0.0.0-20220429153246-ba8d52c478b2
 	github.com/tidwall/gjson v1.14.1
 	gopkg.in/yaml.v2 v2.4.0
 )
