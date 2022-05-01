@@ -111,7 +111,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 			SetCache(cacheKey, send)
 			w.Write(send)
 		} else {
-			send, err := json.Marshal(GetInstance(r).Response)
+			send, err = json.Marshal(GetInstance(r).Response)
 			if err != nil {
 				log.Println(err)
 			}
