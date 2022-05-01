@@ -30,6 +30,7 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 			default:
 				time.Sleep(time.Millisecond * 10)
 				if !IsUpdate(cacheKey) {
+					SetUpdate(cacheKey)
 					return true
 				}
 			}

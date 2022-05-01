@@ -34,16 +34,6 @@ func SetCache(key string, value []byte) {
 	}
 }
 
-// 如果key存在，就设置缓存
-// func SetCacheIfExsits(key string, value []byte) {
-// 	rc.mu.RLock()
-// 	defer rc.mu.RUnlock()
-// 	if _, ok := rc.status[key]; ok {
-// 		rc.status[key] = false
-// 		rc.store.Add(key, value)
-// 	}
-// }
-
 // 获取缓存值, 如果不存在返回nil
 func GetCache(key string) []byte {
 	rc.mu.RLock()
@@ -87,7 +77,6 @@ func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 		default:
 			return nil, CacheNeedUpdate
 		}
-
 	} else {
 		return nil, NotFoundCache
 	}
