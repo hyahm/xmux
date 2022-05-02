@@ -12,11 +12,10 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
-	ck := GetInstance(r).Get(CacheKey)
-	if ck == nil {
+	cacheKey := GetInstance(r).CacheKey
+	if cacheKey == "" {
 		return false
 	}
-	cacheKey := ck.(string)
 	_, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
 	case CacheHit:
@@ -51,12 +50,12 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
-	ck := GetInstance(r).Get(CacheKey)
-	if ck == nil {
+	cacheKey := GetInstance(r).CacheKey
+	if cacheKey == "" {
 		// 没有启用缓存
 		return false
 	}
-	cacheKey := ck.(string)
+
 	cb, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
 	case CacheHit:
@@ -92,11 +91,10 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	// r.Body.Close()
 	var send []byte
 	var err error
-	if GetInstance(r).Response != nil && GetInstance(r).Get(STATUSCODE).(int) == 200 {
-		ck := GetInstance(r).Get(CacheKey)
+	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
+		cacheKey := GetInstance(r).CacheKey
 
-		if ck != nil {
-			cacheKey := ck.(string)
+		if cacheKey != "" {
 			if IsUpdate(cacheKey) {
 				// 如果没有设置缓存，还是以前的处理方法
 				send, err = json.Marshal(GetInstance(r).Response)
@@ -123,7 +121,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 		GetInstance(r).GetConnectId(),
 		r.Method,
 		r.URL.Path, time.Since(start).Seconds(),
-		GetInstance(r).Get(STATUSCODE),
+		GetInstance(r).StatusCode,
 		string(send))
 }
 
@@ -133,7 +131,7 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 	// 	retrun false
 	// }
 
-	pages := GetInstance(r).Get(PAGES).(map[string]struct{})
+	pages := GetInstance(r).GetPageKeys()
 	// 如果长度为0的话，说明任何人都可以访问
 	if len(pages) == 0 {
 		return false

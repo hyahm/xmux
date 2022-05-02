@@ -5,8 +5,6 @@ import (
 	"sync"
 )
 
-const CacheKey = "CacheKey"
-
 var rc *responseCache
 
 // 返回的缓存

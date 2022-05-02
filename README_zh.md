@@ -2,6 +2,12 @@
 基于原生net.http 极简高灵活性 专注前后端分离项目的路由   
 功能自己做主  
 
+新版更新主要地方：
+xmux.GetInstance(r).Get(xmux.PAGES) => xmux.GetInstance(r).GetPageKeys()   // map[string]struct{}
+xmux.GetInstance(r).Get(xmux.StatusCode) => xmux.GetInstance(r).StatusCode  // int
+xmux.GetInstance(r).Get(xmux.CacheKey) => xmux.GetInstance(r).CacheKey   // string
+xmux.GetInstance(r).Get(xmux.Body) => xmux.GetInstance(r).Body   // []byte
+
 [视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
 
 简体中文 | [English](./README.md) | [简体中文](./README_zh.md) 
@@ -148,7 +154,7 @@ HanleFavicon：        methodNotAllowed(),    // 默认请求 favicon
 func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	// 注意这一行， 这是为了将状态码传递到exit中打印状态码
-	GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
+	GetInstance(r).StatusCode = http.StatusNotFound
 	w.WriteHeader(http.StatusNotFound)
 }
 
@@ -714,7 +720,7 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
   func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
   
   	// 拿到对应uri的权限， 也就是AddPageKeys和DelPageKeys所设置的
-  	pages := xmux.GetInstance(r).Get(xmux.PAGES).(map[string]struct{})
+  	pages := xmux.GetInstance(r).GetPageKeys()
   	// 如果长度为0的话，说明任何人都可以访问
   	if len(pages) == 0 {
   		return false
