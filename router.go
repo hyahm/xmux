@@ -53,8 +53,7 @@ func requestBytes(reqbody []byte, r *http.Request) {
 type Router struct {
 	MaxPrintLength       uint64
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
-	new                  bool // 判断是否是通过newRouter 来初始化的
-	PrintRequestStr      bool
+	new                  bool                                          // 判断是否是通过newRouter 来初始化的
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout          time.Duration
 	HanleFavicon         func(http.ResponseWriter, *http.Request)
@@ -152,7 +151,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 				return
 			}
 		} else {
-			GetInstance(req).Set(BODY, []byte(""))
+			GetInstance(req).Body = []byte("")
 		}
 	}
 
@@ -162,7 +161,7 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 
 	// 权限导入
 	// pages
-	fd.Set(PAGES, route.pagekeys)
+	fd.pages = route.pagekeys
 	// 当前函数名去掉目录层级后的
 	name := runtime.FuncForPC(reflect.ValueOf(route.Handle).Pointer()).Name()
 	n := strings.LastIndex(name, ".")
@@ -187,13 +186,13 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	ci := time.Now().UnixNano()
 	fd := &FlowData{
-		ctx:       make(map[string]interface{}),
-		mu:        &sync.RWMutex{},
-		connectId: ci,
+		ctx:        make(map[string]interface{}),
+		mu:         &sync.RWMutex{},
+		connectId:  ci,
+		StatusCode: 200,
 	}
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
-	fd.Set(STATUSCODE, 200)
 	start := time.Now()
 	if r.Enter != nil {
 		if r.Enter(w, req) {
@@ -204,7 +203,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		defer r.Exit(start, w, req)
 	}
 	if stop {
-		fd.Set(STATUSCODE, http.StatusLocked)
+		fd.StatusCode = http.StatusLocked
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
@@ -433,7 +432,7 @@ func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bo
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
+	GetInstance(r).StatusCode = http.StatusNotFound
 	w.WriteHeader(http.StatusNotFound)
 }
 

@@ -10,12 +10,16 @@ import (
 // instance  数据二次封装, 用户各模块之间的数据传递
 
 type FlowData struct {
-	Data      interface{}            // 处理后的数据
-	ctx       map[string]interface{} // 用来传递自定义值
-	mu        *sync.RWMutex
-	Response  interface{} // 返回的数据结构
-	connectId int64
-	funcName  string
+	Data       interface{}            // 处理后的数据
+	ctx        map[string]interface{} // 用来传递自定义值
+	mu         *sync.RWMutex
+	Response   interface{} // 返回的数据结构
+	connectId  int64
+	funcName   string
+	pages      map[string]struct{}
+	StatusCode int
+	Body       []byte
+	CacheKey   string
 }
 
 type conns struct {
@@ -95,6 +99,12 @@ func (data *FlowData) GetFuncName() string {
 	data.mu.RLock()
 	defer data.mu.RUnlock()
 	return data.funcName
+}
+
+func (data *FlowData) GetPageKeys() map[string]struct{} {
+	data.mu.RLock()
+	defer data.mu.RUnlock()
+	return data.pages
 }
 
 func (data *FlowData) Get(k string) interface{} {

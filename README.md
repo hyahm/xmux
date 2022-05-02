@@ -174,7 +174,7 @@ HanleFavicon：        methodNotAllowed(),
 func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	// Note: which is to pass the status code to exit and print the status code
-	GetInstance(r).Set(STATUSCODE, http.StatusNotFound)
+	GetInstance(r).StatusCode = http.StatusNotFound
 	w.WriteHeader(http.StatusNotFound)
 }
 
@@ -712,7 +712,7 @@ Judging by a given array
   func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
   
   	// Get the permission of the corresponding URI, which is set by addpagekeys and delpagekeys
-  	pages := xmux.GetInstance(r).Get(xmux.PAGES).(map[string]struct{})
+  	pages := xmux.GetInstance(r).GetPageKeys()
   	// If the length is 0, it means that anyone can access it
   	if len(pages) == 0 {
   		return false

@@ -17,8 +17,6 @@ import (
 
 type bindType int
 
-const BODY = "body"
-
 const (
 	jsonT bindType = 1
 	yamlT bindType = 2
@@ -45,9 +43,7 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 	if err != nil {
 		return false, err
 	}
-	if r.PrintRequestStr {
-		r.RequestBytes(b, req)
-	}
+	fd.Body = b
 	tt := reflect.TypeOf(fd.Data).Elem()
 	l := tt.NumField()
 	for i := 0; i < l; i++ {
@@ -75,9 +71,7 @@ func (r *Router) unmarsharYaml(w http.ResponseWriter, req *http.Request, fd *Flo
 	if err != nil {
 		return false, err
 	}
-	if r.PrintRequestStr {
-		r.RequestBytes(b, req)
-	}
+	fd.Body = b
 	err = yaml.Unmarshal(b, &fd.Data)
 	return false, err
 }
@@ -87,9 +81,7 @@ func (r *Router) unmarsharXml(w http.ResponseWriter, req *http.Request, fd *Flow
 	if err != nil {
 		return false, err
 	}
-	if r.PrintRequestStr {
-		r.RequestBytes(b, req)
-	}
+	fd.Body = b
 	err = xml.Unmarshal(b, &fd.Data)
 	return false, err
 }
@@ -170,11 +162,9 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
 	cl := req.Header.Get("Content-Length")
 	length, err := strconv.ParseUint(cl, 10, 64)
-	if r.PrintRequestStr && err != nil && length >= r.MaxPrintLength {
+	if err != nil && length >= r.MaxPrintLength {
 		b, _ := io.ReadAll(req.Body)
-		if r.PrintRequestStr {
-			r.RequestBytes(b, req)
-		}
+		fd.Body = b
 		req.Body = io.NopCloser(bytes.NewBuffer(b))
 	}
 
