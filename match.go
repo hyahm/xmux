@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"path"
 	"strings"
 )
 
@@ -14,16 +15,58 @@ const (
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
 // 例如   /asdf/sadf//asdfsadf/asdfsdaf////as///, 转为-》 /asdf/sadf/asdfsadf/asdfsdaf/as
-func prettySlash(s string) string {
-	sl := strings.Split(s, "/")
-	n := make([]string, 0, len(sl))
-	for _, v := range sl {
-		if v != "" {
-			n = append(n, v)
+// func prettySlash(s string) string {
+// 	sl := strings.Split(s, "/")
+// 	n := make([]string, 0, len(sl))
+// 	for _, v := range sl {
+// 		if v != "" {
+// 			n = append(n, v)
+// 		}
+// 	}
+// 	return "/" + strings.Join(n, "/")
+// }
+
+func prettySlash(p string) string {
+	if p == "" {
+		return "/"
+	}
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	np := path.Clean(p)
+	// path.Clean removes trailing slash except for root;
+	// put the trailing slash back if necessary.
+	if p[len(p)-1] == '/' && np != "/" {
+		// Fast path for common case of p being the string we want:
+		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
+			np = p
+		} else {
+			np += "/"
 		}
 	}
-	return "/" + strings.Join(n, "/")
+	return np
 }
+
+// func cleanPath(p string) string {
+// 	if p == "" {
+// 		return "/"
+// 	}
+// 	if p[0] != '/' {
+// 		p = "/" + p
+// 	}
+// 	np := path.Clean(p)
+// 	// path.Clean removes trailing slash except for root;
+// 	// put the trailing slash back if necessary.
+// 	if p[len(p)-1] == '/' && np != "/" {
+// 		// Fast path for common case of p being the string we want:
+// 		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
+// 			np = p
+// 		} else {
+// 			np += "/"
+// 		}
+// 	}
+// 	return np
+// }
 
 // 返回正则表达式的url 和 params(key)
 func match(path string) (string, []string) {

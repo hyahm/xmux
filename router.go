@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -307,6 +308,29 @@ func (r *Router) Run(opt ...string) error {
 	}
 	fmt.Printf("listen on %s\n", addr)
 	return svc.ListenAndServe()
+}
+
+func (r *Router) Debug(ctx context.Context, opt ...string) {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	addr := ":8080"
+	if len(opt) > 0 {
+		addr = opt[0]
+	}
+	svc := &http.Server{
+		Addr:        addr,
+		ReadTimeout: r.ReadTimeout,
+		Handler:     r,
+	}
+	fmt.Printf("listen on %s\n", addr)
+	go svc.ListenAndServe()
+	select {
+	case <-ctx.Done():
+		svc.Close()
+		return
+	}
+
 }
 
 func SetPem(name string) string {
