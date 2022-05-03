@@ -221,11 +221,14 @@ func main() {
 
 #  Context value transfer<a id="variable"></a>
 
-
--   xmux.GetInstance(r).GetConnectId():     connect id（can run it anywhere）
--   xmux.GetInstance(r).GetCurrFuncName()：       Its value is always the function name of the processing function (can use until module)
--   xmux.PAGES：         It is related to page permission(can use until module)
--   xmux.STATUSCODE：  status code
+- Among them, these are built-in
+  -   xmux.GetInstance(r).GetConnectId() ：             Connect id（can run it anywhere）
+  -   xmux.GetInstance(r).GetCurrFuncName()：       	Its value is always the function name of the processing function (can use until module)
+  -   xmux.GetInstance(r).CacheKey:       				Cache key
+  -   xmux.GetInstance(r).Body:               			Bind source data([]byte)
+  -   xmux.GetInstance(r).GetPageKeys()：               It is related to page permission(can use until module)
+  -   xmux.GetInstance(r).StatusCode：            		Status code
+  -   xmux.GetInstance(r).Data:            		        Binding Data 
 - Custom values can only be assigned from the module
 
 ```
@@ -238,7 +241,6 @@ xmux.GetInstance(r).Get("key")
 
 # Hook<a id="hook"></a>
 
-- RequestBytes func([]byte, *http.Request)                         :      Custom built-in parsing request data processing    
 - NotFoundRequireField                                             : Processing tick for failed verification of require fields
 - UnmarshalError                                                   : Built in Unmarshal error hook
 - Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :  handle exit

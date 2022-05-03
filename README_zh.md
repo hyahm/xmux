@@ -2,11 +2,6 @@
 基于原生net.http 极简高灵活性 专注前后端分离项目的路由   
 功能自己做主  
 
-新版更新主要地方：
-xmux.GetInstance(r).Get(xmux.PAGES) => xmux.GetInstance(r).GetPageKeys()   // map[string]struct{}
-xmux.GetInstance(r).Get(xmux.StatusCode) => xmux.GetInstance(r).StatusCode  // int
-xmux.GetInstance(r).Get(xmux.CacheKey) => xmux.GetInstance(r).CacheKey   // string
-xmux.GetInstance(r).Get(xmux.Body) => xmux.GetInstance(r).Body   // []byte
 
 [视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
 
@@ -199,13 +194,14 @@ func main() {
 
 ###  上下文传值<a id="variable"></a>
 
-- 其中，这4个是内置的，请勿赋值, 这4个是全局的，
-  -   xmux.CONNECTID() ：               连接的id（任何地方都可以使用）
-      新版替换成了 xmux.GetInstance(r).GetConnectId()
-  -   xmux.CURRFUNCNAME：       它的值永远是处理函数的函数名（从模块开始才有值） 
-      新版替换成了 xmux.GetInstance(r).GetCurrFuncName()
-  -   xmux.PAGES：                        跟页面权限有关（从模块开始才有值）
-  -   xmux.STATUSCODE：            接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
+- 其中，这几个是内置的，
+  -   xmux.GetInstance(r).GetConnectId() ：             连接的id（任何地方都可以使用）
+  -   xmux.GetInstance(r).GetCurrFuncName()：       	它的值永远是处理函数的函数名（从模块开始才有值） 
+  -   xmux.GetInstance(r).CacheKey:       				缓存的 key
+  -   xmux.GetInstance(r).Body:               			获取的body内容  （[]byte）
+  -   xmux.GetInstance(r).GetPageKeys()：               跟页面权限有关（从模块开始才有值）
+  -   xmux.GetInstance(r).StatusCode：            		接口返回的状态码（有些情况要修改，比如页面跳转，任何地方都可以使用）
+  -   xmux.GetInstance(r).Data:            		        数据绑定
 -  自定义的值是从模块开始才能赋值
 
 ```
@@ -257,7 +253,6 @@ name
 
 ### 钩子<a id="hook"></a>
 
-- RequestBytes func([]byte, *http.Request)                         :      自定义内置解析的请求数据处理    
 - NotFoundRequireField                                             : 必要字段验证失败的处理勾子
 - UnmarshalError                                                   : 内置解析解析错误的勾子
 - Exit (start time.Time, w http.ResponseWriter, r *http.Request)   : 
