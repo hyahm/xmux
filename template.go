@@ -117,7 +117,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, body: %v\n",
+	log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, response: %v\n",
 		GetInstance(r).GetConnectId(),
 		r.Method,
 		r.URL.Path, time.Since(start).Seconds(),
