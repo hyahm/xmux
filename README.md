@@ -275,7 +275,7 @@ func main() {
 
 
 
-# Data binding (the data after binding analysis takes effect before the module) < a id = "bind" ></a>
+# Data binding (the data after binding analysis takes effect before the module) <a id = "bind" ></a>
 
 -Bindjason: bound is a JSON  
 -Bindxml: binding is an XML  
