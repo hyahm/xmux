@@ -248,7 +248,7 @@ xmux.GetInstance(r).Get("key")
 
 
 
-# Set Header <a id="header"></a>
+# Set Header<a id="header"></a>  
 Cross origin is mainly about adding request headers. Other frameworks are generally set up with the help of middleware
 
 However, this route greatly simplifies the cross origin configuration with the help of the above request header settings
