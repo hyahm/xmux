@@ -246,9 +246,26 @@ xmux.GetInstance(r).Get("key")
 - Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :  handle exit
 - Enter( w http.ResponseWriter, r *http.Request) bool              :  handle enter
 
+```go
+func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+	// Any valid request will end up here
+	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
+}
 
 
-# Set Header <a id="header"></a>
+
+func enter( w http.ResponseWriter, r *http.Request) bool {
+	// Any request will coming，You can filter IP domain names and other security or debugging operations
+	
+	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
+}
+
+router := xmux.NewRouter()
+router.Enter = enter
+router.Exit = exit
+```
+
+# Set Header<a id="header"></a>  
 Cross origin is mainly about adding request headers. Other frameworks are generally set up with the help of middleware
 
 However, this route greatly simplifies the cross origin configuration with the help of the above request header settings
@@ -275,7 +292,7 @@ func main() {
 
 
 
-# Data binding (the data after binding analysis takes effect before the module) < a id = "bind" ></a>
+# Data binding (the data after binding analysis takes effect before the module) <a id = "bind" ></a>
 
 -Bindjason: bound is a JSON  
 -Bindxml: binding is an XML  
