@@ -1,9 +1,7 @@
 package xmux
 
 import (
-	"log"
 	"net/http"
-	"reflect"
 	"sync"
 )
 
@@ -74,18 +72,6 @@ func GetInstance(r *http.Request) *FlowData {
 func (data *FlowData) Set(k string, v interface{}) {
 	data.mu.Lock()
 	data.ctx[k] = v
-	data.mu.Unlock()
-}
-
-// 只能是数组配型才能使用append
-func (data *FlowData) Append(k string, v []byte) {
-	data.mu.Lock()
-	if reflect.TypeOf(data.ctx[k]).Kind() != reflect.Slice {
-		log.Println("instance value of the key " + k + " is not slice")
-	} else {
-		data.ctx[k] = reflect.AppendSlice(reflect.ValueOf(data.ctx[k]), reflect.ValueOf(v)).Interface()
-	}
-
 	data.mu.Unlock()
 }
 
