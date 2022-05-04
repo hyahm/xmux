@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -161,13 +162,20 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 
 func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
 	cl := req.Header.Get("Content-Length")
-	length, err := strconv.ParseUint(cl, 10, 64)
-	if err != nil && length >= r.MaxPrintLength {
-		b, _ := io.ReadAll(req.Body)
-		fd.Body = b
+	length, err := strconv.Atoi(cl)
+	if err == nil && length > 0 {
+		b, err := io.ReadAll(req.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if length > r.MaxPrintLength {
+			fd.Body = b[:r.MaxPrintLength]
+		} else {
+			fd.Body = b
+		}
+
 		req.Body = io.NopCloser(bytes.NewBuffer(b))
 	}
-
 	tt := reflect.TypeOf(fd.Data).Elem()
 	vv := reflect.ValueOf(fd.Data).Elem()
 	l := tt.NumField()

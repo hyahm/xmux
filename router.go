@@ -52,7 +52,7 @@ func requestBytes(reqbody []byte, r *http.Request) {
 }
 
 type Router struct {
-	MaxPrintLength       uint64
+	MaxPrintLength       int
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool                                          // 判断是否是通过newRouter 来初始化的
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行

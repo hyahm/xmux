@@ -11,16 +11,18 @@ import (
 	"net/http"
 )
 
-var ErrConnectClosed = errors.New("connect closed")
-var ErrorType = errors.New("type error")
-var ErrorProtocol = errors.New("protocol undefined")
-var ErrorGetLenth = errors.New("get length error")
-var ErrorGetMsg = errors.New("read data error")
-var ErrorMsgNotEnough = errors.New("data length not enough")
-var ErrorNotFoundHandle = errors.New("please write a Handle")
-var ErrorRespose = errors.New("websocket: response does not implement http.Hijacker")
-var ErrorHandshake = errors.New("websocket: client sent data before handshake is complete")
-var ErrorNoWebsocketKey = errors.New("not found Sec-WebSocket-Key")
+var (
+	ErrConnectClosed    = errors.New("connect closed")
+	ErrorType           = errors.New("type error")
+	ErrorProtocol       = errors.New("protocol undefined")
+	ErrorGetLenth       = errors.New("get length error")
+	ErrorGetMsg         = errors.New("read data error")
+	ErrorMsgNotEnough   = errors.New("data length not enough")
+	ErrorNotFoundHandle = errors.New("please write a Handle")
+	ErrorRespose        = errors.New("websocket: response does not implement http.Hijacker")
+	ErrorHandshake      = errors.New("websocket: client sent data before handshake is complete")
+	ErrorNoWebsocketKey = errors.New("not found Sec-WebSocket-Key")
+)
 
 type WsHandler interface {
 	Websocket(w http.ResponseWriter, r *http.Request)

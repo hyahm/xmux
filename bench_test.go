@@ -17,30 +17,35 @@ func BenchmarkOneRoute(B *testing.B) {
 
 func BenchmarkRecoveryMiddleware(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/")
 }
 
 func BenchmarkLoggerMiddleware(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/")
 }
 
 func BenchmarkManyHandlers(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/ping")
 }
 
 func Benchmark5Params(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Get("/param/{param1}/{params2}/{param3}/{param4}/{param5}", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/param/path/to/parameter/john/12345")
 }
 
 func BenchmarkOneRouteJSON(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	data := struct {
 		Status string `json:"status"`
 	}{"ok"}
@@ -77,11 +82,13 @@ func BenchmarkOneRouteString(B *testing.B) {
 	router.Get("/text", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(helper.StringToBytes("this is a plain text"))
 	})
+	router.Exit = nil
 	runRequest(B, router, "GET", "/text")
 }
 
 func BenchmarkManyRoutesFist(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Any("/ping", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/ping")
 }
@@ -95,6 +102,7 @@ func BenchmarkManyRoutesLast(B *testing.B) {
 
 func Benchmark404(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Any("/something", func(w http.ResponseWriter, r *http.Request) {})
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	})
@@ -104,6 +112,7 @@ func Benchmark404(B *testing.B) {
 
 func Benchmark404Many(B *testing.B) {
 	router := NewRouter()
+	router.Exit = nil
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {})
 	router.Get("/path/to/something", func(w http.ResponseWriter, r *http.Request) {})
 	router.Get("/post/:id", func(w http.ResponseWriter, r *http.Request) {})
