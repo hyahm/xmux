@@ -220,15 +220,6 @@ func main() {
 
 
 #  Context value transfer<a id="variable"></a>
-
-- Among them, these are built-in
-  -   xmux.GetInstance(r).GetConnectId() ：             Connect id（can run it anywhere）
-  -   xmux.GetInstance(r).GetCurrFuncName()：       	Its value is always the function name of the processing function (can use until module)
-  -   xmux.GetInstance(r).CacheKey:       				Cache key
-  -   xmux.GetInstance(r).Body:               			Bind source data([]byte)
-  -   xmux.GetInstance(r).GetPageKeys()：               It is related to page permission(can use until module)
-  -   xmux.GetInstance(r).StatusCode：            		Status code
-  -   xmux.GetInstance(r).Data:            		        Binding Data 
 - Custom values can only be assigned from the module
 
 ```
