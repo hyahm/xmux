@@ -25,6 +25,7 @@
 - [缓存模块](#cache)
 - [pprof组](#pprof)
 - [swagger组](#swagger)
+- [连接的实例](#instance)
 
 
 ### 安装<a id="install"></a>  
@@ -863,6 +864,20 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+### 连接的实例 <a id="instance"></a>  
+```
+xmux.GetInstance(r).Body // 请求过来的数据， 只有绑定值了才有这个数据
+xmux.GetInstance(r).CacheKey  // 绑定缓存的key
+xmux.GetInstance(r).Data   // 数据绑定解析出来的值
+xmux.GetInstance(r).Response  // 绑定返回值
+xmux.GetInstance(r).StatusCode   // status_code
+xmux.GetInstance(r).Get()  // 上下文传值用的
+xmux.GetInstance(r).Set()  // 上下文传值用的
+xmux.GetInstance(r).GetConnectId()  // 获取当前的链接id
+xmux.GetInstance(r).GetFuncName()  // 增删改查权限
+xmux.GetInstance(r).GetPageKeys()  // 页面权限
+```
+
 
 
 ### 性能分析
@@ -901,41 +916,6 @@ router.DebugTpl()
 2022/01/22 17:16:11 url: /user/info, method: GET, header: map[], module: xmux.funcOrder{"github.com/hyahm/xmux.DefaultPermissionTemplate"}, midware: "" , pages: map[string]struct {}{}
 ```
 
-
-
-### 压力测试
-
-```
-PS D:\myproject\xmux> go.exe test -benchmem -run=^$ -bench . github.com/hyahm/xmux -v                        
-goos: windows
-goarch: amd64
-pkg: github.com/hyahm/xmux
-BenchmarkOneRoute
-BenchmarkOneRoute-6                      4536045               273.3 ns/op            93 B/op          0 allocs/op
-BenchmarkRecoveryMiddleware
-BenchmarkRecoveryMiddleware-6            4850932               248.7 ns/op            87 B/op          0 allocs/op
-BenchmarkLoggerMiddleware
-BenchmarkLoggerMiddleware-6              4829744               245.8 ns/op            87 B/op          0 allocs/op
-BenchmarkManyHandlers
-BenchmarkManyHandlers-6                  4821524               244.3 ns/op            87 B/op          0 allocs/op
-Benchmark5Params
-Benchmark5Params-6                       4471778               277.2 ns/op           142 B/op          1 allocs/op
-BenchmarkOneRouteJSON
-BenchmarkOneRouteJSON-6                  4873143               250.7 ns/op            86 B/op          0 allocs/op
-BenchmarkOneRouteString
-BenchmarkOneRouteString-6                4727139               248.4 ns/op            89 B/op          0 allocs/op
-BenchmarkManyRoutesFist
-BenchmarkManyRoutesFist-6                1518609               794.1 ns/op           408 B/op          5 allocs/op
-BenchmarkManyRoutesLast
-BenchmarkManyRoutesLast-6               51970549                22.34 ns/op            0 B/op          0 allocs/op
-Benchmark404
-Benchmark404-6                          10658811               111.5 ns/op             0 B/op          0 allocs/op
-Benchmark404Many
-Benchmark404Many-6                       9690430               123.1 ns/op             0 B/op          0 allocs/op
-```
-
-### plow 压力测试预览(因cpu满载中，效果不是真实的)
-![plow](plow.png)
 
 
 ### 流程图总结

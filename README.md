@@ -10,38 +10,23 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 ### Navigation
 
 - [install](#install)
-
 - [quick start](#start)
-
 - [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
-
 - [routing group](#group)
-
 - [auto detect duplicates](#check)
-
 - [context value transfer](#variable)
-
 - [auto ignore slash](#slash)
-
 - [module](#module)
-
 - [hook function](#hook)
-
 - [set request header](#header)
-
 - [data binding](#bind)
-
 - [url regular match](#regex)
-
 - [websocket](#websocket)
-
 - [permission control module](#permission)
-
 - [cache module](#cache)
-
 - [pprof group](#pprof)
-
 - [swagger group](#swagger)
+- [connection instance](#instance)
 
 
 # Install<a id="install"></a>  
@@ -922,41 +907,20 @@ router. DebugTpl()
 ```
 
 
-
-# Bench test
+# Connection Instance <a id="instance"></a>  
 
 ```
-PS D:\myproject\xmux> go.exe test -benchmem -run=^$ -bench . github.com/hyahm/xmux -v                        
-goos: windows
-goarch: amd64
-pkg: github.com/hyahm/xmux
-BenchmarkOneRoute
-BenchmarkOneRoute-6                      4536045               273.3 ns/op            93 B/op          0 allocs/op
-BenchmarkRecoveryMiddleware
-BenchmarkRecoveryMiddleware-6            4850932               248.7 ns/op            87 B/op          0 allocs/op
-BenchmarkLoggerMiddleware
-BenchmarkLoggerMiddleware-6              4829744               245.8 ns/op            87 B/op          0 allocs/op
-BenchmarkManyHandlers
-BenchmarkManyHandlers-6                  4821524               244.3 ns/op            87 B/op          0 allocs/op
-Benchmark5Params
-Benchmark5Params-6                       4471778               277.2 ns/op           142 B/op          1 allocs/op
-BenchmarkOneRouteJSON
-BenchmarkOneRouteJSON-6                  4873143               250.7 ns/op            86 B/op          0 allocs/op
-BenchmarkOneRouteString
-BenchmarkOneRouteString-6                4727139               248.4 ns/op            89 B/op          0 allocs/op
-BenchmarkManyRoutesFist
-BenchmarkManyRoutesFist-6                1518609               794.1 ns/op           408 B/op          5 allocs/op
-BenchmarkManyRoutesLast
-BenchmarkManyRoutesLast-6               51970549                22.34 ns/op            0 B/op          0 allocs/op
-Benchmark404
-Benchmark404-6                          10658811               111.5 ns/op             0 B/op          0 allocs/op
-Benchmark404Many
-Benchmark404Many-6                       9690430               123.1 ns/op             0 B/op          0 allocs/op
+xmux.GetInstance(r).Body // Bind request data,  This data is only available when the binding value is
+xmux.GetInstance(r).CacheKey  // cache key
+xmux.GetInstance(r).Data   // Value parsed by data binding
+xmux.GetInstance(r).Response  // Response data
+xmux.GetInstance(r).StatusCode   // status_code
+xmux.GetInstance(r).Get()  // Get context value
+xmux.GetInstance(r).Set()  // Set context value
+xmux.GetInstance(r).GetConnectId()  // Get current connect id
+xmux.GetInstance(r).GetFuncName()  // It is related to the authority of adding, deleting, modifying and querying
+xmux.GetInstance(r).GetPageKeys()  // Related to page permissions
 ```
-
-# plow 
-![plow](plow.png)
-
 
 # Life cycle flow chart
 ![cycle](xmux.jpg)
