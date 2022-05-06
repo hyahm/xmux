@@ -2,14 +2,20 @@ package xmux
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/hyahm/xmux/helper"
 )
 
+func enter(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println(GetConnents())
+	return false
+}
 func BenchmarkOneRoute(B *testing.B) {
 	router := NewRouter()
+	router.Enter = enter
 	router.Exit = nil
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/ping")

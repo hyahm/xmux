@@ -185,6 +185,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+	atomic.AddInt32(&connections, 1)
+	defer atomic.AddInt32(&connections, -1)
 	ci := time.Now().UnixNano()
 	fd := &FlowData{
 		ctx:        make(map[string]interface{}),
@@ -192,6 +194,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		connectId:  ci,
 		StatusCode: 200,
 	}
+
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
 	start := time.Now()
@@ -208,8 +211,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
-	atomic.AddInt32(&connections, 1)
-	defer atomic.AddInt32(&connections, -1)
+
 	if r.IgnoreSlash {
 		req.URL.Path = prettySlash(req.URL.Path)
 	}
