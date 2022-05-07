@@ -607,7 +607,6 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	for url, mr := range r.route {
 		if thisurl == url {
 			debugPrint(url, mr)
-			return
 		}
 	}
 }
