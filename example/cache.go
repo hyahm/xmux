@@ -39,6 +39,7 @@ type Response struct {
 }
 
 func main() {
+
 	r := &Response{
 		Code: 0,
 	}

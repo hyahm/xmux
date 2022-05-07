@@ -63,7 +63,6 @@ type Router struct {
 	HandleNotFound       func(http.ResponseWriter, *http.Request)
 	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
-	RequestBytes         func([]byte, *http.Request)
 	IgnoreSlash          bool                // 忽略地址多个斜杠， 默认不忽略
 	route                UMR                 // 单实例路由， 组路由最后也会合并过来
 	tpl                  UMR                 // 正则路由， 组路由最后也会合并过来
@@ -185,6 +184,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+
 	atomic.AddInt32(&connections, 1)
 	defer atomic.AddInt32(&connections, -1)
 	ci := time.Now().UnixNano()
@@ -432,7 +432,6 @@ func NewRouter(cacheSize ...int) *Router {
 		header:         map[string]string{},
 		params:         make(map[string][]string),
 		Exit:           exit,
-		RequestBytes:   requestBytes,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),

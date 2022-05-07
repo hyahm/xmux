@@ -13,7 +13,7 @@ func StringToBytes(s string) []byte {
 }
 
 // 去掉多余的符号
-func CompressBytes(src []byte) []byte {
+func ClearBytesSpace(src []byte) []byte {
 	dst := make([]byte, 0, len(src))
 	for _, v := range src {
 		if v == '\n' || v == '\t' || v == '\r' || v == ' ' || v == '\v' || v == '\f' || v == 0x85 || v == 0xA0 {
