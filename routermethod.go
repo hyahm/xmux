@@ -6,10 +6,7 @@ import (
 )
 
 // get this route
-func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
-	if len(methods) == 0 {
-		panic(pattern + " have not any methods")
-	}
+func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method string) *Route {
 	temphead := make(map[string]string)
 	for k, v := range r.header {
 		temphead[k] = v
@@ -32,41 +29,30 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	}
 	// 判断是否是正则
 	url, vars, ok := r.makeRoute(pattern)
-	r.params[url] = vars
+	newRoute.params = vars
+	newRoute.url = url
 	if ok {
 		// 正则匹配的
-		for _, method := range methods {
-
-			if _, ok := r.tpl[url]; ok {
-				if _, ok := r.tpl[url][method]; ok {
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
-				}
+		if _, ok := r.tpl[url]; ok {
+			if _, ok := r.tpl[url][method]; ok {
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
 			}
-			if r.tpl[url] == nil {
-				r.tpl[url] = make(MethodsRoute)
-			}
-			newRoute.url = url
-			newRoute.params = vars
-			r.tpl[url][method] = newRoute
+		} else {
+			r.tpl[url] = make(MethodsRoute)
 		}
 
-		// 如果不存在就创建一个 route
-
+		r.tpl[url][method] = newRoute
 	} else {
 		// 直接匹配
-		for _, method := range methods {
-			// 如果存在就判断是否存在method
-			if _, ok := r.route[url]; ok {
-				if _, ok := r.route[url][method]; ok {
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
-				}
+		// 如果存在就判断是否存在method
+		if _, ok := r.route[url]; ok {
+			if _, ok := r.route[url][method]; ok {
+				log.Fatal("method : " + method + "  duplicate, url: " + url)
 			}
-			if r.route[url] == nil {
-				r.route[url] = make(MethodsRoute)
-			}
-			newRoute.url = url
-			r.route[url][method] = newRoute
+		} else {
+			r.route[url] = make(MethodsRoute)
 		}
+		r.route[url][method] = newRoute
 
 	}
 	return newRoute
@@ -98,24 +84,19 @@ func (r *Router) any(pattern string, handler func(http.ResponseWriter, *http.Req
 	}
 	// 判断是否是正则
 	url, vars, ok := r.makeRoute(pattern)
-
-	r.params[url] = vars
+	newRoute.params = vars
+	newRoute.url = url
 	if ok {
 		// 正则匹配的
-		if r.tpl[url] == nil {
-			r.tpl[url] = make(MethodsRoute)
-		}
 		for _, method := range methods {
 			if _, ok := r.tpl[url]; ok {
 				if _, ok := r.tpl[url][method]; ok {
 					log.Fatal("method : " + method + "  duplicate, url: " + url)
 				}
-			}
-			if r.tpl[url] == nil {
+			} else {
 				r.tpl[url] = make(MethodsRoute)
 			}
-			newRoute.url = url
-			newRoute.params = vars
+
 			r.tpl[url][method] = newRoute
 		}
 
@@ -123,21 +104,15 @@ func (r *Router) any(pattern string, handler func(http.ResponseWriter, *http.Req
 		return r.tpl[url]
 	} else {
 		// 直接匹配
-		if r.route[url] == nil {
-			r.route[url] = make(MethodsRoute)
-		}
-		r.route[url] = make(MethodsRoute)
 		for _, method := range methods {
 			// 如果存在就判断是否存在method
 			if _, ok := r.route[url]; ok {
 				if _, ok := r.route[url][method]; ok {
 					log.Fatal("method : " + method + "  duplicate, url: " + url)
 				}
-			}
-			if r.route[url] == nil {
+			} else {
 				r.route[url] = make(MethodsRoute)
 			}
-			newRoute.url = url
 			r.route[url][method] = newRoute
 		}
 		return r.route[url]

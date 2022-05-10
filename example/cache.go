@@ -39,7 +39,6 @@ type Response struct {
 }
 
 func main() {
-
 	r := &Response{
 		Code: 0,
 	}
@@ -48,10 +47,11 @@ func main() {
 
 	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
 	router.BindResponse(r)
-	router.Get("/aaa", c)
+	// router.Get("/aaa", c)
 	router.IgnoreSlash = true
-	router.Get("/update/////aaa", noCache).DelModule(setKey)
+	router.Get("/aaa", noCache).DelModule(setKey)
 	router.Get("/no/cache1", noCache1).DelModule(setKey)
+	router.Request("/aaa", noCache, http.MethodGet, http.MethodPost)
 	router.AddGroup(xmux.Pprof().DelModule(setKey))
 	router.Run()
 }
