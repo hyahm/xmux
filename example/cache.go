@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"unsafe"
 
-	"github.com/hyahm/gocache"
 	"github.com/hyahm/xmux"
 )
 
@@ -39,21 +39,28 @@ type Response struct {
 }
 
 func main() {
-	r := &Response{
-		Code: 0,
-	}
-	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
-	xmux.InitResponseCache(cth)
+	a := 1
+	var b *int
+	b = (*int)(unsafe.Pointer(&a))
+	fmt.Println(*b)
+	a = 2
+	fmt.Println(*b)
 
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
-	router.BindResponse(r)
-	// router.Get("/aaa", c)
-	router.IgnoreSlash = true
-	router.Get("/aaa", noCache).DelModule(setKey)
-	router.Get("/no/cache1", noCache1).DelModule(setKey)
-	router.Request("/aaa", noCache, http.MethodGet, http.MethodPost)
-	router.AddGroup(xmux.Pprof().DelModule(setKey))
-	router.Run()
+	// r := &Response{
+	// 	Code: 0,
+	// }
+	// cth := gocache.NewCache[string, []byte](100, gocache.LFU)
+	// xmux.InitResponseCache(cth)
+
+	// router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
+	// router.BindResponse(r)
+	// // router.Get("/aaa", c)
+	// router.IgnoreSlash = true
+	// router.Get("/aaa", noCache).DelModule(setKey)
+	// router.Get("/no/cache1", noCache1).DelModule(setKey)
+	// router.Request("/aaa", noCache, http.MethodGet, http.MethodPost)
+	// router.AddGroup(xmux.Pprof().DelModule(setKey))
+	// router.Run()
 }
 
 // func debug(paths ...string) {

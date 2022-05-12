@@ -91,7 +91,7 @@ func (r *Router) makeRoute(pattern string) (string, []string, bool) {
 	// 创建 methodsRoute
 
 	if r.IgnoreSlash {
-		pattern = prettySlash(pattern)
+		pattern = PrettySlash(pattern)
 	}
 
 	if v, listvar := match(pattern); len(listvar) > 0 {
@@ -213,7 +213,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if r.IgnoreSlash {
-		req.URL.Path = prettySlash(req.URL.Path)
+		req.URL.Path = PrettySlash(req.URL.Path)
 	}
 	// /favicon.ico 请求
 	if req.URL.Path == "/favicon.ico" {

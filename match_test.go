@@ -12,7 +12,7 @@ func TestMatch(t *testing.T) {
 }
 
 func TestCleanPath(t *testing.T) {
-	path := prettySlash("/asdf/sadf//asdfsadf/asdfsdaf////as///")
+	path := PrettySlash("/asdf/sadf//asdfsadf/asdfsdaf////as///")
 	t.Log(path)
 }
 
