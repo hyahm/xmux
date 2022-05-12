@@ -451,7 +451,7 @@ func unmarshalError(err error, w http.ResponseWriter, r *http.Request) bool {
 }
 
 func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("require field not found", key)
+	fmt.Println("required field not found", key)
 	return false
 }
 

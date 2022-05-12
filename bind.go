@@ -55,7 +55,7 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 		}
 		key := tagkeys[0]
 		if len(tagkeys) > 1 {
-			if strings.Contains(keys[len(key):], "require") && !gjson.Get(string(b), key).Exists() {
+			if strings.Contains(keys[len(key):], "required") && !gjson.Get(string(b), key).Exists() {
 				if r.NotFoundRequireField(key, w, req) {
 					return true, nil
 				}
@@ -188,7 +188,7 @@ func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 		key := tagkeys[0]
 		value := req.FormValue(key)
 		if len(tagkeys) > 1 {
-			if (strings.Contains(keys[len(key):], "require")) && value == "" {
+			if (strings.Contains(keys[len(key):], "required")) && value == "" {
 				if r.NotFoundRequireField(key, w, req) {
 					return true, nil
 				}
