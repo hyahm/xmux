@@ -26,7 +26,7 @@ const (
 // 	return "/" + strings.Join(n, "/")
 // }
 
-func prettySlash(p string) string {
+func PrettySlash(p string) string {
 	if p == "" {
 		return "/"
 	}
