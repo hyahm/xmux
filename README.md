@@ -217,7 +217,7 @@ xmux.GetInstance(r).Get("key")
 
 # Hook<a id="hook"></a>
 
-- NotFoundRequireField                                             : Processing tick for failed verification of require fields
+- NotFoundRequiredField                                             : Processing tick for failed verification of required fields
 - UnmarshalError                                                   : Built in Unmarshal error hook
 - Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :  handle exit
 - Enter( w http.ResponseWriter, r *http.Request) bool              :  handle enter
@@ -280,7 +280,7 @@ func main() {
 Validation field must required
 ```
 type User struct {
-	Username string "json:"username,require"
+	Username string "json:"username,required"
 }
 ```
 
@@ -668,7 +668,7 @@ Judging by a given array
           name: 'DirectivePermission',
           meta: {
             title: 'Directive Permission'
-            // if do not set roles, means: this page does not require permission
+            // if do not set roles, means: this page does not required permission
           }
         },
         {
