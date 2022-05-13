@@ -130,8 +130,8 @@ Remove any unnecessary slashes, for example
 func main() {
 	router := xmux.NewRouter()
 	router.IgnoreSlash = true
-	router.Get("/get",show) // 不同请求分别处理
-	router.Get("/get/",show) // 不同请求分别处理
+	router.Get("/get",show) 
+	router.Get("/get/",show)
 	router.Run()
 }
 
