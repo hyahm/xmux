@@ -254,7 +254,7 @@ name
 
 ### 钩子<a id="hook"></a>
 
-- NotFoundRequireField                                             : 必要字段验证失败的处理勾子
+- NotFoundRequiredField                                             : 必要字段验证失败的处理勾子
 - UnmarshalError                                                   : 内置解析解析错误的勾子
 - Exit (start time.Time, w http.ResponseWriter, r *http.Request)   : 
 - Enter( w http.ResponseWriter, r *http.Request) bool              : 
@@ -309,7 +309,11 @@ func main() {
 
 验证字段的必须存在
 
-
+```go
+type User struct {
+	Username string `json:"username,required" form:"username,required"`
+}
+```
 
 router.PrintRequestStr：  是否打印接受请求体内容
 
@@ -677,7 +681,7 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
           name: 'DirectivePermission',
           meta: {
             title: 'Directive Permission'
-            // if do not set roles, means: this page does not require permission
+            // if do not set roles, means: this page does not required permission
           }
         },
         {
