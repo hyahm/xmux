@@ -71,7 +71,7 @@ func main() {
 	//Just for example, the following writing method is not recommended, but route.Reqeust("/",nil, "POST", "GET")
 	router.Get("/", nil) // get request
 	router.Post("/", nil) // post request
-	router.Request("/ getpost", nil, "POST", "GET") // both get and post requests are supported
+	router.Request("/getpost", nil, "POST", "GET") // both get and post requests are supported
 	router.Any("/any", nil) // supports all requests except options
 	router.Run()
 }
