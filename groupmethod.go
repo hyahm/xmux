@@ -31,6 +31,15 @@ func (gr *RouteGroup) any(pattern string, handler func(http.ResponseWriter, *htt
 		delPageKeys: make(map[string]struct{}),
 		delheader:   make(map[string]struct{}),
 	}
+	if gr.module != nil {
+		newRoute.module = gr.module.cloneMudule()
+	} else {
+		newRoute.module = &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+			mu:        sync.RWMutex{},
+		}
+	}
 	url, vars, ok := gr.makeRoute(pattern)
 	gr.params[url] = vars
 	if ok {
@@ -87,18 +96,22 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		tempPages[k] = struct{}{}
 	}
 	newRoute := &Route{
-		handle:   http.HandlerFunc(handler),
-		pagekeys: make(map[string]struct{}),
-		module: &module{
-			filter:    make(map[string]struct{}),
-			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-			mu:        sync.RWMutex{},
-		},
+		handle:      http.HandlerFunc(handler),
+		pagekeys:    make(map[string]struct{}),
 		new:         true,
 		header:      make(map[string]string),
 		delmodule:   make(map[string]struct{}),
 		delPageKeys: make(map[string]struct{}),
 		delheader:   make(map[string]struct{}),
+	}
+	if gr.module != nil {
+		newRoute.module = gr.module.cloneMudule()
+	} else {
+		newRoute.module = &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+			mu:        sync.RWMutex{},
+		}
 	}
 	url, vars, ok := gr.makeRoute(pattern)
 	gr.params[url] = vars

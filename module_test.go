@@ -26,12 +26,46 @@ func m4(w http.ResponseWriter, r *http.Request) bool {
 func m5(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
+func sub6group() *RouteGroup {
+	sub1 := NewRouteGroup().AddModule(m1)
+	sub1.Get("/sub6/get", nil)
+	sub1.Post("/sub6/post", nil)
+	sub1.Any("/sub6/any", nil)
+	return sub1
+}
+
+func sub7group() *RouteGroup {
+	sub1 := NewRouteGroup().DelModule(m1, m2)
+	sub1.Get("/sub7/get", nil)
+	sub1.Post("/sub7/post", nil)
+	sub1.Any("/sub7/any", nil)
+	sub1.AddGroup(sub6group())
+	return sub1
+}
 
 func TestModule(t *testing.T) {
 	router := NewRouter().AddModule(m1, m2)
 	router.AddGroup(subgroup())
 	router.Get("/get", nil)
 	router.Post("/", nil).DelModule(m2)
+	router.AddGroup(sub7group())
+	{
+		s := router.route["/sub6/get"][http.MethodGet].module.funcOrder
+		t.Log(helper.GetFuncName(s[0]))
+		// if helper.GetFuncName(s[0]) != "github.com/hyahm/xmux.m1" || len(s) != 1 {
+		// 	t.Fail()
+		// }
+		// get := router.route["/get"][http.MethodGet].module.funcOrder
+		// if len(get) != 2 {
+		// 	t.Fail()
+		// }
+		// if helper.GetFuncName(get[0]) != "github.com/hyahm/xmux.m1" {
+		// 	t.Fail()
+		// }
+		// if helper.GetFuncName(get[1]) != "github.com/hyahm/xmux.m2" {
+		// 	t.Fail()
+		// }
+	}
 	router.AddGroup(sub3group())
 	{
 		s := router.route["/"][http.MethodPost].module.funcOrder
