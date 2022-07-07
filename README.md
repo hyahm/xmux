@@ -119,7 +119,7 @@ func main() {
 	router.AddGroup(g)
 	router.Run()
 }
-
+```
 
 
 # Automatically detect duplicates <a id="check"></a>
