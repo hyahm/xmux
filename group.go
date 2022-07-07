@@ -20,11 +20,13 @@ type RouteGroup struct {
 	delmodule        map[string]struct{}
 	responseData     interface{}
 	bindResponseData bool
+	routes           []*Route
 	params           map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
 	delheader        map[string]struct{}
 	pagekeys         mstringstruct // 页面权限
-
-	delPageKeys map[string]struct{}
+	prefix           []string
+	delprefix        map[string]struct{}
+	delPageKeys      map[string]struct{}
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -35,11 +37,14 @@ func NewRouteGroup() *RouteGroup {
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 			mu:        sync.RWMutex{},
 		},
+		prefix:    []string{"/"},
+		delprefix: make(map[string]struct{}),
 		new:       true,
 		delmodule: make(map[string]struct{}),
 		params:    make(map[string][]string),
 		route:     make(UMR),
 		tpl:       make(UMR),
+		routes:    make([]*Route, 0),
 	}
 }
 
@@ -141,11 +146,39 @@ func (g *RouteGroup) DelModule(handles ...func(http.ResponseWriter, *http.Reques
 	return g
 }
 
+func (g *RouteGroup) Prefix(prefix string) *RouteGroup {
+	if !g.new {
+		panic("must be init by NewRouteGroup()")
+	}
+	g.prefix = append(g.prefix, prefix)
+	return g
+}
+
+func (g *RouteGroup) DelPrefix(prefixs ...string) *RouteGroup {
+	if !g.new {
+		panic("must be init by NewRouteGroup()")
+	}
+	for _, prefix := range prefixs {
+		g.delprefix[prefix] = struct{}{}
+	}
+	return g
+}
+
 // 组里面也包括路由 后面的其实还是patter和handle,
 // 根据路径来判断是不是正则表达式， 分别挂载到组路由的tpl 和 route 中
 // 路径对应的 params 全部都在 pattern 中
 // 返回url 和 是否是正则表达式
 func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
+	// 格式路径
+	if v, listvar := match(pattern); len(listvar) > 0 {
+		return v, listvar, true
+		// 判断是否重复
+	} else {
+		return pattern, nil, false
+	}
+}
+
+func makeRoute(pattern string) (string, []string, bool) {
 	// 格式路径
 	if v, listvar := match(pattern); len(listvar) > 0 {
 		return v, listvar, true

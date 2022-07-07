@@ -3,6 +3,7 @@ package xmux
 import (
 	"log"
 	"net/http"
+	"path"
 )
 
 // get this route
@@ -11,7 +12,6 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	for k, v := range r.header {
 		temphead[k] = v
 	}
-
 	tempPages := make(map[string]struct{})
 	for k := range r.pagekeys {
 		tempPages[k] = struct{}{}
@@ -26,10 +26,15 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		delheader:    make(map[string]struct{}),
 		delmodule:    make(map[string]struct{}),
 		delPageKeys:  make(map[string]struct{}),
+		prefixs:      make([]string, 0),
+		delprefix:    map[string]struct{}{},
 	}
+	prefix := path.Join(r.prefix...)
+	prefix = path.Join(prefix, pattern)
 	// 判断是否是正则
-	url, vars, ok := r.makeRoute(pattern)
+	url, vars, ok := r.makeRoute(prefix)
 	newRoute.params = vars
+
 	newRoute.url = url
 	if ok {
 		// 正则匹配的
@@ -81,9 +86,13 @@ func (r *Router) any(pattern string, handler func(http.ResponseWriter, *http.Req
 		delheader:    make(map[string]struct{}),
 		delmodule:    make(map[string]struct{}),
 		delPageKeys:  make(map[string]struct{}),
+		prefixs:      make([]string, 0),
+		delprefix:    map[string]struct{}{},
 	}
 	// 判断是否是正则
-	url, vars, ok := r.makeRoute(pattern)
+	prefix := path.Join(r.prefix...)
+	prefix = path.Join(prefix, pattern)
+	url, vars, ok := r.makeRoute(prefix)
 	newRoute.params = vars
 	newRoute.url = url
 	if ok {

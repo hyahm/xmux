@@ -13,6 +13,7 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 - [quick start](#start)
 - [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
 - [routing group](#group)
+- [prefix](#prefix)
 - [auto detect duplicates](#check)
 - [context value transfer](#variable)
 - [auto ignore slash](#slash)
@@ -103,6 +104,22 @@ func main() {
 	router.AddGroup(aritclegroup.Article)
 }
 ```
+
+### prefix <a id="prefix"></a>
+// notice： DelPrefix is valid only by routegroup 
+```go
+
+func main() {
+	router := xmux.NewRouter().Prefix("test")
+	router.Get("/bbb", c)   // /test/bbb
+	router.Get("/ccc", c).DelPrefix("test")   // /test/bbb
+	g := xmux.NewRouteGroup()
+	g.Get("/aaa", noCache).DelModule(setKey) // /test/bbb
+	g.Get("/no/cache1", noCache1).DelModule(setKey).DelPrefix("test") // /no/cache1
+	router.AddGroup(g)
+	router.Run()
+}
+
 
 
 # Automatically detect duplicates <a id="check"></a>

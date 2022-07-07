@@ -12,6 +12,7 @@
 - [快速开始](#start)
 - [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
 - [路由组](#group)
+- [前缀](#prefix)
 - [自动检测重复项](#check)
 - [上下文传值](#variable)
 - [自动忽略斜杠](#slash)
@@ -26,6 +27,7 @@
 - [pprof组](#pprof)
 - [swagger组](#swagger)
 - [连接的实例](#instance)
+
 
 
 ### 安装<a id="install"></a>  
@@ -102,6 +104,23 @@ func main() {
 }
 ```
 
+### 前缀 <a id="prefix"></a>
+// 注意： 只有组路由DelPrefix才会生效  
+```go
+
+func main() {
+	router := xmux.NewRouter().Prefix("test")
+	router.Get("/bbb", c)   // /test/bbb
+	router.Get("/ccc", c).DelPrefix("test")   // /test/bbb
+	g := xmux.NewRouteGroup()
+	g.Get("/aaa", noCache).DelModule(setKey) // /test/bbb
+	g.Get("/no/cache1", noCache1).DelModule(setKey).DelPrefix("test") // /no/cache1
+	router.AddGroup(g)
+	router.Run()
+}
+
+
+```
 
 ### 自动检测重复项 <a id="check"></a>
 ```go

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -52,6 +53,7 @@ func requestBytes(reqbody []byte, r *http.Request) {
 }
 
 type Router struct {
+	prefix               []string
 	MaxPrintLength       int
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool                                          // 判断是否是通过newRouter 来初始化的
@@ -427,6 +429,7 @@ func NewRouter(cacheSize ...int) *Router {
 	return &Router{
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
 		new:            true,
+		prefix:         []string{"/"},
 		route:          make(UMR),
 		tpl:            make(UMR),
 		header:         map[string]string{},
@@ -476,6 +479,15 @@ func (r *Router) cloneHeader() mstringstring {
 		tempHeader[k] = v
 	}
 	return tempHeader
+}
+
+func (r *Router) Prefix(prefixs ...string) *Router {
+	if len(prefixs) == 0 {
+		return r
+	}
+	r.prefix = append(r.prefix, prefixs...)
+
+	return r
 }
 
 // 组路由合并到每个单路由里面
@@ -544,35 +556,79 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 	if group.params == nil && group.route == nil {
 		return nil
 	}
-
-	for url, args := range group.params {
-		r.params[url] = args
-		if len(args) == 0 {
-			for method := range group.route[url] {
-				if _, ok := r.route[url]; ok {
-					if _, gok := r.route[url][method]; gok {
-						log.Fatal("method : " + method + "  duplicate, url: " + url)
-					}
-				}
-				r.merge(group, group.route[url][method])
+	prefixs := SubtractSliceMap(r.prefix, group.delprefix)
+	prefix := append(prefixs, group.prefix...)
+	for _, route := range group.routes {
+		subprefixs := SubtractSliceMap(prefix, route.delprefix)
+		subprefix := append(subprefixs, route.prefixs...)
+		allurl := path.Join(subprefix...)
+		allurl = path.Join(allurl, route.url)
+		url, vars, ok := makeRoute(allurl)
+		route.params = vars
+		if ok {
+			if r.tpl[url] == nil {
+				r.tpl[url] = make(map[string]*Route)
 			}
-
-			r.route[url] = group.route[url]
+			for _, method := range route.methods {
+				if _, methodOk := r.tpl[url][method]; methodOk {
+					// 如果也存在， 那么method重复了
+					log.Fatal("method : " + method + "  duplicate, url: " + url)
+				}
+				if r.tpl[url] == nil {
+					r.tpl[url] = make(MethodsRoute)
+				}
+				// newRoute.methods[method] = struct{}{}
+				route.url = url
+				route.params = vars
+				r.merge(group, route)
+			}
 
 		} else {
-			for method := range group.tpl[url] {
-				if _, ok := r.tpl[url]; ok {
-					if _, gok := r.tpl[url][method]; gok {
-						log.Fatal("method : " + method + "  duplicate, url: " + url)
-					}
-				}
-				r.merge(group, group.tpl[url][method])
+			if r.route[url] == nil {
+				r.route[url] = make(map[string]*Route)
 			}
+			// 如果存在就判断是否存在method
+			for _, method := range route.methods {
+				if _, methodOk := r.route[url][method]; methodOk {
+					// 如果也存在， 那么method重复了
+					log.Fatal("method : " + method + "  duplicate, url: " + url)
+				}
+				route.url = url
+				r.route[url][method] = route
+				r.merge(group, route)
+			}
+			// 如果不存在就创建一个 route
 
-			r.tpl[url] = group.tpl[url]
 		}
-
 	}
+	// for url, args := range group.params {
+	// 	r.params[url] = args
+	// 	if len(args) == 0 {
+	// 		for method := range group.route[url] {
+	// 			if _, ok := r.route[url]; ok {
+	// 				if _, gok := r.route[url][method]; gok {
+	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
+	// 				}
+	// 			}
+	// 			r.merge(group, group.route[url][method])
+	// 		}
+
+	// 		r.route[url] = group.route[url]
+
+	// 	} else {
+	// 		for method := range group.tpl[url] {
+	// 			if _, ok := r.tpl[url]; ok {
+	// 				if _, gok := r.tpl[url][method]; gok {
+	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
+	// 				}
+	// 			}
+	// 			r.merge(group, group.tpl[url][method])
+	// 		}
+
+	// 		r.tpl[url] = group.tpl[url]
+	// 	}
+
+	// }
 
 	return r
 }

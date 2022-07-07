@@ -25,7 +25,7 @@ func AddFoo(w http.ResponseWriter, r *http.Request) {
 
 func UnmarshalError(err error, w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println(err)
-	return true
+	return false
 }
 
 func main() {
@@ -34,5 +34,5 @@ func main() {
 	router.UnmarshalError = UnmarshalError
 	// 也可以直接使用内置的
 	router.Post("/bind/json", AddFoo).BindByContentType(&DataFoo{}) // 如果是json格式的可以直接 BindJson 与上面是类似的效果
-	router.Run()
+	router.Run(":7777")
 }
