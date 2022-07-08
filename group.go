@@ -146,11 +146,11 @@ func (g *RouteGroup) DelModule(handles ...func(http.ResponseWriter, *http.Reques
 	return g
 }
 
-func (g *RouteGroup) Prefix(prefix string) *RouteGroup {
+func (g *RouteGroup) Prefix(prefixs ...string) *RouteGroup {
 	if !g.new {
 		panic("must be init by NewRouteGroup()")
 	}
-	g.prefix = append(g.prefix, prefix)
+	g.prefix = append(g.prefix, prefixs...)
 	return g
 }
 
@@ -168,15 +168,15 @@ func (g *RouteGroup) DelPrefix(prefixs ...string) *RouteGroup {
 // 根据路径来判断是不是正则表达式， 分别挂载到组路由的tpl 和 route 中
 // 路径对应的 params 全部都在 pattern 中
 // 返回url 和 是否是正则表达式
-func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
-	// 格式路径
-	if v, listvar := match(pattern); len(listvar) > 0 {
-		return v, listvar, true
-		// 判断是否重复
-	} else {
-		return pattern, nil, false
-	}
-}
+// func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
+// 	// 格式路径
+// 	if v, listvar := match(pattern); len(listvar) > 0 {
+// 		return v, listvar, true
+// 		// 判断是否重复
+// 	} else {
+// 		return pattern, nil, false
+// 	}
+// }
 
 func makeRoute(pattern string) (string, []string, bool) {
 	// 格式路径

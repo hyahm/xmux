@@ -51,7 +51,7 @@ func main() {
 	router.Get("/bbb", c)
 	router.Get("/ccc", c).DelPrefix("test")
 	router.IgnoreSlash = true
-	g := xmux.NewRouteGroup()
+	g := xmux.NewRouteGroup().Prefix().DelPrefix()
 	g.Get("/aaa", noCache).DelModule(setKey)
 	g.Get("/no/cache1", noCache1).DelModule(setKey).DelPrefix("test")
 	// router.Request("/aaa", noCache, http.MethodGet, http.MethodPost)
