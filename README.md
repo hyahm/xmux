@@ -106,7 +106,7 @@ func main() {
 ```
 
 ### prefix <a id="prefix"></a>
-// notice： DelPrefix is valid only by routegroup 
+// notice： DelPrefix and Prefix are valid only by routegroup 
 ```go
 
 func main() {
