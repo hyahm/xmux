@@ -189,6 +189,7 @@ func GenRsa(prikey, pubkey, crtkey string) error {
 	return pem.Encode(f, cblock)
 }
 
+//RSA解密
 func RsaDecryptFromBase64(s string, priviteKeyPath string) ([]byte, error) {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
@@ -216,6 +217,7 @@ func RsaDecryptFromBase64(s string, priviteKeyPath string) ([]byte, error) {
 	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, b)
 }
 
+//RSA解密
 func RsaDecryptFromString(s string, priviteKeyPath string) ([]byte, error) {
 	b := []byte(s)
 	file, err := os.Open(priviteKeyPath)
