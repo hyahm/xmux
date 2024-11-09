@@ -762,7 +762,10 @@ xmux.NewRouter(cache ...uint64) // cache 是一个内置lru 路径缓存， 不�
   
   func main() {
   	router := xmux.NewRouter()
-  	router.AddModule(DefaultPermissionTemplate).AddPageKeys("admin", "editor")
+	// 添加验证模块，直接用模版就可以，也可以自己写
+	router.AddModule(xmux.DefaultPermissionTemplate)
+	// AddPageKeys() 里面的字符串权限与js 路由里面的验证是一样的， 这里是全局添加， 所有下面所有路由都有
+  	router.AddPageKeys("admin", "editor")
   	router.Post("/permission", AddName)
   	router.Post("/permission/page", AddStd).DelPageKeys("editor")
   	router.Post("/permission/directive", AddFoo)
