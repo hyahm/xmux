@@ -642,7 +642,7 @@ xmux.StopService()
 xmux.NewRouter(cache ...uint64) // Cache is a built-in LRU path cache. The default cache 10000 is not written. Please modify it yourself according to the situation
 ```
 
-#  Permission control < a id = "permission" ></a>
+# Permission control <a id="permission"></a>
 
 - Page permissions
 
