@@ -139,7 +139,7 @@ func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Req
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	return r.any(pattern, handler, http.MethodConnect,
+	return r.any(pattern, handler,
 		http.MethodDelete, http.MethodGet, http.MethodHead,
 		http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace,
 	)

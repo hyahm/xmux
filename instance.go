@@ -7,8 +7,17 @@ import (
 
 // instance  数据二次封装, 用户各模块之间的数据传递
 
+type CURD interface {
+	Create()
+	Update()
+	Read()
+	Delete()
+	Marshal()
+}
+
 type FlowData struct {
-	Data       interface{}            // 处理后的数据
+	Data any
+	// 处理后的数据
 	ctx        map[string]interface{} // 用来传递自定义值
 	mu         *sync.RWMutex
 	Response   interface{} // 返回的数据结构
