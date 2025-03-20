@@ -396,7 +396,7 @@ func (r *Router) RunUnsafeTLS(opt ...string) error {
 	return nil
 }
 
-func (r *Router) RunTLS(certFile, keyFile string, opt ...string) error {
+func (r *Router) RunTLS(certFile, keyFile string) error {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -407,13 +407,9 @@ func (r *Router) RunTLS(certFile, keyFile string, opt ...string) error {
 	if strings.Trim(certFile, "") == "" {
 		certFile = "server.crt" // 证书文件
 	}
-	addr := ":443"
-	if len(opt) > 0 {
-		addr = opt[0]
-	}
 
 	svc := &http.Server{
-		Addr:        addr,
+		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
@@ -424,7 +420,7 @@ func (r *Router) RunTLS(certFile, keyFile string, opt ...string) error {
 	if os.IsNotExist(err1) || os.IsNotExist(err2) {
 		GenRsa(keyFile, certFile)
 	}
-	fmt.Println("listen on ", addr, "over https")
+	fmt.Println("listen on ", r.addr, "over https")
 	return svc.ListenAndServeTLS(certFile, keyFile)
 }
 
