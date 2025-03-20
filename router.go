@@ -54,10 +54,12 @@ func requestBytes(reqbody []byte, r *http.Request) {
 }
 
 type Router struct {
+	addr                 string
 	prefix               []string
 	MaxPrintLength       int
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool                                          // 判断是否是通过newRouter 来初始化的
+	EnableConnect        bool                                          // 判断是否是通过newRouter 来初始化的
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout          time.Duration
 	HanleFavicon         func(http.ResponseWriter, *http.Request)
@@ -192,11 +194,20 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	atomic.AddInt32(&connections, 1)
 	defer atomic.AddInt32(&connections, -1)
-	// 增加处理 CONNECT请求
+
 	if req.Method == http.MethodConnect {
+		if r.EnableConnect {
+			if r.HandleConnect == nil {
+				r.HandleConnect = handleConnect
+			}
+		} else {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
 		r.HandleConnect(w, req)
 		return
 	}
+
 	ci := time.Now().UnixNano()
 	fd := &FlowData{
 		ctx:        make(map[string]interface{}),
@@ -303,37 +314,33 @@ endloop:
 	r.readFromCache(start, thisRouter, w, req, fd)
 }
 
-func (r *Router) Run(opt ...string) error {
+func (r *Router) SetAddr(addr string) {
+	r.addr = addr
+}
+
+func (r *Router) Run() error {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	addr := ":8080"
-	if len(opt) > 0 {
-		addr = opt[0]
-	}
 	svc := &http.Server{
-		Addr:        addr,
+		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
-	fmt.Printf("listen on %s\n", addr)
+	fmt.Printf("listen on %s\n", r.addr)
 	return svc.ListenAndServe()
 }
 
-func (r *Router) Debug(ctx context.Context, opt ...string) {
+func (r *Router) Debug(ctx context.Context) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	addr := ":8080"
-	if len(opt) > 0 {
-		addr = opt[0]
-	}
 	svc := &http.Server{
-		Addr:        addr,
+		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
 		Handler:     r,
 	}
-	fmt.Printf("listen on %s\n", addr)
+	fmt.Printf("listen on %s\n", r.addr)
 	go svc.ListenAndServe()
 	select {
 	case <-ctx.Done():
@@ -389,15 +396,16 @@ func (r *Router) RunUnsafeTLS(opt ...string) error {
 	return nil
 }
 
-func (r *Router) RunTLS(keyfile, pemfile string, opt ...string) error {
+func (r *Router) RunTLS(certFile, keyFile string, opt ...string) error {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	if strings.Trim(keyfile, "") == "" {
-		panic("keyfile is empty")
+
+	if strings.Trim(keyFile, "") == "" {
+		keyFile = "server.key"
 	}
-	if strings.Trim(pemfile, "") == "" {
-		panic("pemfile is empty")
+	if strings.Trim(certFile, "") == "" {
+		certFile = "server.crt" // 证书文件
 	}
 	addr := ":443"
 	if len(opt) > 0 {
@@ -411,13 +419,13 @@ func (r *Router) RunTLS(keyfile, pemfile string, opt ...string) error {
 	}
 
 	// 如果key文件不存在那么就自动生成
-	_, err1 := os.Stat(keyfile)
-	_, err2 := os.Stat(pemfile)
+	_, err1 := os.Stat(keyFile)
+	_, err2 := os.Stat(certFile)
 	if os.IsNotExist(err1) || os.IsNotExist(err2) {
-		GenRsa(keyfile, "client.key", pemfile)
+		GenRsa(keyFile, certFile)
 	}
 	fmt.Println("listen on ", addr, "over https")
-	return svc.ListenAndServeTLS(pemfile, keyfile)
+	return svc.ListenAndServeTLS(certFile, keyFile)
 }
 
 func NewRouter(cacheSize ...int) *Router {
@@ -427,6 +435,7 @@ func NewRouter(cacheSize ...int) *Router {
 	}
 	initUrlCache(c)
 	return &Router{
+		addr:           ":8080",
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
 		new:            true,
 		prefix:         []string{"/"},
@@ -443,7 +452,6 @@ func NewRouter(cacheSize ...int) *Router {
 		HanleFavicon:         handleFavicon,
 		HandleOptions:        handleOptions,
 		HandleNotFound:       handleNotFound,
-		HandleConnect:        handleConnect,
 		NotFoundRequireField: notFoundRequireField,
 
 		UnmarshalError: unmarshalError,

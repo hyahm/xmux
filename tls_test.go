@@ -11,7 +11,7 @@ import (
 )
 
 func TestRsa(t *testing.T) {
-	GenRsa("pri.key", "pub.key", "ca.crt")
+	GenRsa("pri.key", "ca.crt")
 }
 
 func TestDecrypt(t *testing.T) {

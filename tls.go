@@ -7,6 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -122,74 +123,85 @@ func createCertificateFile(name string, cert *x509.Certificate, key *rsa.Private
 
 }
 
-func GenRsa(prikey, pubkey, crtkey string) error {
+func GenRsa(keyFile, certFile string) {
 	// openssl genrsa -out private.pem 2048
 	// openssl rsa -in private.pem -pubout -out public.pem
 	// openssl pkeyutl -encrypt -inkey public.pem  -pubin -in f.txt -out fe.txt
 	// openssl pkeyutl -decrypt -inkey private.pem -in fe.txt -out ffff.txt
-	pri, err := rsa.GenerateKey(rand.Reader, 2048)
+	// 设置证书的有效期
+	notBefore := time.Now()
+	notAfter := notBefore.Add(365 * 24 * time.Hour) // 有效期为 365 天
+
+	// 设置证书的主题
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to generate serial number: %v", err)
 	}
 
-	derText := x509.MarshalPKCS1PrivateKey(pri)
-	block := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: derText,
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization:  []string{"My Company"},
+			Country:       []string{"CN"},
+			Province:      []string{"My Province"},
+			Locality:      []string{"My City"},
+			StreetAddress: []string{"My Street"},
+			PostalCode:    []string{"123456"},
+			CommonName:    "localhost", // 证书的通用名称，可以是域名或 IP 地址
+		},
+		NotBefore: notBefore,
+		NotAfter:  notAfter,
+		// 设置证书的用途
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  true, // 设置为自签名证书
 	}
-	f, err := os.OpenFile(prikey, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	pem.Encode(f, block)
 
 	// 生成私钥
-
-	ptext, err := x509.MarshalPKIXPublicKey(&pri.PublicKey)
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return err
-	}
-	pblock := &pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: ptext,
+		log.Fatalf("Failed to generate private key: %v", err)
 	}
 
-	f, err = os.OpenFile(pubkey, os.O_CREATE|os.O_WRONLY, 0644)
+	// 使用私钥生成证书
+	certificateBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to create certificate: %v", err)
 	}
-	defer f.Close()
-	pem.Encode(f, pblock)
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject:      pkix.Name{CommonName: "xmux"},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageCRLSign | x509.KeyUsageDigitalSignature,
-	}
-	if ip := net.ParseIP("localhost"); ip != nil {
-		template.IPAddresses = append(template.IPAddresses, ip)
-	} else {
-		template.DNSNames = append(template.DNSNames, "localhost")
-	}
-	cert, err := x509.CreateCertificate(rand.Reader, &template, &template, &pri.PublicKey, pri)
+
+	// 保存证书到文件
+	certOut, err := os.Create(certFile)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to open server.crt for writing: %v", err)
 	}
-	cblock := &pem.Block{
+	defer certOut.Close()
+
+	// 使用 PEM 格式保存证书
+	pem.Encode(certOut, &pem.Block{
 		Type:  "CERTIFICATE",
-		Bytes: cert,
-	}
-	f, err = os.OpenFile(crtkey, os.O_CREATE|os.O_WRONLY, 0644)
+		Bytes: certificateBytes,
+	})
+
+	// 保存私钥到文件
+	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to open server.key for writing: %v", err)
 	}
-	defer f.Close()
-	return pem.Encode(f, cblock)
+	defer keyOut.Close()
+
+	// 使用 PEM 格式保存私钥
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	pem.Encode(keyOut, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	})
+
+	fmt.Println("Certificate and private key generated successfully!")
 }
 
-//RSA解密
+// RSA解密
 func RsaDecryptFromBase64(s string, priviteKeyPath string) ([]byte, error) {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
@@ -217,7 +229,7 @@ func RsaDecryptFromBase64(s string, priviteKeyPath string) ([]byte, error) {
 	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, b)
 }
 
-//RSA解密
+// RSA解密
 func RsaDecryptFromString(s string, priviteKeyPath string) ([]byte, error) {
 	b := []byte(s)
 	file, err := os.Open(priviteKeyPath)
@@ -242,7 +254,7 @@ func RsaDecryptFromString(s string, priviteKeyPath string) ([]byte, error) {
 	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, b)
 }
 
-//RSA加密
+// RSA加密
 func RSA_Encrypt(plainText []byte, path string) ([]byte, error) {
 	//打开文件
 	file, err := os.Open(path)
