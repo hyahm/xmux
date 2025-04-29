@@ -59,7 +59,7 @@ type Router struct {
 	MaxPrintLength       int
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool                                          // 判断是否是通过newRouter 来初始化的
-	EnableConnect        bool                                          // 判断是否是通过newRouter 来初始化的
+	EnableConnect        bool                                          //
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout          time.Duration
 	HanleFavicon         func(http.ResponseWriter, *http.Request)
@@ -236,6 +236,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.IgnoreSlash {
 		req.URL.Path = PrettySlash(req.URL.Path)
 	}
+	fmt.Println(req.URL.Path)
 	// /favicon.ico 请求
 	if req.URL.Path == "/favicon.ico" {
 		for k, v := range r.header {
@@ -310,6 +311,7 @@ endloop:
 		responseData: thisRoute.responseData,
 	}
 	// 设置缓存
+	fmt.Println(req.URL.Path)
 	setUrlCache(req.URL.Path+req.Method, thisRouter)
 	r.readFromCache(start, thisRouter, w, req, fd)
 }
@@ -598,19 +600,21 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 	if group.params == nil && group.route == nil {
 		return nil
 	}
+	// 将前缀删除
 	prefixs := SubtractSliceMap(r.prefix, group.delprefix)
 	prefix := append(prefixs, group.prefix...)
 	for _, route := range group.routes {
 		subprefixs := SubtractSliceMap(prefix, route.delprefix)
 		subprefix := append(subprefixs, route.prefixs...)
 		allurl := path.Join(subprefix...)
-		allurl = path.Join(allurl, route.url)
+		allurl = PrettySlash(allurl + route.url)
 		url, vars, ok := makeRoute(allurl)
 		route.params = vars
 		if ok {
 			if r.tpl[url] == nil {
 				r.tpl[url] = make(map[string]*Route)
 			}
+
 			for _, method := range route.methods {
 				if _, methodOk := r.tpl[url][method]; methodOk {
 					// 如果也存在， 那么method重复了
@@ -621,6 +625,7 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 				}
 				// newRoute.methods[method] = struct{}{}
 				route.url = url
+				r.tpl[url][method] = route
 				route.params = vars
 				r.merge(group, route)
 			}

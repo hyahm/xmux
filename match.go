@@ -75,7 +75,7 @@ func match(path string) (string, []string) {
 		panic("pattern empty")
 	}
 	// 返回三个参数，  （正则）路径， 正则的参数， 是否是正则
-	// 按照/分段计算
+	// 按照/分段计算, 计算的时候需要计算后面的斜杠， 如果有的长度会多一个
 	pl := strings.Split(path, "/")
 	var (
 		pathlist []string

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/hyahm/gocache v0.0.0-20220522145614-dfeab3db5e17
+	github.com/hyahm/golog v0.0.0-20250429010410-fbf87c26b237
 	github.com/tidwall/gjson v1.14.1
 	gopkg.in/yaml.v2 v2.4.0
 )
