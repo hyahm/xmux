@@ -21,7 +21,6 @@ import (
 func Pprof() *RouteGroup {
 	pprof := NewRouteGroup()
 	pprof.Get("/debug/pprof", index).SetHeader("Content-Type", "text/html; charset=utf-8")
-	pprof.Get("/debug/pprof/", index).SetHeader("Content-Type", "text/html; charset=utf-8")
 	pprof.Get("/debug/{name}", debug).SetHeader("Content-Type", "text/plain; charset=utf-8")
 	pprof.Get("/debug/cmdline", cmdline).SetHeader("Content-Type", "text/plain; charset=utf-8")
 	pprof.Get("/debug/profile", profile).SetHeader("Content-Type", "application/octet-stream").
