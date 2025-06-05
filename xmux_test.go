@@ -1,18 +1,17 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"testing"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("home")
+	w.Write([]byte("home"))
 }
 
 func grouphome(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("grouphome")
+	w.Write([]byte("grouphome"))
 }
 
 var group *RouteGroup

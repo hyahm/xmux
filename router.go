@@ -236,7 +236,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.IgnoreSlash {
 		req.URL.Path = PrettySlash(req.URL.Path)
 	}
-	fmt.Println(req.URL.Path)
 	// /favicon.ico 请求
 	if req.URL.Path == "/favicon.ico" {
 		for k, v := range r.header {
@@ -311,7 +310,6 @@ endloop:
 		responseData: thisRoute.responseData,
 	}
 	// 设置缓存
-	fmt.Println(req.URL.Path)
 	setUrlCache(req.URL.Path+req.Method, thisRouter)
 	r.readFromCache(start, thisRouter, w, req, fd)
 }
