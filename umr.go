@@ -2,7 +2,9 @@ package xmux
 
 // url资源的path,
 
-type UMR map[string]MethodsRoute
+// UMR[url][method] = *Route
+
+// type UMR map[string]MethodsRoute
 
 // func (u UMR) add() {
 // 	for method := range u {

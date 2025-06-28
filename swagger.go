@@ -129,58 +129,56 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 			Schemes: ss,
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
-		// 合并请求
+		// 合并匹配请求
 		for k, mr := range router.route {
 			if k == url || k == jsonPath {
 				continue
 			}
+
+			ms := MethodStrcut{
+				Summary:  mr.summary,
+				Produces: []string{"application/json"},
+				Responses: map[string]Response{"200": {
+					Description: "",
+				}},
+			}
 			path := make(map[string]MethodStrcut)
-			for method, route := range mr {
-				ms := MethodStrcut{
-					Summary:  route.summary,
-					Produces: []string{"application/json"},
-					Responses: map[string]Response{"200": {
-						Description: "asdfsdf",
-					}},
-				}
-
-				if acc, ok := route.header["Content-Type"]; ok {
-					ms.Produces = strings.Split(acc, ";")
-				} else {
-					ms.Produces = []string{"application/json"}
-				}
-				ms.Parameters = route.query
-
+			for _, method := range mr.methods {
 				path[strings.ToLower(method)] = ms
 			}
+			if acc, ok := mr.header["Content-Type"]; ok {
+				ms.Produces = strings.Split(acc, ";")
+			} else {
+				ms.Produces = []string{"application/json"}
+			}
+			ms.Parameters = mr.query
 			swagger.Paths[k] = path
 		}
 		// 合并正则请求
-		for _, mr := range router.tpl {
+		for url, mr := range router.tpl {
 			path := make(map[string]MethodStrcut)
-			for method, route := range mr {
+			for _, method := range mr.methods {
 				ms := MethodStrcut{
-					Summary:  route.summary,
+					Summary:  mr.summary,
 					Produces: []string{"application/json"},
 					Responses: map[string]Response{"200": {
-						Description: "asdfsdf",
+						Description: "",
 					}},
 				}
 
-				if acc, ok := route.header["Content-Type"]; ok {
+				if acc, ok := mr.header["Content-Type"]; ok {
 					ms.Produces = strings.Split(acc, ";")
 				} else {
 					ms.Produces = []string{"application/json"}
 				}
-				ms.Parameters = route.query
+				ms.Parameters = mr.query
 
 				// 正则请求还需要合并path, 自定义正则必须每个组都以^开头 $结尾， 不然无法自动生成
-				url := ""
-				for _, name := range route.params {
+				for _, name := range mr.params {
 					// url 进行填充
 					// 将url的^ 替换成 { 将url的$ 替换成  }
 
-					url = route.url[1 : len(route.url)-1]
+					url = mr.url[1 : len(mr.url)-1]
 					start := strings.Index(url, "(")
 					end := strings.Index(url, ")")
 					t := "string"

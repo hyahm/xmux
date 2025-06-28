@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/hyahm/xmux/helper"
 )
@@ -200,7 +199,6 @@ func (rt *Route) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 		rt.module = &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-			mu:        sync.RWMutex{},
 		}
 	}
 	rt.module.add(handles...)

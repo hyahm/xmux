@@ -26,3 +26,17 @@ func SubtractSliceMap[T comparable](a []T, b map[T]struct{}) []T {
 	}
 	return temp
 }
+
+// 重复的K  有多个key 也只返回一个
+func SliceExsit(s1, s2 []string) (string, bool) {
+	mm := make(map[string]struct{})
+	for _, v := range s2 {
+		mm[v] = struct{}{}
+	}
+	for _, v := range s1 {
+		if _, ok := mm[v]; ok {
+			return v, true
+		}
+	}
+	return "", false
+}

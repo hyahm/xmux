@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/hyahm/xmux/helper"
 )
@@ -16,7 +15,6 @@ type module struct {
 	// order     []func(w http.ResponseWriter, r *http.Request) bool // 保存执行的顺序
 	filter    map[string]struct{}                                 // 过滤重复的,值是索引的位置
 	funcOrder []func(w http.ResponseWriter, r *http.Request) bool // 函数名排序
-	mu        sync.RWMutex
 }
 
 // 获取module数组
@@ -24,7 +22,6 @@ func (m *module) cloneMudule() *module {
 	newModule := &module{
 		filter:    make(map[string]struct{}),
 		funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0, len(m.funcOrder)),
-		mu:        sync.RWMutex{},
 	}
 	for k := range m.filter {
 		newModule.filter[k] = struct{}{}
@@ -35,8 +32,8 @@ func (m *module) cloneMudule() *module {
 
 // 删除模块， 返回新的模块
 func (m *module) delete(delmodules map[string]struct{}) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	// m.mu.Lock()
+	// defer m.mu.Unlock()
 	for name := range delmodules {
 		if _, ok := m.filter[name]; ok {
 			// 说明存在
@@ -52,15 +49,15 @@ func (m *module) delete(delmodules map[string]struct{}) {
 }
 
 func (m *module) GetModules() []func(w http.ResponseWriter, r *http.Request) bool {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+	// m.mu.RLock()
+	// defer m.mu.RUnlock()
 	return m.funcOrder
 }
 
 // 添加模块
 func (m *module) add(mds ...func(w http.ResponseWriter, r *http.Request) bool) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	// m.mu.Lock()
+	// defer m.mu.Unlock()
 	// 添加, 不会重复添加 module
 	for _, md := range mds {
 		name := helper.GetFuncName(md)
