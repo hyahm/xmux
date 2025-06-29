@@ -188,7 +188,7 @@ func makeRoute(pattern string) (string, []string, bool) {
 	}
 }
 
-func (g *RouteGroup) merge(group *RouteGroup, route *Route) {
+func (g *RouteGroup) merge(group *RouteGroup, route *Route) *Route {
 	// 合并head
 	tempHeader := g.header.clone()
 
@@ -272,6 +272,7 @@ func (g *RouteGroup) merge(group *RouteGroup, route *Route) {
 	// 添加私有模块
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
+	return route
 }
 
 // 组路由添加到组路由
@@ -283,19 +284,23 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 	if group == nil || (group.urlTpl == nil && group.urlRoute == nil) {
 		return g
 	}
+	// 缺少 请求头， 前缀， 模块， 响应数据 的合并
 	for url, route := range group.urlRoute {
 		if _, ok := g.urlRoute[url]; ok {
 			log.Fatal("url : " + url + "  duplicate")
 		}
-		g.urlRoute[url] = route
+
+		g.urlRoute[url] = g.merge(group, route)
 	}
 
 	for url, route := range group.urlTpl {
 		if _, ok := g.urlTpl[url]; ok {
 			log.Fatal("url : " + url + "  duplicate")
 		}
-		g.urlTpl[url] = route
+
+		g.urlTpl[url] = g.merge(group, route)
 	}
+
 	// g.urlRoute = append(g.urlRoute, group.urlRoute...)
 	// for url, args := range group.params {
 	// 	g.params[url] = args

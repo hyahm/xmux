@@ -3,7 +3,6 @@ package xmux
 import (
 	"log"
 	"net/http"
-	"path"
 )
 
 // func (gr *RouteGroup) any(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) MethodsRoute {
@@ -26,6 +25,7 @@ import (
 // 			module: &module{
 // 				filter:    make(map[string]struct{}),
 // 				funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+// 				mu:        sync.RWMutex{},
 // 			},
 // 			new:         true,
 // 			methods:     methods,
@@ -43,59 +43,60 @@ import (
 // 			newRoute.module = &module{
 // 				filter:    make(map[string]struct{}),
 // 				funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+// 				mu:        sync.RWMutex{},
 // 			}
 // 		}
 // 		mr[method] = newRoute
 // 		gr.routes = append(gr.routes, newRoute)
 // 	}
 // 	return mr
-// url, vars, ok := gr.makeRoute(pattern)
-// gr.params[url] = vars
-// if ok {
-// 	if gr.tpl[url] == nil {
-// 		gr.tpl[url] = make(MethodsRoute)
-// 	}
-// 	for _, method := range methods {
-// 		if _, methodOk := gr.tpl[url][method]; methodOk {
-// 			// 如果也存在， 那么method重复了
-// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
-// 		}
-// 		if gr.tpl[url] == nil {
-// 			gr.tpl[url] = make(MethodsRoute)
-// 		}
-// 		// newRoute.methods[method] = struct{}{}
-// 		newRoute.url = url
-// 		newRoute.params = vars
+// 	// url, vars, ok := gr.makeRoute(pattern)
+// 	// gr.params[url] = vars
+// 	// if ok {
+// 	// 	if gr.tpl[url] == nil {
+// 	// 		gr.tpl[url] = make(MethodsRoute)
+// 	// 	}
+// 	// 	for _, method := range methods {
+// 	// 		if _, methodOk := gr.tpl[url][method]; methodOk {
+// 	// 			// 如果也存在， 那么method重复了
+// 	// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
+// 	// 		}
+// 	// 		if gr.tpl[url] == nil {
+// 	// 			gr.tpl[url] = make(MethodsRoute)
+// 	// 		}
+// 	// 		// newRoute.methods[method] = struct{}{}
+// 	// 		newRoute.url = url
+// 	// 		newRoute.params = vars
 
-// 		gr.tpl[url][method] = newRoute
-// 	}
-// 	return gr.tpl[url]
-// } else {
-// 	if gr.route[url] == nil {
-// 		gr.route[url] = make(MethodsRoute)
-// 	}
+// 	// 		gr.tpl[url][method] = newRoute
+// 	// 	}
+// 	// 	return gr.tpl[url]
+// 	// } else {
+// 	// 	if gr.route[url] == nil {
+// 	// 		gr.route[url] = make(MethodsRoute)
+// 	// 	}
 
-// 	// 如果存在就判断是否存在method
-// 	for _, method := range methods {
-// 		if _, methodOk := gr.route[url][method]; methodOk {
-// 			// 如果也存在， 那么method重复了
-// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
-// 		}
-// 		if gr.route[url] == nil {
-// 			gr.route[url] = make(MethodsRoute)
-// 		}
-// 		newRoute.url = url
-// 		gr.route[url][method] = newRoute
-// 	}
-// 	// 如果不存在就创建一个 route
-// 	return gr.route[url]
-// }
+// 	// 	// 如果存在就判断是否存在method
+// 	// 	for _, method := range methods {
+// 	// 		if _, methodOk := gr.route[url][method]; methodOk {
+// 	// 			// 如果也存在， 那么method重复了
+// 	// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
+// 	// 		}
+// 	// 		if gr.route[url] == nil {
+// 	// 			gr.route[url] = make(MethodsRoute)
+// 	// 		}
+// 	// 		newRoute.url = url
+// 	// 		gr.route[url][method] = newRoute
+// 	// 	}
+// 	// 	// 如果不存在就创建一个 route
+// 	// 	return gr.route[url]
+// 	// }
 
 // }
 
 // get this route
 func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
-	// 附加前置的 header, module 和 pagekeys
+
 	temphead := make(map[string]string)
 	for k, v := range gr.header {
 		temphead[k] = v
@@ -105,13 +106,11 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 	for k := range gr.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-
 	newRoute := &Route{
 		handle:      http.HandlerFunc(handler),
 		pagekeys:    make(map[string]struct{}),
 		new:         true,
-		url:         pattern,
-		methods:     append(make([]string, 0), methods...),
+		methods:     []string{methods[0]},
 		header:      make(map[string]string),
 		delmodule:   make(map[string]struct{}),
 		delPageKeys: make(map[string]struct{}),
@@ -127,47 +126,50 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 		}
 	}
-	prefix := path.Join(gr.prefix...)
-	prefix = path.Join(prefix, pattern)
-	// 判断是否是正则
-	url, vars, ok := makeRoute(prefix)
-	newRoute.params = vars
-
-	newRoute.url = url
+	url, vars, ok := makeRoute(pattern)
 	if ok {
-		// 正则匹配的
 		if _, ok := gr.urlTpl[url]; ok {
-			methodmap := make(map[string]struct{})
-			for _, method := range methods {
-				methodmap[method] = struct{}{}
+			m, exsit := SliceExsit(gr.urlTpl[url].methods, newRoute.methods)
+			if exsit {
+				log.Fatal("method : " + m + "  duplicate, url: " + url)
 			}
-			for _, method := range gr.urlTpl[url].methods {
-				if _, ok := methodmap[method]; ok {
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
-				}
-			}
-			gr.urlTpl[url] = newRoute
+			// url 存在， 但是method不存在， 提醒下url 重复了，
+			log.Fatalf("Found that the URL(%s) has multiple request methods. Please use Request method to merge the processing\n", url)
 		}
+		// for _, method := range methods {
+		// 	if _, methodOk := gr.tpl[url][method]; methodOk {
+		// 		// 如果也存在， 那么method重复了
+		// 		log.Fatal("method : " + method + "  duplicate, url: " + url)
+		// 	}
+		// 	if gr.tpl[url] == nil {
+		// 		gr.tpl[url] = make(MethodsRoute)
+		// 	}
+		// newRoute.methods[method] = struct{}{}
+		newRoute.params = vars
+
+		gr.urlTpl[url] = newRoute
+		// }
 
 	} else {
-		// 直接匹配
-		// 如果存在就判断是否存在method
 		if _, ok := gr.urlRoute[url]; ok {
-			methodmap := make(map[string]struct{})
-			for _, method := range methods {
-				methodmap[method] = struct{}{}
+			m, exsit := SliceExsit(gr.urlRoute[url].methods, newRoute.methods)
+			if exsit {
+				log.Fatal("method : " + m + "  duplicate, url: " + url)
 			}
-			for _, method := range gr.urlRoute[url].methods {
-				if _, ok := methodmap[method]; ok {
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
-				}
-			}
-			gr.urlRoute[url] = newRoute
+			// url 存在， 但是method不存在， 提醒下url 重复了，
+			log.Fatalf("Found that the URL(%s) has multiple request methods. Please use Request method to merge the processing\n", url)
 		}
+		// 如果存在就判断是否存在method
+		// for _, method := range methods {
+		// 	if _, methodOk := gr.route[url][method]; methodOk {
+		// 		// 如果也存在， 那么method重复了
+		// 		log.Fatal("method : " + method + "  duplicate, url: " + url)
+		// 	}
+		gr.urlRoute[url] = newRoute
+		// }
+		// 	// 如果不存在就创建一个 route
 
 	}
-
-	// gr.routes = append(gr.routes, newRoute)
 	return newRoute
 }
 
@@ -188,9 +190,9 @@ func (gr *RouteGroup) Any(pattern string, handler func(http.ResponseWriter, *htt
 	)
 }
 
-// func (gr *RouteGroup) Requests(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
-// 	return gr.defindMethod(pattern, handler, methods...)
-// }
+func (gr *RouteGroup) Requests(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
+	return gr.defindMethod(pattern, handler, methods...)
+}
 
 func (gr *RouteGroup) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	if !gr.new {

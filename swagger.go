@@ -130,7 +130,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 			Paths:   make(map[string]map[string]MethodStrcut),
 		}
 		// 合并匹配请求
-		for k, mr := range router.route {
+		for k, mr := range router.urlRoute {
 			if k == url || k == jsonPath {
 				continue
 			}
@@ -155,7 +155,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 			swagger.Paths[k] = path
 		}
 		// 合并正则请求
-		for url, mr := range router.tpl {
+		for url, mr := range router.urlTpl {
 			path := make(map[string]MethodStrcut)
 			for _, method := range mr.methods {
 				ms := MethodStrcut{
@@ -178,7 +178,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 					// url 进行填充
 					// 将url的^ 替换成 { 将url的$ 替换成  }
 
-					url = mr.url[1 : len(mr.url)-1]
+					url = url[1 : len(url)-1]
 					start := strings.Index(url, "(")
 					end := strings.Index(url, ")")
 					t := "string"

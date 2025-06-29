@@ -42,31 +42,30 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	url, vars, ok := makeRoute(prefix)
 	newRoute.params = vars
 
-	newRoute.url = url
 	if ok {
 		// 正则匹配的
-		if _, ok := r.tpl[url]; ok {
-			if _, ok := r.tpl[url]; ok {
-				m, exsit := SliceExsit(r.tpl[url].methods, method)
+		if _, ok := r.urlTpl[url]; ok {
+			if _, ok := r.urlTpl[url]; ok {
+				m, exsit := SliceExsit(r.urlTpl[url].methods, method)
 				if exsit {
 					log.Fatal("method : " + m + "  duplicate, url: " + url)
 				}
 			}
 		}
 
-		r.tpl[url] = newRoute
+		r.urlTpl[url] = newRoute
 	} else {
 		// 直接匹配
 		// 如果存在就判断是否存在method
-		if _, ok := r.route[url]; ok {
-			if _, ok := r.route[url]; ok {
-				m, exsit := SliceExsit(r.route[url].methods, method)
+		if _, ok := r.urlRoute[url]; ok {
+			if _, ok := r.urlRoute[url]; ok {
+				m, exsit := SliceExsit(r.urlRoute[url].methods, method)
 				if exsit {
 					log.Fatal("method : " + m + "  duplicate, url: " + url)
 				}
 			}
 		}
-		r.route[url] = newRoute
+		r.urlRoute[url] = newRoute
 
 	}
 	return newRoute

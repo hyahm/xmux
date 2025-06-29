@@ -68,14 +68,14 @@ type Router struct {
 	HandleConnect        func(http.ResponseWriter, *http.Request)
 	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
-	IgnoreSlash          bool                // 忽略地址多个斜杠， 默认不忽略
-	route                UrlRoute            // 单实例路由， 组路由最后也会合并过来
-	tpl                  UrlRoute            // 正则路由， 组路由最后也会合并过来
-	params               map[string][]string // 记录所有路由， []string 是正则匹配的参数
-	header               map[string]string   // 全局路由头
-	module               *module             // 全局模块
-	responseData         interface{}
-	pagekeys             mstringstruct
+	IgnoreSlash          bool     // 忽略地址多个斜杠， 默认不忽略
+	urlRoute             UrlRoute // 单实例路由， 组路由最后也会合并过来
+	urlTpl               UrlRoute // 正则路由， 组路由最后也会合并过来
+	// params               map[string][]string // 记录所有路由， map[string]string 是正则匹配的参数
+	header       map[string]string // 全局路由头
+	module       *module           // 全局模块
+	responseData interface{}
+	pagekeys     mstringstruct
 
 	SwaggerTitle       string
 	SwaggerDescription string
@@ -99,14 +99,17 @@ func (r *Router) makeRoute(pattern string) (string, []string, bool) {
 		pattern = PrettySlash(pattern)
 	}
 
-	if v, listvar := match(pattern); len(listvar) > 0 {
-		r.params[v] = listvar
-		return v, listvar, true
-	} else {
+	// if v, listvar := match(pattern); len(listvar) > 0 {
+	// 	if r.params[v] == nil {
+	// 		r.params[v] = make(map[string]string)
+	// 	}
+	// 	r.params[v] = listvar
+	// 	return v, listvar, true
+	// } else {
 
-		r.params[pattern] = make([]string, 0)
-		return pattern, nil, false
-	}
+	// 	r.params[pattern] = make([]string, 0)
+	return pattern, nil, false
+	// }
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
@@ -266,7 +269,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	var thisRoute *Route
-	if route, ok := r.route[req.URL.Path]; ok {
+	if route, ok := r.urlRoute[req.URL.Path]; ok {
 		// route, ok := r.route[req.URL.Path][req.Method]
 		if !ok {
 			r.HandleNotFound(w, req)
@@ -275,18 +278,22 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 		}
 		thisRoute = route
 	} else {
-		for reUrl := range r.tpl {
+		for reUrl := range r.urlTpl {
 			re := regexp.MustCompile(reUrl)
 			// req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
-				route, ok := r.tpl[reUrl]
+				route, ok := r.urlTpl[reUrl]
 				if ok {
+					fmt.Println(route.params)
 					ap := make(map[string]string)
 					vl := re.FindStringSubmatch(req.URL.Path)
-					for i, v := range r.params[reUrl] {
+					fmt.Println(vl)
+					for i, v := range route.params {
+						fmt.Println("_---" + v + "+++++++")
 						ap[v] = vl[i+1]
 					}
 					thisRoute = route
+					fmt.Println(ap)
 					setParams(req.URL.Path, ap)
 					goto endloop
 				}
@@ -434,11 +441,11 @@ func NewRouter(cacheSize ...int) *Router {
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
 		new:            true,
 		prefix:         []string{"/"},
-		route:          make(UrlRoute),
-		tpl:            make(UrlRoute),
+		urlRoute:       make(UrlRoute),
+		urlTpl:         make(UrlRoute),
 		header:         map[string]string{},
-		params:         make(map[string][]string),
-		Exit:           exit,
+		// params:         make(map[string][]string),
+		Exit: exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
@@ -531,7 +538,7 @@ func (r *Router) Prefix(prefixs ...string) *Router {
 }
 
 // 组路由合并到每个单路由里面
-func (r *Router) merge(group *RouteGroup, route *Route) {
+func (r *Router) merge(group *RouteGroup, route *Route) *Route {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
@@ -583,6 +590,7 @@ func (r *Router) merge(group *RouteGroup, route *Route) {
 	// 添加私有模块
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
+	return route
 	// 与组的区别， 组里面这里是合并， 这里是删除
 }
 
@@ -607,26 +615,23 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 		// allurl := path.Join(subprefix...)
 		// allurl = PrettySlash(allurl + route.url)
 		// url, vars, ok := makeRoute(allurl)
-		if _, ok := r.route[url]; ok {
-			v, ok := SliceExsit(r.route[url].methods, route.methods)
+		if _, ok := r.urlRoute[url]; ok {
+			v, ok := SliceExsit(r.urlRoute[url].methods, route.methods)
 			if ok {
 				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
 		}
-
-		r.merge(group, route)
+		r.urlRoute[url] = r.merge(group, route)
 	}
 	// 正则匹配的合并
 	for url, tpl := range group.urlTpl {
-		if _, ok := r.tpl[url]; ok {
-			v, ok := SliceExsit(r.route[url].methods, tpl.methods)
+		if _, ok := r.urlTpl[url]; ok {
+			v, ok := SliceExsit(r.urlTpl[url].methods, tpl.methods)
 			if ok {
 				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
 		}
-
-		r.merge(group, tpl)
-
+		r.urlTpl[url] = r.merge(group, tpl)
 		// if ok {
 		// 	if r.tpl[url] == nil {
 		// 		r.tpl[url] = make(map[string]*Route)
@@ -713,7 +718,7 @@ func (r *Router) DebugRoute() {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.route {
+	for url, mr := range r.urlRoute {
 		debugPrint(url, mr)
 	}
 }
@@ -722,7 +727,7 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.route {
+	for url, mr := range r.urlRoute {
 		if thisurl == url {
 			debugPrint(url, mr)
 		}
@@ -733,7 +738,7 @@ func (r *Router) DebugTpl() {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.tpl {
+	for url, mr := range r.urlTpl {
 		debugPrint(url, mr)
 	}
 }
@@ -742,7 +747,7 @@ func (r *Router) DebugIncludeTpl(pattern string) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.tpl {
+	for url, mr := range r.urlTpl {
 		if strings.Contains(url, pattern) {
 			debugPrint(url, mr)
 		}
