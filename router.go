@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -59,7 +58,7 @@ type Router struct {
 	MaxPrintLength       int
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool                                          // 判断是否是通过newRouter 来初始化的
-	EnableConnect        bool                                          // 判断是否是通过newRouter 来初始化的
+	EnableConnect        bool                                          //
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout          time.Duration
 	HanleFavicon         func(http.ResponseWriter, *http.Request)
@@ -69,14 +68,14 @@ type Router struct {
 	HandleConnect        func(http.ResponseWriter, *http.Request)
 	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
-	IgnoreSlash          bool                // 忽略地址多个斜杠， 默认不忽略
-	route                UMR                 // 单实例路由， 组路由最后也会合并过来
-	tpl                  UMR                 // 正则路由， 组路由最后也会合并过来
-	params               map[string][]string // 记录所有路由， []string 是正则匹配的参数
-	header               map[string]string   // 全局路由头
-	module               *module             // 全局模块
-	responseData         interface{}
-	pagekeys             mstringstruct
+	IgnoreSlash          bool     // 忽略地址多个斜杠， 默认不忽略
+	urlRoute             UrlRoute // 单实例路由， 组路由最后也会合并过来
+	urlTpl               UrlRoute // 正则路由， 组路由最后也会合并过来
+	// params               map[string][]string // 记录所有路由， map[string]string 是正则匹配的参数
+	header       map[string]string // 全局路由头
+	module       *module           // 全局模块
+	responseData interface{}
+	pagekeys     mstringstruct
 
 	SwaggerTitle       string
 	SwaggerDescription string
@@ -100,14 +99,17 @@ func (r *Router) makeRoute(pattern string) (string, []string, bool) {
 		pattern = PrettySlash(pattern)
 	}
 
-	if v, listvar := match(pattern); len(listvar) > 0 {
-		r.params[v] = listvar
-		return v, listvar, true
-	} else {
+	// if v, listvar := match(pattern); len(listvar) > 0 {
+	// 	if r.params[v] == nil {
+	// 		r.params[v] = make(map[string]string)
+	// 	}
+	// 	r.params[v] = listvar
+	// 	return v, listvar, true
+	// } else {
 
-		r.params[pattern] = make([]string, 0)
-		return pattern, nil, false
-	}
+	// 	r.params[pattern] = make([]string, 0)
+	return pattern, nil, false
+	// }
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
@@ -267,8 +269,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	var thisRoute *Route
-	if _, ok := r.route[req.URL.Path]; ok {
-		route, ok := r.route[req.URL.Path][req.Method]
+	if route, ok := r.urlRoute[req.URL.Path]; ok {
+		// route, ok := r.route[req.URL.Path][req.Method]
 		if !ok {
 			r.HandleNotFound(w, req)
 			atomic.AddInt32(&connections, -1)
@@ -276,18 +278,22 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 		}
 		thisRoute = route
 	} else {
-		for reUrl := range r.tpl {
+		for reUrl := range r.urlTpl {
 			re := regexp.MustCompile(reUrl)
 			// req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
-				route, ok := r.tpl[reUrl][req.Method]
+				route, ok := r.urlTpl[reUrl]
 				if ok {
+					fmt.Println(route.params)
 					ap := make(map[string]string)
 					vl := re.FindStringSubmatch(req.URL.Path)
-					for i, v := range r.params[reUrl] {
+					fmt.Println(vl)
+					for i, v := range route.params {
+						fmt.Println("_---" + v + "+++++++")
 						ap[v] = vl[i+1]
 					}
 					thisRoute = route
+					fmt.Println(ap)
 					setParams(req.URL.Path, ap)
 					goto endloop
 				}
@@ -435,15 +441,14 @@ func NewRouter(cacheSize ...int) *Router {
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
 		new:            true,
 		prefix:         []string{"/"},
-		route:          make(UMR),
-		tpl:            make(UMR),
+		urlRoute:       make(UrlRoute),
+		urlTpl:         make(UrlRoute),
 		header:         map[string]string{},
-		params:         make(map[string][]string),
-		Exit:           exit,
+		// params:         make(map[string][]string),
+		Exit: exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-			mu:        sync.RWMutex{},
 		},
 		HanleFavicon:         handleFavicon,
 		HandleOptions:        handleOptions,
@@ -533,7 +538,7 @@ func (r *Router) Prefix(prefixs ...string) *Router {
 }
 
 // 组路由合并到每个单路由里面
-func (r *Router) merge(group *RouteGroup, route *Route) {
+func (r *Router) merge(group *RouteGroup, route *Route) *Route {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
@@ -585,6 +590,7 @@ func (r *Router) merge(group *RouteGroup, route *Route) {
 	// 添加私有模块
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
+	return route
 	// 与组的区别， 组里面这里是合并， 这里是删除
 }
 
@@ -595,53 +601,74 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 		panic("must be use get router by NewRouter()")
 	}
 	// 将路由的所有变量全部移交到route
-	if group.params == nil && group.route == nil {
+	if group.urlTpl == nil && group.urlRoute == nil {
 		return nil
 	}
-	prefixs := SubtractSliceMap(r.prefix, group.delprefix)
-	prefix := append(prefixs, group.prefix...)
-	for _, route := range group.routes {
-		subprefixs := SubtractSliceMap(prefix, route.delprefix)
-		subprefix := append(subprefixs, route.prefixs...)
-		allurl := path.Join(subprefix...)
-		allurl = path.Join(allurl, route.url)
-		url, vars, ok := makeRoute(allurl)
-		route.params = vars
-		if ok {
-			if r.tpl[url] == nil {
-				r.tpl[url] = make(map[string]*Route)
+	// 将前缀删除
+	// prefixs := SubtractSliceMap(r.prefix, group.delprefix)
+	// prefix := append(prefixs, group.prefix...)
+	// 匹配理由的合并
+	for url, route := range group.urlRoute {
+		// route.methods = append(route.methods, http.MethodGet)
+		// subprefixs := SubtractSliceMap(prefix, route.delprefix)
+		// subprefix := append(subprefixs, route.prefixs...)
+		// allurl := path.Join(subprefix...)
+		// allurl = PrettySlash(allurl + route.url)
+		// url, vars, ok := makeRoute(allurl)
+		if _, ok := r.urlRoute[url]; ok {
+			v, ok := SliceExsit(r.urlRoute[url].methods, route.methods)
+			if ok {
+				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
-			for _, method := range route.methods {
-				if _, methodOk := r.tpl[url][method]; methodOk {
-					// 如果也存在， 那么method重复了
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
-				}
-				if r.tpl[url] == nil {
-					r.tpl[url] = make(MethodsRoute)
-				}
-				// newRoute.methods[method] = struct{}{}
-				route.url = url
-				route.params = vars
-				r.merge(group, route)
-			}
-
-		} else {
-			if r.route[url] == nil {
-				r.route[url] = make(map[string]*Route)
-			}
-			// 如果存在就判断是否存在method
-			for _, method := range route.methods {
-				if _, methodOk := r.route[url][method]; methodOk {
-					// 如果也存在， 那么method重复了
-					log.Fatal("method : " + method + "  duplicate, url: " + url)
-				}
-				route.url = url
-				r.route[url][method] = route
-				r.merge(group, route)
-			}
-			// 如果不存在就创建一个 route
-
 		}
+		r.urlRoute[url] = r.merge(group, route)
+	}
+	// 正则匹配的合并
+	for url, tpl := range group.urlTpl {
+		if _, ok := r.urlTpl[url]; ok {
+			v, ok := SliceExsit(r.urlTpl[url].methods, tpl.methods)
+			if ok {
+				log.Fatal("method : " + v + "  duplicate, url: " + url)
+			}
+		}
+		r.urlTpl[url] = r.merge(group, tpl)
+		// if ok {
+		// 	if r.tpl[url] == nil {
+		// 		r.tpl[url] = make(map[string]*Route)
+		// 	}
+
+		// 	for _, method := range route.methods {
+		// 		if _, methodOk := r.tpl[url][method]; methodOk {
+		// 			// 如果也存在， 那么method重复了
+		// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
+		// 		}
+		// 		if r.tpl[url] == nil {
+		// 			r.tpl[url] = make(MethodsRoute)
+		// 		}
+		// 		// newRoute.methods[method] = struct{}{}
+		// 		route.url = url
+		// 		r.tpl[url][method] = route
+		// 		route.params = vars
+		// 		r.merge(group, route)
+		// 	}
+
+		// } else {
+		// 	if r.route[url] == nil {
+		// 		r.route[url] = make(map[string]*Route)
+		// 	}
+		// 	// 如果存在就判断是否存在method
+		// 	for _, method := range route.methods {
+		// 		if _, methodOk := r.route[url][method]; methodOk {
+		// 			// 如果也存在， 那么method重复了
+		// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
+		// 		}
+		// 		route.url = url
+		// 		r.route[url][method] = route
+		// 		r.merge(group, route)
+		// 	}
+		// 	// 如果不存在就创建一个 route
+
+		// }
 	}
 	// for url, args := range group.params {
 	// 	r.params[url] = args
@@ -677,15 +704,13 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 
 // 将路由组的信息合并到路由
 
-func debugPrint(url string, mr MethodsRoute) {
-	for method, route := range mr {
-		names := make([]string, 0)
-		for _, v := range route.module.funcOrder {
-			names = append(names, helper.GetFuncName(v))
-		}
-		log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
-			url, method, route.header, names, route.pagekeys)
+func debugPrint(url string, route *Route) {
+	names := make([]string, 0)
+	for _, v := range route.module.funcOrder {
+		names = append(names, helper.GetFuncName(v))
 	}
+	log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
+		url, route.methods, route.header, names, route.pagekeys)
 
 }
 
@@ -693,7 +718,7 @@ func (r *Router) DebugRoute() {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.route {
+	for url, mr := range r.urlRoute {
 		debugPrint(url, mr)
 	}
 }
@@ -702,7 +727,7 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.route {
+	for url, mr := range r.urlRoute {
 		if thisurl == url {
 			debugPrint(url, mr)
 		}
@@ -713,7 +738,7 @@ func (r *Router) DebugTpl() {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.tpl {
+	for url, mr := range r.urlTpl {
 		debugPrint(url, mr)
 	}
 }
@@ -722,7 +747,7 @@ func (r *Router) DebugIncludeTpl(pattern string) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range r.tpl {
+	for url, mr := range r.urlTpl {
 		if strings.Contains(url, pattern) {
 			debugPrint(url, mr)
 		}

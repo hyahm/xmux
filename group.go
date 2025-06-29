@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/hyahm/xmux/helper"
 )
@@ -13,20 +12,22 @@ import (
 type RouteGroup struct {
 	new bool
 	// 感觉还没到method， 应该先uri后缀的
-	route            UMR // 完全匹配的路由对应的methodsroute
+	urlRoute         UrlRoute // 完全匹配的路由对应的methodsroute
 	header           mstringstring
-	tpl              UMR // 正则匹配的路由对应的methodsroute
+	urlTpl           UrlRoute // 正则匹配的路由对应的methodsroute
 	module           *module
 	delmodule        map[string]struct{}
 	responseData     interface{}
 	bindResponseData bool
-	routes           []*Route
-	params           map[string][]string // value 是 args， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
-	delheader        map[string]struct{}
-	pagekeys         mstringstruct // 页面权限
-	prefix           []string
-	delprefix        map[string]struct{}
-	delPageKeys      map[string]struct{}
+	// routes           []*Route            // 通过Get,Post,Delete 等添加的路由列表
+
+	// key, url ,  value 是正则匹配的参数名， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
+	// params      map[string][]string
+	delheader   map[string]struct{}
+	pagekeys    mstringstruct // 页面权限
+	prefix      []string
+	delprefix   map[string]struct{}
+	delPageKeys map[string]struct{}
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -35,16 +36,15 @@ func NewRouteGroup() *RouteGroup {
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
-			mu:        sync.RWMutex{},
 		},
 		prefix:    []string{"/"},
 		delprefix: make(map[string]struct{}),
 		new:       true,
 		delmodule: make(map[string]struct{}),
-		params:    make(map[string][]string),
-		route:     make(UMR),
-		tpl:       make(UMR),
-		routes:    make([]*Route, 0),
+		// params:    make(map[string][]string),
+		urlRoute: make(UrlRoute),
+		urlTpl:   make(UrlRoute),
+		// routes:    make([]*Route, 0),
 	}
 }
 
@@ -61,7 +61,7 @@ func (g *RouteGroup) DebugAssignRoute(thisurl string) {
 	if !g.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range g.route {
+	for url, mr := range g.urlRoute {
 		if thisurl == url {
 			debugPrint(url, mr)
 			return
@@ -73,7 +73,7 @@ func (g *RouteGroup) DebugIncludeTpl(pattern string) {
 	if !g.new {
 		panic("must be use get router by NewRouter()")
 	}
-	for url, mr := range g.tpl {
+	for url, mr := range g.urlTpl {
 		if strings.Contains(url, pattern) {
 			debugPrint(url, mr)
 		}
@@ -188,7 +188,7 @@ func makeRoute(pattern string) (string, []string, bool) {
 	}
 }
 
-func (g *RouteGroup) merge(group *RouteGroup, route *Route) {
+func (g *RouteGroup) merge(group *RouteGroup, route *Route) *Route {
 	// 合并head
 	tempHeader := g.header.clone()
 
@@ -272,6 +272,7 @@ func (g *RouteGroup) merge(group *RouteGroup, route *Route) {
 	// 添加私有模块
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
+	return route
 }
 
 // 组路由添加到组路由
@@ -280,35 +281,54 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		panic("must be init by NewRouteGroup()")
 	}
 	// 将路由的所有变量全部移交到route
-	if group == nil || (group.params == nil && group.route == nil) {
+	if group == nil || (group.urlTpl == nil && group.urlRoute == nil) {
 		return g
 	}
-	for url, args := range group.params {
-		g.params[url] = args
-		if len(args) == 0 {
-			for method := range group.route[url] {
-				if _, ok := g.route[url]; ok {
-					if _, gok := g.route[url][method]; gok {
-						log.Fatal("method : " + method + "  duplicate, url: " + url)
-					}
-				}
-				g.merge(group, group.route[url][method])
-			}
-
-			g.route[url] = group.route[url]
-
-		} else {
-			for method := range group.tpl[url] {
-				if _, ok := g.tpl[url]; ok {
-					if _, gok := g.tpl[url][method]; gok {
-						log.Fatal("method : " + method + "  duplicate, url: " + url)
-					}
-				}
-				g.merge(group, group.tpl[url][method])
-			}
-			g.tpl[url] = group.tpl[url]
+	// 缺少 请求头， 前缀， 模块， 响应数据 的合并
+	for url, route := range group.urlRoute {
+		if _, ok := g.urlRoute[url]; ok {
+			log.Fatal("url : " + url + "  duplicate")
 		}
+
+		g.urlRoute[url] = g.merge(group, route)
 	}
+
+	for url, route := range group.urlTpl {
+		if _, ok := g.urlTpl[url]; ok {
+			log.Fatal("url : " + url + "  duplicate")
+		}
+
+		g.urlTpl[url] = g.merge(group, route)
+	}
+
+	// g.urlRoute = append(g.urlRoute, group.urlRoute...)
+	// for url, args := range group.params {
+	// 	g.params[url] = args
+	// 	if len(args) == 0 {
+	// 		for method := range group.urlRoute[url] {
+	// 			if _, ok := g.urlMethodRoute[url]; ok {
+	// 				if _, gok := g.urlMethodRoute[url][method]; gok {
+	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
+	// 				}
+	// 			}
+	// 			g.merge(group, group.urlMethodRoute[url][method])
+	// 		}
+
+	// 		g.urlMethodRoute[url] = group.urlMethodRoute[url]
+
+	// 	} else {
+	// 		for method := range group.urlMethodtpl[url] {
+	// 			if _, ok := g.urlMethodtpl[url]; ok {
+	// 				if _, gok := g.urlMethodtpl[url][method]; gok {
+	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
+	// 				}
+	// 			}
+	// 			g.merge(group, group.urlMethodtpl[url][method])
+	// 		}
+	// 		g.urlMethodtpl[url] = group.urlMethodtpl[url]
+	// 	}
+	// }
+	// g.routes = append(g.routes, group.routes...)
 	return g
 }
 

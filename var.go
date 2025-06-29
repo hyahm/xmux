@@ -50,8 +50,8 @@ func Var(r *http.Request) params {
 }
 
 func getParams(key string) params {
-	paramsLocker.Lock()
-	defer paramsLocker.Unlock()
+	paramsLocker.RLock()
+	defer paramsLocker.RUnlock()
 	return allparams[key]
 }
 

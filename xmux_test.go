@@ -1,10 +1,41 @@
 package xmux
 
-import "testing"
+import (
+	"log"
+	"net/http"
+	"testing"
+)
+
+func home(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("home admin" + Var(r)["bbb"]))
+}
+
+func grouphome(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("grouphome" + Var(r)["name"] + "-" + Var(r)["age"]))
+}
+
+func adminGroup() *RouteGroup {
+	admin := NewRouteGroup().Prefix("test")
+	admin.Get("/admin/{bbb}", home)
+	admin.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age}", grouphome)
+	return admin
+}
+
+func userGroup() *RouteGroup {
+	user := NewRouteGroup().Prefix("test")
+	user.Get("/group", grouphome)
+	user.AddGroup(adminGroup())
+	return user
+}
 
 func TestMain(t *testing.T) {
 	router := NewRouter()
+	router.AddGroup(Pprof())
 	router.EnableConnect = true
+	router.Get("/pp", home)
 	router.SetAddr(":9000")
-	router.RunTLS("server.crt", "server.key")
+
+	router.AddGroup(userGroup())
+	router.DebugTpl()
+	log.Fatal(router.Run())
 }

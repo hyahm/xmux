@@ -75,7 +75,7 @@ func match(path string) (string, []string) {
 		panic("pattern empty")
 	}
 	// 返回三个参数，  （正则）路径， 正则的参数， 是否是正则
-	// 按照/分段计算
+	// 按照/分段计算, 计算的时候需要计算后面的斜杠， 如果有的长度会多一个
 	pl := strings.Split(path, "/")
 	var (
 		pathlist []string
@@ -125,11 +125,15 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 			// 找不到就是完全匹配, 也就不是正则
 		}
 		vars := newPath[4+nextColon : 3+nextColon+firstSuffix]
-
+		vars = strings.Trim(vars, " ")
 		if strings.Count(vars, ",") == 0 {
 			varlist = append(varlist, vars)
 		} else {
-			varlist = append(varlist, strings.Split(vars, ",")...)
+			trimvar := make([]string, 0)
+			for _, v := range strings.Split(vars, ",") {
+				trimvar = append(trimvar, strings.Trim(v, " "))
+			}
+			varlist = append(varlist, trimvar...)
 		}
 		newpath += head + newPath[3:3+nextColon]
 		path = newPath[4+nextColon+firstSuffix:]
@@ -146,6 +150,7 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 			panic("路径: " + path + "有问题，非正则的{}里面最多只能出现一个:")
 		}
 		re, opt := normal(path[firstPrev+1 : firstSuffix])
+		opt = strings.Trim(opt, " ")
 		varlist = append(varlist, opt)
 		newpath += head + re
 		path = path[firstSuffix+1:]
