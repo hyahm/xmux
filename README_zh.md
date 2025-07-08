@@ -39,7 +39,7 @@ go get github.com/hyahm/xmux
 
 ### 快速开始<a id="start"></a>  
 
-```
+```go
 package main
 
 import (
@@ -60,7 +60,7 @@ func main() {
 打开 http://localhost:8080 就能看到 hello world!
 
 ### 请求方式<a id="method"></a>
-```
+```go
 package main
 
 import (
@@ -78,6 +78,10 @@ func main() {
 	router.Any("/any",nil)  // 支持除了options 之外的所有请求
 	router.Run()
 }
+
+
+
+2019/11/29 21:51:11 Found that the / has multiple request methods. Please use Request method to merge the processing
 ```
 
 ### <a id="group">路由组</a>

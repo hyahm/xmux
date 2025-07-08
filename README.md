@@ -79,6 +79,9 @@ func main() {
 	router.Any("/any", nil) // supports all requests except options
 	router.Run()
 }
+
+
+2019/11/29 21:51:11 Found that the / has multiple request methods. Please use Request method to merge the processing
 ```
 
 # Route Group<a id="group"></a>
