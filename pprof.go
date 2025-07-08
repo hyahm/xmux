@@ -5,7 +5,7 @@ import (
 )
 
 func Pprof() *RouteGroup {
-	pp := NewRouteGroup()
+	pp := NewRouteGroup().BindResponse(nil)
 
 	pp.Get("/debug/pprof/{all:name}", pprof.Index)
 	pp.Get("/debug/pprof/cmdline", pprof.Cmdline)

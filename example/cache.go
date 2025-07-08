@@ -57,7 +57,8 @@ func main() {
 	// router.Request("/aaa", noCache, http.MethodGet, http.MethodPost)
 	router.AddGroup(g)
 	router.DebugRoute()
-	router.Run(":7777")
+	router.SetAddr(":7777")
+	router.Run()
 }
 
 // func debug(paths ...string) {

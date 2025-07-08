@@ -110,7 +110,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		handle:      http.HandlerFunc(handler),
 		pagekeys:    make(map[string]struct{}),
 		new:         true,
-		methods:     []string{methods[0]},
+		methods:     methods,
 		header:      make(map[string]string),
 		delmodule:   make(map[string]struct{}),
 		delPageKeys: make(map[string]struct{}),
@@ -188,10 +188,6 @@ func (gr *RouteGroup) Any(pattern string, handler func(http.ResponseWriter, *htt
 		http.MethodDelete, http.MethodGet, http.MethodHead,
 		http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace,
 	)
-}
-
-func (gr *RouteGroup) Requests(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
-	return gr.defindMethod(pattern, handler, methods...)
 }
 
 func (gr *RouteGroup) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {

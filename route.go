@@ -70,6 +70,10 @@ func (rt *Route) BindResponse(response interface{}) *Route {
 	if !rt.new {
 		panic("can not support init")
 	}
+	if response == nil {
+		rt.bindResponseData = false
+		return rt
+	}
 	rt.responseData = response
 	rt.bindResponseData = true
 	return rt

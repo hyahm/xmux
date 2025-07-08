@@ -287,9 +287,7 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 					fmt.Println(route.params)
 					ap := make(map[string]string)
 					vl := re.FindStringSubmatch(req.URL.Path)
-					fmt.Println(vl)
 					for i, v := range route.params {
-						fmt.Println("_---" + v + "+++++++")
 						ap[v] = vl[i+1]
 					}
 					thisRoute = route
@@ -320,8 +318,9 @@ endloop:
 	r.readFromCache(start, thisRouter, w, req, fd)
 }
 
-func (r *Router) SetAddr(addr string) {
+func (r *Router) SetAddr(addr string) *Router {
 	r.addr = addr
+	return r
 }
 
 func (r *Router) Run() error {
@@ -709,8 +708,8 @@ func debugPrint(url string, route *Route) {
 	for _, v := range route.module.funcOrder {
 		names = append(names, helper.GetFuncName(v))
 	}
-	log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v\n",
-		url, route.methods, route.header, names, route.pagekeys)
+	log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v  responsedata: %v\n",
+		url, route.methods, route.header, names, route.pagekeys, route.responseData)
 
 }
 
