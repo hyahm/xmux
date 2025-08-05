@@ -269,11 +269,22 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	var thisRoute *Route
+	matchMethod := false
 	if route, ok := r.urlRoute[req.URL.Path]; ok {
+		for _, v := range route.methods {
+			if v == req.Method {
+				matchMethod = true
+				break
+			}
+		}
 		// route, ok := r.route[req.URL.Path][req.Method]
 		if !ok {
 			r.HandleNotFound(w, req)
 			atomic.AddInt32(&connections, -1)
+			return
+		}
+		if !matchMethod {
+			r.HandleNotFound(w, req)
 			return
 		}
 		thisRoute = route
@@ -284,6 +295,18 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 			if re.MatchString(req.URL.Path) {
 				route, ok := r.urlTpl[reUrl]
 				if ok {
+					// 匹配请求
+
+					for _, v := range route.methods {
+						if v == req.Method {
+							matchMethod = true
+							break
+						}
+					}
+					if !matchMethod {
+						r.HandleNotFound(w, req)
+						return
+					}
 					fmt.Println(route.params)
 					ap := make(map[string]string)
 					vl := re.FindStringSubmatch(req.URL.Path)

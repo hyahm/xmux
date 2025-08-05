@@ -50,7 +50,7 @@ func TestMain(t *testing.T) {
 	router.AddGroup(Pprof())
 	router.EnableConnect = true
 	router.Get("/pp", home)
-	router.SetAddr(":9000")
+	router.SetAddr(":19000")
 
 	router.AddGroup(userGroup())
 	router.DebugRoute()
