@@ -111,7 +111,7 @@ func main() {
 ```
 
 ### 前缀 <a id="prefix"></a>
-// 注意： 只有组路由DelPrefix才会生效  
+// 注意： DelPrefix和 Prefix 只有路由组才会生效, 直接 再 router 里面无法生效
 ```go
 
 func main() {

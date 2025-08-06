@@ -33,6 +33,7 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 - [connection instance](#instance)
 
 
+
 # Install<a id="install"></a>  
 ```
 go get github.com/hyahm/xmux
@@ -118,9 +119,9 @@ func main() {
 func main() {
 	router := xmux.NewRouter().Prefix("test")
 	router.Get("/bbb", c)   // /test/bbb
-	router.Get("/ccc", c).DelPrefix("test")   // /test/bbb
+	router.Get("/ccc", c).DelPrefix("test")   // /test/ccc  
 	g := xmux.NewRouteGroup()
-	g.Get("/aaa", noCache).DelModule(setKey) // /test/bbb
+	g.Get("/aaa", noCache).DelModule(setKey) // /test/aaa
 	g.Get("/no/cache1", noCache1).DelModule(setKey).DelPrefix("test") // /no/cache1
 	router.AddGroup(g)
 	router.Run()

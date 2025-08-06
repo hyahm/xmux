@@ -6,12 +6,22 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 	"os"
+	"path"
 	"testing"
 )
 
 func TestRsa(t *testing.T) {
 	GenRsa("pri.key", "ca.crt")
+}
+
+func TestUrl(t *testing.T) {
+	base := "https://example.com/api/v1"
+	endpoint := "/users/list"
+
+	url := base + path.Join("/", endpoint)
+	fmt.Println(url) // 输出: https://example.com/api/v1/users/list
 }
 
 func TestDecrypt(t *testing.T) {

@@ -28,6 +28,7 @@ type RouteGroup struct {
 	prefix      []string
 	delprefix   map[string]struct{}
 	delPageKeys map[string]struct{}
+	denyPrefix  bool
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -78,6 +79,10 @@ func (g *RouteGroup) DebugIncludeTpl(pattern string) {
 			debugPrint(url, mr)
 		}
 	}
+}
+
+func (g *RouteGroup) DenyPrefix() {
+	g.denyPrefix = true
 }
 
 func (g *RouteGroup) AddPageKeys(pagekeys ...string) *RouteGroup {
@@ -168,16 +173,18 @@ func (g *RouteGroup) DelPrefix(prefixs ...string) *RouteGroup {
 // 根据路径来判断是不是正则表达式， 分别挂载到组路由的tpl 和 route 中
 // 路径对应的 params 全部都在 pattern 中
 // 返回url 和 是否是正则表达式
-// func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
-// 	// 格式路径
-// 	if v, listvar := match(pattern); len(listvar) > 0 {
-// 		return v, listvar, true
-// 		// 判断是否重复
-// 	} else {
-// 		return pattern, nil, false
-// 	}
-// }
-
+//
+//	func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
+//		// 格式路径
+//		if v, listvar := match(pattern); len(listvar) > 0 {
+//			return v, listvar, true
+//			// 判断是否重复
+//		} else {
+//			return pattern, nil, false
+//		}
+//	}
+//
+// 第三个参数返回的true 就是正则
 func makeRoute(pattern string) (string, []string, bool) {
 	// 格式路径
 	if v, listvar := match(pattern); len(listvar) > 0 {
@@ -189,6 +196,7 @@ func makeRoute(pattern string) (string, []string, bool) {
 }
 
 func (g *RouteGroup) merge(group *RouteGroup, route *Route) *Route {
+
 	// 合并head
 	tempHeader := g.header.clone()
 
@@ -284,59 +292,38 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 	if group == nil || (group.urlTpl == nil && group.urlRoute == nil) {
 		return g
 	}
+
+	// g.prefix = append(g.prefix, group.prefix...)
+	// for k := range group.delprefix {
+	// 	g.delprefix[k] = struct{}{}
+	// }
+
 	// 缺少 请求头， 前缀， 模块， 响应数据 的合并
 	for url, route := range group.urlRoute {
 		if _, ok := g.urlRoute[url]; ok {
 			log.Fatal("url : " + url + "  duplicate")
 		}
-
-		g.urlRoute[url] = g.merge(group, route)
+		// 合并prefix, 主要是合并到 group 里面的路由里面
+		newRoute := g.merge(group, route)
+		newRoute.prefixs = append(g.prefix, newRoute.prefixs...)
+		for key := range g.delprefix {
+			newRoute.delprefix[key] = struct{}{}
+		}
+		g.urlRoute[url] = newRoute
 	}
 
 	for url, route := range group.urlTpl {
 		if _, ok := g.urlTpl[url]; ok {
 			log.Fatal("url : " + url + "  duplicate")
 		}
-
-		g.urlTpl[url] = g.merge(group, route)
-	}
-
-	// g.urlRoute = append(g.urlRoute, group.urlRoute...)
-	// for url, args := range group.params {
-	// 	g.params[url] = args
-	// 	if len(args) == 0 {
-	// 		for method := range group.urlRoute[url] {
-	// 			if _, ok := g.urlMethodRoute[url]; ok {
-	// 				if _, gok := g.urlMethodRoute[url][method]; gok {
-	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
-	// 				}
-	// 			}
-	// 			g.merge(group, group.urlMethodRoute[url][method])
-	// 		}
-
-	// 		g.urlMethodRoute[url] = group.urlMethodRoute[url]
-
-	// 	} else {
-	// 		for method := range group.urlMethodtpl[url] {
-	// 			if _, ok := g.urlMethodtpl[url]; ok {
-	// 				if _, gok := g.urlMethodtpl[url][method]; gok {
-	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
-	// 				}
-	// 			}
-	// 			g.merge(group, group.urlMethodtpl[url][method])
-	// 		}
-	// 		g.urlMethodtpl[url] = group.urlMethodtpl[url]
-	// 	}
-	// }
-	// g.routes = append(g.routes, group.routes...)
-	return g
-}
-
-func exsitMethod(m1, m2 map[string]struct{}) (string, bool) {
-	for k := range m1 {
-		if _, ok := m2[k]; ok {
-			return k, true
+		// 合并prefix, 主要是合并到 group 里面的路由里面
+		newRoute := g.merge(group, route)
+		newRoute.prefixs = append(g.prefix, newRoute.prefixs...)
+		for key := range g.delprefix {
+			newRoute.delprefix[key] = struct{}{}
 		}
+		g.urlTpl[url] = newRoute
 	}
-	return "", false
+
+	return g
 }

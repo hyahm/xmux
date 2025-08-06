@@ -17,15 +17,15 @@ func grouphome(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminGroup() *RouteGroup {
-	admin := NewRouteGroup().Prefix("test")
-	admin.Get("/admin/{bbb}", home)
+	admin := NewRouteGroup().Prefix("test").DelPrefix("aa")
+	admin.Get("/admin/{bbb}", home).Prefix("aa").DelPrefix("bb")
 	admin.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age}", grouphome)
 	return admin
 }
 
 func userGroup() *RouteGroup {
 	user := NewRouteGroup().Prefix("test")
-	user.Get("/group", grouphome).BindResponse(nil)
+	user.Get("/group", grouphome)
 	user.Request("/group/add", nil, http.MethodGet, http.MethodDelete, http.MethodPost)
 	user.AddGroup(adminGroup())
 	return user
@@ -45,14 +45,15 @@ func TestMain(t *testing.T) {
 		Required: true,
 		Type:     "string",
 	}
-	router := NewRouter().BindResponse(response)
+	router := NewRouter().BindResponse(response).Prefix("nginx")
 
 	router.AddGroup(Pprof())
 	router.EnableConnect = true
-	router.Get("/pp", home)
+	router.Get("/pp", home).BindResponse(nil)
 	router.SetAddr(":19000")
 
 	router.AddGroup(userGroup())
 	router.DebugRoute()
+	router.DebugTpl()
 	log.Fatal(router.Run())
 }

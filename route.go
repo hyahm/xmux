@@ -27,8 +27,8 @@ type Route struct {
 	summary          string
 	bindType         bindType    // 数据绑定格式
 	dataSource       interface{} // 数据源
-
-	query []Parameter
+	query            []Parameter
+	denyPrefix       bool
 }
 
 func (rt *Route) Prefix(prefix string) *Route {
@@ -57,6 +57,10 @@ func (rt *Route) GetHeader() map[string]string {
 	return rt.header
 }
 
+func (rt *Route) DenyPrefix() {
+	rt.denyPrefix = true
+}
+
 // 这个路由的注释, 使用swagger加上这个字段才能显示执行的窗口
 func (rt *Route) SwaggerSummary(summary string) *Route {
 	if !rt.new {
@@ -70,12 +74,13 @@ func (rt *Route) BindResponse(response interface{}) *Route {
 	if !rt.new {
 		panic("can not support init")
 	}
-	if response == nil {
-		rt.bindResponseData = false
-		return rt
-	}
-	rt.responseData = response
 	rt.bindResponseData = true
+	rt.responseData = response
+	// if response == nil {
+	// 	rt.bindResponseData = false
+	// 	return rt
+	// }
+
 	return rt
 }
 

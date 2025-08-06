@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -307,14 +308,12 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 						r.HandleNotFound(w, req)
 						return
 					}
-					fmt.Println(route.params)
 					ap := make(map[string]string)
 					vl := re.FindStringSubmatch(req.URL.Path)
 					for i, v := range route.params {
 						ap[v] = vl[i+1]
 					}
 					thisRoute = route
-					fmt.Println(ap)
 					setParams(req.URL.Path, ap)
 					goto endloop
 				}
@@ -631,21 +630,22 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 	// prefix := append(prefixs, group.prefix...)
 	// 匹配理由的合并
 	for url, route := range group.urlRoute {
-		// route.methods = append(route.methods, http.MethodGet)
-		// subprefixs := SubtractSliceMap(prefix, route.delprefix)
-		// subprefix := append(subprefixs, route.prefixs...)
-		// allurl := path.Join(subprefix...)
-		// allurl = PrettySlash(allurl + route.url)
-		// url, vars, ok := makeRoute(allurl)
 		if _, ok := r.urlRoute[url]; ok {
 			v, ok := SliceExsit(r.urlRoute[url].methods, route.methods)
 			if ok {
 				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
 		}
-		r.urlRoute[url] = r.merge(group, route)
+		newRoute := r.merge(group, route)
+		if !route.denyPrefix && len(r.prefix) > 0 {
+
+			url = r.mergePrefix(route, url)
+		}
+		// 最终的prefix合并
+		r.urlRoute[url] = newRoute
 	}
 	// 正则匹配的合并
+
 	for url, tpl := range group.urlTpl {
 		if _, ok := r.urlTpl[url]; ok {
 			v, ok := SliceExsit(r.urlTpl[url].methods, tpl.methods)
@@ -653,75 +653,40 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
 		}
-		r.urlTpl[url] = r.merge(group, tpl)
-		// if ok {
-		// 	if r.tpl[url] == nil {
-		// 		r.tpl[url] = make(map[string]*Route)
-		// 	}
+		newRoute := r.merge(group, tpl)
+		if len(r.prefix) > 0 {
+			url = r.mergePrefix(tpl, url)
+		}
+		r.urlTpl[url] = newRoute
 
-		// 	for _, method := range route.methods {
-		// 		if _, methodOk := r.tpl[url][method]; methodOk {
-		// 			// 如果也存在， 那么method重复了
-		// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
-		// 		}
-		// 		if r.tpl[url] == nil {
-		// 			r.tpl[url] = make(MethodsRoute)
-		// 		}
-		// 		// newRoute.methods[method] = struct{}{}
-		// 		route.url = url
-		// 		r.tpl[url][method] = route
-		// 		route.params = vars
-		// 		r.merge(group, route)
-		// 	}
-
-		// } else {
-		// 	if r.route[url] == nil {
-		// 		r.route[url] = make(map[string]*Route)
-		// 	}
-		// 	// 如果存在就判断是否存在method
-		// 	for _, method := range route.methods {
-		// 		if _, methodOk := r.route[url][method]; methodOk {
-		// 			// 如果也存在， 那么method重复了
-		// 			log.Fatal("method : " + method + "  duplicate, url: " + url)
-		// 		}
-		// 		route.url = url
-		// 		r.route[url][method] = route
-		// 		r.merge(group, route)
-		// 	}
-		// 	// 如果不存在就创建一个 route
-
-		// }
 	}
-	// for url, args := range group.params {
-	// 	r.params[url] = args
-	// 	if len(args) == 0 {
-	// 		for method := range group.route[url] {
-	// 			if _, ok := r.route[url]; ok {
-	// 				if _, gok := r.route[url][method]; gok {
-	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
-	// 				}
-	// 			}
-	// 			r.merge(group, group.route[url][method])
-	// 		}
-
-	// 		r.route[url] = group.route[url]
-
-	// 	} else {
-	// 		for method := range group.tpl[url] {
-	// 			if _, ok := r.tpl[url]; ok {
-	// 				if _, gok := r.tpl[url][method]; gok {
-	// 					log.Fatal("method : " + method + "  duplicate, url: " + url)
-	// 				}
-	// 			}
-	// 			r.merge(group, group.tpl[url][method])
-	// 		}
-
-	// 		r.tpl[url] = group.tpl[url]
-	// 	}
-
-	// }
 
 	return r
+}
+
+func (r *Router) mergePrefix(newRoute *Route, url string) string {
+	newAddPrefix := append(r.prefix, newRoute.prefixs...)
+	prefixs := make([]string, 0)
+	if len(newRoute.delprefix) > 0 {
+		for _, v := range newAddPrefix {
+			if _, ok := newRoute.delprefix[v]; !ok {
+				prefixs = append(prefixs, v)
+			}
+		}
+	} else {
+		prefixs = newAddPrefix
+	}
+
+	if url[0:1] == "^" {
+		url = url[1:]
+		prefixs = append(prefixs, url)
+		url = "^" + path.Join(prefixs...)
+	} else {
+		prefixs = append(prefixs, url)
+		url = path.Join(prefixs...)
+	}
+
+	return url
 }
 
 // 将路由组的信息合并到路由

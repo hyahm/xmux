@@ -36,12 +36,11 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		prefixs:      make([]string, 0),
 		delprefix:    map[string]struct{}{},
 	}
-	prefix := path.Join(r.prefix...)
-	prefix = path.Join(prefix, pattern)
+	// prefix := path.Join(r.prefix...)
+	// prefix = path.Join(prefix, pattern)
 	// 判断是否是正则
-	url, vars, ok := makeRoute(prefix)
+	url, vars, ok := makeRoute(pattern)
 	newRoute.params = vars
-
 	if ok {
 		// 正则匹配的
 		if _, ok := r.urlTpl[url]; ok {
@@ -52,7 +51,10 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 				}
 			}
 		}
-
+		if len(r.prefix) > 0 {
+			allPrefix := append(r.prefix, url)
+			url = path.Join(allPrefix...)
+		}
 		r.urlTpl[url] = newRoute
 	} else {
 		// 直接匹配
@@ -64,6 +66,10 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 					log.Fatal("method : " + m + "  duplicate, url: " + url)
 				}
 			}
+		}
+		if len(r.prefix) > 0 {
+			allPrefix := append(r.prefix, url)
+			url = path.Join(allPrefix...)
 		}
 		r.urlRoute[url] = newRoute
 

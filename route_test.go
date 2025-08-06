@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"log"
-	"net/http"
 	"regexp"
 	"strings"
 	"testing"
@@ -15,7 +14,7 @@ type routerTest struct {
 	url         string
 	keys        []string
 	values      []string
-	isRe        bool
+	isSlash     bool
 	shouldMatch bool
 }
 
@@ -28,7 +27,7 @@ func TestPattern(t *testing.T) {
 			url:         "/aaaa/bbbb",
 			keys:        nil,
 			values:      nil,
-			isRe:        false,
+			isSlash:     false,
 			method:      "GET",
 			shouldMatch: true,
 		},
@@ -37,7 +36,7 @@ func TestPattern(t *testing.T) {
 			pattern:     "/aaaa/{bbbb}",
 			url:         "/aaaa/bbbb",
 			method:      "GET",
-			isRe:        true,
+			isSlash:     false,
 			keys:        []string{"bbbb"},
 			values:      []string{"bbbb"},
 			shouldMatch: true,
@@ -47,7 +46,7 @@ func TestPattern(t *testing.T) {
 			pattern:     "/aaaa/{bbbb}",
 			url:         "/aaaa/12334",
 			method:      "POST",
-			isRe:        true,
+			isSlash:     false,
 			keys:        []string{"bbbb"},
 			values:      []string{"12334"},
 			shouldMatch: true,
@@ -57,7 +56,7 @@ func TestPattern(t *testing.T) {
 			pattern:     "/aaaa/{string:bbbb}",
 			url:         "/aaaa/hioj",
 			method:      "GET",
-			isRe:        true,
+			isSlash:     false,
 			keys:        []string{"bbbb"},
 			values:      []string{"hioj"},
 			shouldMatch: true,
@@ -66,7 +65,7 @@ func TestPattern(t *testing.T) {
 			title:       "int类型正则匹配",
 			pattern:     "/aaaa/{int:bbbb}",
 			method:      "GET",
-			isRe:        true,
+			isSlash:     false,
 			url:         "/aaaa/joijoa324",
 			shouldMatch: false,
 		},
@@ -76,7 +75,7 @@ func TestPattern(t *testing.T) {
 			url:         "/aaaa/334",
 			keys:        []string{"bbbb"},
 			method:      "GET",
-			isRe:        true,
+			isSlash:     false,
 			values:      []string{"65555555555555"},
 			shouldMatch: true,
 		},
@@ -85,27 +84,27 @@ func TestPattern(t *testing.T) {
 			pattern:     "/aaaa////{int:bbbb}",
 			url:         "/aaaa/334",
 			method:      "POST",
-			isRe:        true,
+			isSlash:     false,
 			keys:        []string{"bbbb"},
 			values:      []string{"334"},
 			shouldMatch: true,
 		},
 		{
 			title:       "多路径截断",
-			pattern:     "/aaaa////{string:bbbb}///",
-			url:         "/aaaa/sdf",
+			pattern:     "/aaaa///{string:bbbb}///",
+			url:         "/aaaa/sdf/",
 			method:      "POST",
-			isRe:        true,
+			isSlash:     true,
 			keys:        []string{"bbbb"},
 			values:      []string{"sdf"},
 			shouldMatch: true,
 		},
 		{
 			title:       "多路径截断",
-			pattern:     "/////aaaa////{string:bbbb}///",
-			url:         "/aaaa/sdf",
+			pattern:     "/aaaa///{string:bbbb}///",
+			url:         "/aaaa/sdf/",
 			method:      "POST",
-			isRe:        true,
+			isSlash:     true,
 			keys:        []string{"bbbb"},
 			values:      []string{"sdf"},
 			shouldMatch: true,
@@ -118,29 +117,20 @@ func TestPattern(t *testing.T) {
 	}
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("hello"))
-	return
-}
-
 func testPattern(t *testing.T, test routerTest) {
 
-	r := NewRouter()
 	t.Log("before: ", test.pattern)
 	test.pattern = PrettySlash(test.pattern)
 	t.Log("after: ", test.pattern)
-	r.makeRoute(test.pattern)
+	// r.makeRoute(test.pattern)
 	patternMatched := false
+
 	url, _, ok := makeRoute(test.pattern)
-	if ok {
-		patternMatched = true
+	if !ok {
+		patternMatched = url == test.url
 	} else {
-		for reurl, _ := range r.urlTpl {
-			re := regexp.MustCompile(reurl)
-			if re.MatchString(url) {
-				patternMatched = true
-			}
-		}
+		re := regexp.MustCompile(url)
+		patternMatched = re.MatchString(test.url)
 	}
 
 	if patternMatched != test.shouldMatch {
