@@ -45,15 +45,16 @@ func TestMain(t *testing.T) {
 		Required: true,
 		Type:     "string",
 	}
-	router := NewRouter().BindResponse(response).Prefix("nginx")
+	router := NewRouter().BindResponse(response)
 
 	router.AddGroup(Pprof())
 	router.EnableConnect = true
 	router.Get("/pp", home).BindResponse(nil)
 	router.SetAddr(":19000")
-
+	// router.Get("/static", tt)
+	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
 	router.AddGroup(userGroup())
-	router.DebugRoute()
 	router.DebugTpl()
+
 	log.Fatal(router.Run())
 }

@@ -946,6 +946,25 @@ xmux.GetInstance(r).GetFuncName()  // It is related to the authority of adding, 
 xmux.GetInstance(r).GetPageKeys()  // Related to page permissions
 ```
 
+# browse file <a id="browse"></a>  
+```go
+package xmux
+
+import (
+	"log"
+	"github.com/hyahm/xmux"
+)
+
+
+func main() {
+	router := xmux.NewRouter()
+	//The first parameter is the URL prefix path, the second is the local directory, 
+	// the third is whether to display the file list, and the fourth is whether to download.
+	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
+	log.Fatal(router.Run())
+}
+```
+
 # Life cycle flow chart
 ![cycle](xmux.jpg)
 

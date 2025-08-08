@@ -29,7 +29,7 @@ go版本 >= 1.18
 - [pprof组](#pprof)
 - [swagger组](#swagger)
 - [连接的实例](#instance)
-
+- [文件浏览](#browse)
 
 
 ### 安装<a id="install"></a>  
@@ -910,6 +910,24 @@ xmux.GetInstance(r).GetFuncName()  // 增删改查权限
 xmux.GetInstance(r).GetPageKeys()  // 页面权限
 ```
 
+
+# 目录列表 <a id="browse"></a>  
+```go
+package xmux
+
+import (
+	"log"
+	"github.com/hyahm/xmux"
+)
+
+
+func main() {
+	router := xmux.NewRouter()
+	// 第一个参数是 url前缀路径，  第二个参数是本地目录，  第三个是 是否显示列出文件列表， 第四个是是都下载
+	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
+	log.Fatal(router.Run())
+}
+```
 
 
 ### 性能分析
