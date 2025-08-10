@@ -345,9 +345,12 @@ func (r *Router) SetAddr(addr string) *Router {
 	return r
 }
 
-func (r *Router) Run() error {
+func (r *Router) Run(addr ...string) error {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
+	}
+	if len(addr) > 0 {
+		r.addr = addr[0]
 	}
 	svc := &http.Server{
 		Addr:        r.addr,
