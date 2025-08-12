@@ -12,6 +12,7 @@ go版本 >= 1.18
 ### 导航
 - [安装](#install)
 - [快速开始](#start)
+- [http3](#http3)
 - [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
 - [路由组](#group)
 - [前缀](#prefix)
@@ -58,6 +59,61 @@ func main() {
 ```
 
 打开 http://localhost:8080 就能看到 hello world!
+
+### http3 <a id="http3"></a>  
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/hyahm/xmux"
+)
+
+func main() {
+	router := xmux.NewRouter()
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("<h1>hello world!<h1>"))
+	})
+	xmux.GenerateCertificate("cert.pem", "key.pem", "localhost")
+	err := router.RunQuic("cert.pem", "key.pem")
+}
+```
+client.go
+```go
+package main
+
+import (
+	"crypto/tls"
+	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/quic-go/quic-go/http3"
+)
+
+func main() {
+	client := http.Client{
+		Transport: &http3.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, // 仅测试用
+			},
+		},
+	}
+
+	resp, err := client.Get("https://localhost:8080/")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Println(string(body))
+}
+
+```
+运行 `go run client.go` 就能看到 hello world!
 
 ### 请求方式<a id="method"></a>
 ```go

@@ -14,6 +14,7 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 
 - [install](#install)
 - [quick start](#start)
+- [http3](#http3)
 - [Using GET, POST, PUT, PATCH, DELETE and OPTIONS](#method)
 - [routing group](#group)
 - [prefix](#prefix)
@@ -60,6 +61,62 @@ func main() {
 ```
 
 open http://localhost:8080 in brower you can see hello world!
+
+
+### http3 <a id="http3"></a>  
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/hyahm/xmux"
+)
+
+func main() {
+	router := xmux.NewRouter()
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("<h1>hello world!<h1>"))
+	})
+	xmux.GenerateCertificate("cert.pem", "key.pem", "localhost")
+	err := router.RunQuic("cert.pem", "key.pem")
+}
+```
+client.go
+```go
+package main
+
+import (
+	"crypto/tls"
+	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/quic-go/quic-go/http3"
+)
+
+func main() {
+	client := http.Client{
+		Transport: &http3.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, // 仅测试用
+			},
+		},
+	}
+
+	resp, err := client.Get("https://localhost:8080/")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Println(string(body))
+}
+
+```
+run  `go run client.go` you can see: hello world!
 
 # Multiple request method<a id="method"></a>
 ```go

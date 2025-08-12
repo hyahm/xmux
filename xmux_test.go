@@ -2,13 +2,12 @@ package xmux
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"testing"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	// w.Write([]byte("home admin" + Var(r)["bbb"]))
+	w.Write([]byte("home admin" + Var(r)["bbb"]))
 }
 
 func grouphome(w http.ResponseWriter, r *http.Request) {
@@ -49,12 +48,13 @@ func TestMain(t *testing.T) {
 
 	router.AddGroup(Pprof())
 	router.EnableConnect = true
-	router.Get("/pp", home).BindResponse(nil)
-	router.SetAddr(":19000")
+	router.Get("/", home).BindResponse(nil)
 	// router.Get("/static", tt)
 	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
 	router.AddGroup(userGroup())
 	router.DebugTpl()
+	GenerateCertificate("cert.pem", "key.pem", "localhost")
+	err := router.RunQuic("cert.pem", "key.pem")
+	fmt.Println(err)
 
-	log.Fatal(router.Run())
 }

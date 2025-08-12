@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/hyahm/xmux/helper"
+	"github.com/quic-go/quic-go/http3"
 )
 
 var connections int32
@@ -424,6 +426,39 @@ func (r *Router) RunUnsafeTLS(opt ...string) error {
 	}
 	fmt.Println("listen on " + addr + " over https")
 	return nil
+}
+
+func (r *Router) RunQuic(certPemFile, keyPemFile string, addr ...string) error {
+	certPem, err := os.ReadFile(certPemFile)
+	if err != nil {
+		return err
+	}
+	keyPem, err := os.ReadFile(keyPemFile)
+	if err != nil {
+		return err
+	}
+	// 1. 准备一个符合 TLS1.3 + ALPN=h3 的证书
+	cert, err := tls.X509KeyPair(certPem, keyPem) // 也可使用自签或 ACME
+	if err != nil {
+		return err
+	}
+
+	tlsConf := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		NextProtos:   []string{"h3"}, // 必须声明
+	}
+	if len(addr) > 0 {
+		r.addr = addr[0]
+	}
+	// 2. 启动 HTTP/3 服务器
+	s := http3.Server{
+		Addr:      r.addr,
+		TLSConfig: tlsConf,
+		Handler:   r,
+	}
+
+	log.Println("⇨  HTTP/3 server over https on " + r.addr)
+	return s.ListenAndServe()
 }
 
 func (r *Router) RunTLS(certFile, keyFile string) error {

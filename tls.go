@@ -17,6 +17,71 @@ import (
 	"time"
 )
 
+// 生成证书， domain 只会读取第一个
+func GenerateCertificate(certFile, keyFile string, domain ...string) error {
+	dm := "localhost"
+	if len(domain) > 0 {
+		dm = domain[0]
+	}
+	addrs, err := net.LookupHost(dm)
+	if err != nil {
+		return err
+	}
+	iPAddresses := make([]net.IP, 0)
+	for _, addr := range addrs {
+		iPAddresses = append(iPAddresses, net.ParseIP(addr))
+	}
+	// 1. 生成私钥
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+
+	// 2. 构造证书模板
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(2024),
+		Subject: pkix.Name{
+			Organization: []string{dm},
+			CommonName:   dm,
+		},
+		NotBefore:             time.Now().Add(-time.Hour), // 允许时钟偏差
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		DNSNames:              []string{dm},
+		IPAddresses:           iPAddresses,
+	}
+
+	// 3. 自签名：用自己的私钥给自己签发
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return err
+	}
+
+	// 4. 编码并写入文件
+	certOut, err := os.Create(certFile)
+	if err != nil {
+		return err
+	}
+	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	certOut.Close()
+
+	keyOut, err := os.Create(keyFile)
+	if err != nil {
+		return err
+	}
+	pem.Encode(keyOut, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(priv),
+	})
+	keyOut.Close()
+
+	log.Printf("✅ 证书已生成：%s /%s\n", certFile, keyFile)
+	return nil
+}
+
 func createTLS() {
 	fi, err := os.Stat("keys")
 	if err != nil {
@@ -68,9 +133,7 @@ func createTLS() {
 		}
 	}
 
-	for _, ip := range hosts {
-		server.IPAddresses = append(server.IPAddresses, ip)
-	}
+	server.IPAddresses = append(server.IPAddresses, hosts...)
 
 	privSer, _ := rsa.GenerateKey(rand.Reader, 1024)
 	createCertificateFile("server", server, privSer, ca, privCa)
