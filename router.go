@@ -75,44 +75,28 @@ type Router struct {
 	urlRoute             UrlRoute // 单实例路由， 组路由最后也会合并过来
 	urlTpl               UrlRoute // 正则路由， 组路由最后也会合并过来
 	// params               map[string][]string // 记录所有路由， map[string]string 是正则匹配的参数
-	header       map[string]string // 全局路由头
-	module       *module           // 全局模块
-	responseData interface{}
-	pagekeys     mstringstruct
-
+	header             map[string]string // 全局路由头
+	module             *module           // 全局模块
+	responseData       interface{}
+	pagekeys           mstringstruct
 	SwaggerTitle       string
 	SwaggerDescription string
 	SwaggerVersion     string
 }
 
+func (r *Router) SetTimeout(t time.Duration) *Router {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	r.ReadTimeout = t
+	return r
+}
 func (r *Router) BindResponse(response interface{}) *Router {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
 	r.responseData = response
 	return r
-}
-
-// 判断是否是正则路径， 返回一个路径 string 和是否是正则的 bool
-func (r *Router) makeRoute(pattern string) (string, []string, bool) {
-	// 格式化路径
-	// 创建 methodsRoute
-
-	if r.IgnoreSlash {
-		pattern = PrettySlash(pattern)
-	}
-
-	// if v, listvar := match(pattern); len(listvar) > 0 {
-	// 	if r.params[v] == nil {
-	// 		r.params[v] = make(map[string]string)
-	// 	}
-	// 	r.params[v] = listvar
-	// 	return v, listvar, true
-	// } else {
-
-	// 	r.params[pattern] = make([]string, 0)
-	return pattern, nil, false
-	// }
 }
 
 func (r *Router) SetHeader(k, v string) *Router {
