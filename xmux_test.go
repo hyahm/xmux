@@ -47,14 +47,15 @@ func TestMain(t *testing.T) {
 	router := NewRouter().BindResponse(response)
 
 	router.AddGroup(Pprof())
+	router.Get("/aaa/{bbb}", nil)
 	router.EnableConnect = true
-	router.Get("/", home).BindResponse(nil)
+	// router.Get("/", home).BindResponse(nil)
 	// router.Get("/static", tt)
-	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
+	router.AddGroup(FileBrowse("/static", "/mnt/d/share", true, false))
 	router.AddGroup(userGroup())
 	router.DebugTpl()
-	GenerateCertificate("cert.pem", "key.pem", "localhost")
-	err := router.RunQuic("cert.pem", "key.pem")
+	// GenerateCertificate("cert.pem", "key.pem", "localhost")
+	err := router.Run()
 	fmt.Println(err)
 
 }

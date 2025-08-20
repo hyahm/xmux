@@ -52,8 +52,8 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 			}
 		}
 		if len(r.prefix) > 0 {
-			allPrefix := append(r.prefix, url)
-			url = path.Join(allPrefix...)
+			url = r.mergePrefix(newRoute, url)
+
 		}
 		r.urlTpl[url] = newRoute
 	} else {
