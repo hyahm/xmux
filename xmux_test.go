@@ -45,15 +45,16 @@ func TestMain(t *testing.T) {
 		Type:     "string",
 	}
 	router := NewRouter().BindResponse(response)
-
+	router.Prefix("/api")
 	router.AddGroup(Pprof())
 	router.Get("/aaa/{bbb}", nil)
+	router.Post("/bbb", nil)
 	router.EnableConnect = true
 	// router.Get("/", home).BindResponse(nil)
 	// router.Get("/static", tt)
 	router.AddGroup(FileBrowse("/static", "/mnt/d/share", true, false))
 	router.AddGroup(userGroup())
-	router.DebugTpl()
+	router.DebugRoute()
 	// GenerateCertificate("cert.pem", "key.pem", "localhost")
 	err := router.Run()
 	fmt.Println(err)
