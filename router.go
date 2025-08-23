@@ -128,7 +128,45 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
-func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
+
+	for k, v := range route.Header {
+		w.Header().Set(k, v)
+	}
+
+	// 进入前的钩子函数
+	if r.Enter != nil {
+		if r.Enter(w, req) {
+			return
+		}
+	}
+	start := time.Now()
+	// 退出前的钩子函数
+	if r.Exit != nil {
+		defer r.Exit(start, w, req)
+	}
+	// /favicon.ico 请求除了请求头， 不做其他任何处理
+	if req.URL.Path == "/favicon.ico" {
+		r.HanleFavicon(w, req)
+		return
+	}
+
+	// option 请求处理
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		r.HandleOptions(w, req)
+		return
+	}
+	// 从这里开始， 将会有上下文， 前面为了了性能考虑， 不做上下文处理
+	ci := time.Now().UnixNano()
+	fd := &FlowData{
+		ctx:        make(map[string]interface{}),
+		mu:         &sync.RWMutex{},
+		connectId:  ci,
+		StatusCode: 200,
+	}
+
+	allconn.Set(req, fd)
+	defer allconn.Del(req)
 
 	if route.responseData != nil {
 		fd.Response = Clone(route.responseData)
@@ -149,10 +187,6 @@ func (r *Router) readFromCache(start time.Time, route *rt, w http.ResponseWriter
 		} else {
 			GetInstance(req).Body = []byte("")
 		}
-	}
-
-	for k, v := range route.Header {
-		w.Header().Set(k, v)
 	}
 
 	// 权限导入
@@ -197,27 +231,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ci := time.Now().UnixNano()
-	fd := &FlowData{
-		ctx:        make(map[string]interface{}),
-		mu:         &sync.RWMutex{},
-		connectId:  ci,
-		StatusCode: 200,
-	}
-
-	allconn.Set(req, fd)
-	defer allconn.Del(req)
-	start := time.Now()
-	if r.Enter != nil {
-		if r.Enter(w, req) {
-			return
-		}
-	}
-	if r.Exit != nil {
-		defer r.Exit(start, w, req)
-	}
 	if stop {
-		fd.StatusCode = http.StatusLocked
+		// fd.StatusCode = http.StatusLocked
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
@@ -225,37 +240,38 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.IgnoreSlash {
 		req.URL.Path = PrettySlash(req.URL.Path)
 	}
-	// /favicon.ico 请求
-	if req.URL.Path == "/favicon.ico" {
-		for k, v := range r.header {
-			w.Header().Set(k, v)
-		}
-		r.HanleFavicon(w, req)
-		return
-	}
-	// option 请求处理
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		for k, v := range r.header {
-			w.Header().Set(k, v)
-		}
-		r.HandleOptions(w, req)
-		return
-	}
 
 	// 正在寻址中的话， 就等待寻址完成
 	// 先进行路由表缓存寻找
 	route, ok := getUrlCache(req.URL.Path + req.Method)
+
 	if ok {
-		r.readFromCache(start, route, w, req, fd)
+		r.readFromCache(route, w, req)
 	} else {
 		// 寻址
-		r.serveHTTP(start, w, req, fd)
+		r.serveHTTP(w, req)
 	}
 }
 
+func (r *Router) setHeader(route *Route) map[string]string {
+	// 设置请求头
+	headers := make(map[string]string)
+	for k, v := range r.header {
+		headers[k] = v
+	}
+	for k, v := range route.header {
+		headers[k] = v
+	}
+	for k := range route.delheader {
+		delete(headers, k)
+	}
+	return headers
+}
+
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
-func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Request, fd *FlowData) {
+func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
+
 	matchMethod := false
 	if route, ok := r.urlRoute[req.URL.Path]; ok {
 		for _, v := range route.methods {
@@ -311,19 +327,21 @@ func (r *Router) serveHTTP(start time.Time, w http.ResponseWriter, req *http.Req
 		return
 	}
 endloop:
+	// todo: 后面补充prefix
 	// 缓存handler
-	thisRouter := &rt{
+	thisRouteCache := &rt{
 		Handle:       thisRoute.handle,
-		Header:       thisRoute.header,
+		Header:       r.setHeader(thisRoute),
 		module:       thisRoute.module.GetModules(),
 		dataSource:   thisRoute.dataSource,
 		pagekeys:     thisRoute.pagekeys,
 		bindType:     thisRoute.bindType,
 		responseData: thisRoute.responseData,
 	}
+
 	// 设置缓存
-	setUrlCache(req.URL.Path+req.Method, thisRouter)
-	r.readFromCache(start, thisRouter, w, req, fd)
+	setUrlCache(req.URL.Path+req.Method, thisRouteCache)
+	r.readFromCache(thisRouteCache, w, req)
 }
 
 func (r *Router) SetAddr(addr string) *Router {

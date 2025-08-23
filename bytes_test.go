@@ -15,6 +15,5 @@ func TestBytes(t *testing.T) {
 		}
 		b = append(b, v)
 	}
-	fmt.Println(b)
 	fmt.Println(string(b))
 }
