@@ -151,11 +151,6 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	// option 请求处理
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		r.HandleOptions(w, req)
-		return
-	}
 	// 从这里开始， 将会有上下文， 前面为了了性能考虑， 不做上下文处理
 	ci := time.Now().UnixNano()
 	fd := &FlowData{
@@ -167,6 +162,12 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
+
+	// option 请求处理
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		r.HandleOptions(w, req)
+		return
+	}
 
 	if route.responseData != nil {
 		fd.Response = Clone(route.responseData)
@@ -376,11 +377,8 @@ func (r *Router) Debug(ctx context.Context) {
 	}
 	fmt.Printf("listen on %s\n", r.addr)
 	go svc.ListenAndServe()
-	select {
-	case <-ctx.Done():
-		svc.Close()
-		return
-	}
+	<-ctx.Done()
+	svc.Close()
 
 }
 
