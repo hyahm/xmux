@@ -132,7 +132,11 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
-
+	// option 请求处理
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		r.HandleOptions(w, req)
+		return
+	}
 	// 进入前的钩子函数
 	if r.Enter != nil {
 		if r.Enter(w, req) {
@@ -211,11 +215,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if r.Exit != nil {
 		defer r.Exit(start, w, req)
 	}
-	// option 请求处理
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		r.HandleOptions(w, req)
-		return
-	}
+
 	if req.Method == http.MethodConnect {
 		if r.EnableConnect {
 			if r.HandleConnect == nil {
