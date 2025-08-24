@@ -32,6 +32,7 @@ func userGroup() *RouteGroup {
 func TestMain(t *testing.T) {
 	router := NewRouter()
 	router.AddGroup(Pprof())
+	router.Prefix("/api")
 	router.EnableConnect = true
 	router.Get("/pp/{name}", home)
 	router.SetAddr(":9000")

@@ -128,47 +128,20 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
-func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
-
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
 
-	// /favicon.ico 请求除了请求头， 不做其他任何处理
-	if req.URL.Path == "/favicon.ico" {
-		r.HanleFavicon(w, req)
-		return
-	}
-
-	// 从这里开始， 将会有上下文， 前面为了了性能考虑， 不做上下文处理
-	ci := time.Now().UnixNano()
-	fd := &FlowData{
-		ctx:        make(map[string]interface{}),
-		mu:         &sync.RWMutex{},
-		connectId:  ci,
-		StatusCode: 200,
-	}
-	allconn.Set(req, fd)
-	defer allconn.Del(req)
-
-	if route.responseData != nil {
-		fd.Response = Clone(route.responseData)
-	}
 	// 进入前的钩子函数
 	if r.Enter != nil {
 		if r.Enter(w, req) {
 			return
 		}
 	}
-	start := time.Now()
-	// 退出前的钩子函数
-	if r.Exit != nil {
-		defer r.Exit(start, w, req)
-	}
-	// option 请求处理
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		r.HandleOptions(w, req)
-		return
+
+	if route.responseData != nil {
+		fd.Response = Clone(route.responseData)
 	}
 	if route.dataSource != nil {
 		base := reflect.TypeOf(route.dataSource)
@@ -217,6 +190,32 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	atomic.AddInt32(&connections, 1)
 	defer atomic.AddInt32(&connections, -1)
 
+	// /favicon.ico 请求除了请求头， 不做其他任何处理
+	if req.URL.Path == "/favicon.ico" {
+		r.HanleFavicon(w, req)
+		return
+	}
+
+	// 从这里开始， 将会有上下文， 前面为了了性能考虑， 不做上下文处理
+	ci := time.Now().UnixNano()
+	fd := &FlowData{
+		ctx:        make(map[string]interface{}),
+		mu:         &sync.RWMutex{},
+		connectId:  ci,
+		StatusCode: 200,
+	}
+	allconn.Set(req, fd)
+	defer allconn.Del(req)
+	start := time.Now()
+	// 退出前的钩子函数
+	if r.Exit != nil {
+		defer r.Exit(start, w, req)
+	}
+	// option 请求处理
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		r.HandleOptions(w, req)
+		return
+	}
 	if req.Method == http.MethodConnect {
 		if r.EnableConnect {
 			if r.HandleConnect == nil {
@@ -245,10 +244,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	route, ok := getUrlCache(req.URL.Path + req.Method)
 
 	if ok {
-		r.readFromCache(route, w, req)
+		r.readFromCache(route, w, req, fd)
 	} else {
 		// 寻址
-		r.serveHTTP(w, req)
+		r.serveHTTP(w, req, fd)
 	}
 }
 
@@ -268,7 +267,7 @@ func (r *Router) setHeader(route *Route) map[string]string {
 }
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
-func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request, fd *FlowData) {
 	var thisRoute *Route
 
 	matchMethod := false
@@ -340,7 +339,7 @@ endloop:
 
 	// 设置缓存
 	setUrlCache(req.URL.Path+req.Method, thisRouteCache)
-	r.readFromCache(thisRouteCache, w, req)
+	r.readFromCache(thisRouteCache, w, req, fd)
 }
 
 func (r *Router) SetAddr(addr string) *Router {
@@ -527,7 +526,7 @@ func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bo
 }
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+	// w.Header().Add("Access-Control-Allow-Origin", "*")
 	GetInstance(r).StatusCode = http.StatusNotFound
 	w.WriteHeader(http.StatusNotFound)
 }
