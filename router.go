@@ -134,17 +134,6 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		w.Header().Set(k, v)
 	}
 
-	// 进入前的钩子函数
-	if r.Enter != nil {
-		if r.Enter(w, req) {
-			return
-		}
-	}
-	start := time.Now()
-	// 退出前的钩子函数
-	if r.Exit != nil {
-		defer r.Exit(start, w, req)
-	}
 	// /favicon.ico 请求除了请求头， 不做其他任何处理
 	if req.URL.Path == "/favicon.ico" {
 		r.HanleFavicon(w, req)
@@ -159,18 +148,27 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		connectId:  ci,
 		StatusCode: 200,
 	}
-
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
 
+	if route.responseData != nil {
+		fd.Response = Clone(route.responseData)
+	}
+	// 进入前的钩子函数
+	if r.Enter != nil {
+		if r.Enter(w, req) {
+			return
+		}
+	}
+	start := time.Now()
+	// 退出前的钩子函数
+	if r.Exit != nil {
+		defer r.Exit(start, w, req)
+	}
 	// option 请求处理
 	if !r.DisableOption && req.Method == http.MethodOptions {
 		r.HandleOptions(w, req)
 		return
-	}
-
-	if route.responseData != nil {
-		fd.Response = Clone(route.responseData)
 	}
 	if route.dataSource != nil {
 		base := reflect.TypeOf(route.dataSource)
