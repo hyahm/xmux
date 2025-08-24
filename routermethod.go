@@ -8,6 +8,17 @@ import (
 
 // get this route
 func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method ...string) *Route {
+	if !r.DisableOption {
+		var exsitOption bool
+		for _, v := range method {
+			if v == http.MethodOptions {
+				exsitOption = true
+			}
+		}
+		if !exsitOption {
+			method = append(method, http.MethodOptions)
+		}
+	}
 	temphead := make(map[string]string)
 	for k, v := range r.header {
 		temphead[k] = v
@@ -170,6 +181,7 @@ func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Req
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+
 	return r.defindMethod(pattern, handler, http.MethodGet)
 }
 

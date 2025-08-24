@@ -132,7 +132,6 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
-	// option 请求处理
 	if !r.DisableOption && req.Method == http.MethodOptions {
 		r.HandleOptions(w, req)
 		return
@@ -211,6 +210,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	allconn.Set(req, fd)
 	defer allconn.Del(req)
 	start := time.Now()
+	// option 请求处理
+
 	// 退出前的钩子函数
 	if r.Exit != nil {
 		defer r.Exit(start, w, req)
@@ -675,6 +676,17 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 		if !route.denyPrefix && len(r.prefix) > 0 {
 
 			url = r.mergePrefix(route, url)
+		}
+		if !r.DisableOption {
+			var exsitOption bool
+			for _, v := range newRoute.methods {
+				if v == http.MethodOptions {
+					exsitOption = true
+				}
+			}
+			if !exsitOption {
+				newRoute.methods = append(newRoute.methods, http.MethodOptions)
+			}
 		}
 		// 最终的prefix合并
 		r.urlRoute[url] = newRoute
