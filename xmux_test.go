@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"testing"
@@ -33,10 +34,15 @@ func TestMain(t *testing.T) {
 	router := NewRouter()
 	router.AddGroup(Pprof())
 	router.Prefix("/api")
-	router.EnableConnect = true
+	// router.EnableConnect = true
 	router.Get("/pp/{name}", home)
+	router.Connect("/connect", connect)
 	router.SetAddr(":9000")
 
 	router.AddGroup(userGroup())
 	log.Fatal(router.Run())
+}
+
+func connect(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("------------------------------------------")
 }

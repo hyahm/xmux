@@ -93,6 +93,13 @@ func (gr *RouteGroup) Get(pattern string, handler func(http.ResponseWriter, *htt
 	return gr.defindMethod(pattern, handler, http.MethodGet)
 }
 
+func (gr *RouteGroup) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+	if !gr.new {
+		panic("must be init by NewRouteGroup")
+	}
+	return gr.defindMethod(pattern, handler, http.MethodConnect)
+}
+
 func (gr *RouteGroup) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
@@ -119,13 +126,6 @@ func (gr *RouteGroup) Options(pattern string, handler func(http.ResponseWriter, 
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodOptions)
-}
-
-func (gr *RouteGroup) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !gr.new {
-		panic("must be init by NewRouteGroup")
-	}
-	return gr.defindMethod(pattern, handler, http.MethodConnect)
 }
 
 func (gr *RouteGroup) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {

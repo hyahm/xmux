@@ -185,6 +185,14 @@ func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Req
 	return r.defindMethod(pattern, handler, http.MethodGet)
 }
 
+func (r *Router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+
+	return r.defindMethod(pattern, handler, http.MethodConnect)
+}
+
 func (r *Router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
 	if !r.new {
 		panic("must be use get router by NewRouter()")

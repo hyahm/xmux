@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"path"
@@ -22,7 +20,7 @@ import (
 	"github.com/quic-go/quic-go/http3"
 )
 
-var connections int32
+var connections int32 = -1
 
 const PAGES = "PAGES"
 
@@ -51,24 +49,19 @@ type rt struct {
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
-func requestBytes(reqbody []byte, r *http.Request) {
-	log.Printf("connect_id: %d\tdata: %s", GetInstance(r).GetConnectId(), string(reqbody))
-}
-
 type Router struct {
 	addr                 string
 	prefix               []string
 	MaxPrintLength       int
 	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
 	new                  bool                                          // 判断是否是通过newRouter 来初始化的
-	EnableConnect        bool                                          //
 	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout          time.Duration
 	HanleFavicon         func(http.ResponseWriter, *http.Request)
 	DisableOption        bool                                     // 禁止全局option
 	HandleOptions        func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound       func(http.ResponseWriter, *http.Request)
-	HandleConnect        func(http.ResponseWriter, *http.Request)
+	HandleAll            func(http.ResponseWriter, *http.Request) bool
 	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
 	IgnoreSlash          bool     // 忽略地址多个斜杠， 默认不忽略
@@ -128,7 +121,7 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return r
 }
 
-func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) {
+func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
@@ -139,6 +132,24 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 			return
 		}
 	}
+
+	ci := time.Now().UnixNano()
+	fd := &FlowData{
+		ctx:        make(map[string]interface{}),
+		mu:         &sync.RWMutex{},
+		connectId:  ci,
+		StatusCode: 200,
+	}
+	allconn.Set(req, fd)
+	defer allconn.Del(req)
+	start := time.Now()
+	// option 请求处理
+
+	// 退出前的钩子函数
+	if r.Exit != nil {
+		defer r.Exit(start, w, req)
+	}
+
 	if !r.DisableOption && req.Method == http.MethodOptions {
 		r.HandleOptions(w, req)
 		return
@@ -190,51 +201,18 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		panic("must be use get router by NewRouter()")
 	}
 
-	atomic.AddInt32(&connections, 1)
-	defer atomic.AddInt32(&connections, -1)
-
-	// /favicon.ico 请求除了请求头， 不做其他任何处理
-	if req.URL.Path == "/favicon.ico" {
-		r.HanleFavicon(w, req)
-		return
-	}
-
-	// 从这里开始， 将会有上下文， 前面为了了性能考虑， 不做上下文处理
-	ci := time.Now().UnixNano()
-	fd := &FlowData{
-		ctx:        make(map[string]interface{}),
-		mu:         &sync.RWMutex{},
-		connectId:  ci,
-		StatusCode: 200,
-	}
-	allconn.Set(req, fd)
-	defer allconn.Del(req)
-	start := time.Now()
-	// option 请求处理
-
-	// 退出前的钩子函数
-	if r.Exit != nil {
-		defer r.Exit(start, w, req)
-	}
-
-	if req.Method == http.MethodConnect {
-		if r.EnableConnect {
-			if r.HandleConnect == nil {
-				r.HandleConnect = handleConnect
-			}
-		} else {
-			w.WriteHeader(http.StatusBadGateway)
-			return
-		}
-		r.HandleConnect(w, req)
-		return
-	}
-
 	if stop {
 		// fd.StatusCode = http.StatusLocked
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
+	if r.HandleAll != nil {
+		if r.HandleAll(w, req) {
+			return
+		}
+	}
+	atomic.AddInt32(&connections, 1)
+	defer atomic.AddInt32(&connections, -1)
 
 	if r.IgnoreSlash {
 		req.URL.Path = PrettySlash(req.URL.Path)
@@ -245,10 +223,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	route, ok := getUrlCache(req.URL.Path + req.Method)
 
 	if ok {
-		r.readFromCache(route, w, req, fd)
+		r.readFromCache(route, w, req)
 	} else {
 		// 寻址
-		r.serveHTTP(w, req, fd)
+		r.serveHTTP(w, req)
 	}
 }
 
@@ -268,11 +246,12 @@ func (r *Router) setHeader(route *Route) map[string]string {
 }
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
-func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request, fd *FlowData) {
+func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
 
 	matchMethod := false
 	if route, ok := r.urlRoute[req.URL.Path]; ok {
+
 		for _, v := range route.methods {
 			if v == req.Method {
 				matchMethod = true
@@ -326,6 +305,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request, fd *FlowDat
 		return
 	}
 endloop:
+
 	// todo: 后面补充prefix
 	// 缓存handler
 	thisRouteCache := &rt{
@@ -340,7 +320,7 @@ endloop:
 
 	// 设置缓存
 	setUrlCache(req.URL.Path+req.Method, thisRouteCache)
-	r.readFromCache(thisRouteCache, w, req, fd)
+	r.readFromCache(thisRouteCache, w, req)
 }
 
 func (r *Router) SetAddr(addr string) *Router {
@@ -378,20 +358,6 @@ func (r *Router) Debug(ctx context.Context) {
 	<-ctx.Done()
 	svc.Close()
 
-}
-
-func SetPem(name string) string {
-	return name
-}
-
-func SetKey(name string) string {
-	return name
-}
-
-type Opt interface {
-	SetKey() string
-	SetPem() string
-	SetAddr() string
 }
 
 func (r *Router) RunUnsafeTLS(opt ...string) error {
@@ -509,72 +475,12 @@ func NewRouter(cacheSize ...int) *Router {
 		},
 		HanleFavicon:         handleFavicon,
 		HandleOptions:        handleOptions,
+		HandleAll:            handleAll,
 		HandleNotFound:       handleNotFound,
 		NotFoundRequireField: notFoundRequireField,
 
 		UnmarshalError: unmarshalError,
 	}
-}
-
-func unmarshalError(err error, w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println(err)
-	return false
-}
-
-func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("required field not found", key)
-	return false
-}
-
-func handleNotFound(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Add("Access-Control-Allow-Origin", "*")
-	GetInstance(r).StatusCode = http.StatusNotFound
-	w.WriteHeader(http.StatusNotFound)
-}
-
-func handleConnect(w http.ResponseWriter, r *http.Request) {
-	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-		return
-	}
-	defer destConn.Close()
-
-	// 向客户端返回成功响应
-	w.WriteHeader(http.StatusOK)
-
-	// 使用 Hijacker 获取客户端的 TCP 连接
-	hj, ok := w.(http.Hijacker)
-	if !ok {
-		http.Error(w, "webserver doesn't support hijacking", http.StatusInternalServerError)
-		return
-	}
-	clientConn, _, err := hj.Hijack()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer clientConn.Close()
-
-	// 在客户端和目标服务器之间建立双向隧道
-	go transfer(destConn, clientConn)
-	transfer(clientConn, destConn)
-}
-
-// 数据传输函数
-func transfer(destination io.WriteCloser, source io.ReadCloser) {
-	defer destination.Close()
-	defer source.Close()
-	io.Copy(destination, source)
-}
-
-func handleOptions(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
-
-func handleFavicon(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.WriteHeader(http.StatusOK)
 }
 
 func (r *Router) cloneHeader() mstringstring {

@@ -1022,6 +1022,6 @@ func main() {
 }
 ```
 
-# Life cycle flow chart
+# Life cycle flow chart (If there is no matching route, it will not enter the figure below.)
 ![cycle](xmux.jpg)
 

@@ -337,24 +337,29 @@ name
 
 - NotFoundRequiredField                                             : 必要字段验证失败的处理勾子
 - UnmarshalError                                                   : 内置解析解析错误的勾子
-- Exit (start time.Time, w http.ResponseWriter, r *http.Request)   : 
-- Enter( w http.ResponseWriter, r *http.Request) bool              : 
+- Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :    // 匹配到的路由才会进来 
+- Enter( w http.ResponseWriter, r *http.Request) bool              :    // 匹配到的路由才会进来 
+- HandleAll(w http.ResponseWriter,r *http.Request)   bool            :     为了性能考虑新增   所有请求都能在这里获取到数据， 用来替代之前的 enter 和  exit 的请求记录
 ```go
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	// 主要为了打印执行的时间
+	//  主要为了打印执行的时间  注意此时间没有计算寻址时间， 本路径寻址使用了缓存，可以无视寻址时间
+	 // 匹配到的路由才会进来 
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 
 // 与module一样的效果， return true 就是直接返回， return false 就是继续 但是不支持 xmux.GetInstence(r)传参  
 // 主要用来过滤请求和调试
 func enter( w http.ResponseWriter, r *http.Request) bool {
-	// 任何请求都会进入到这里，比如过滤ip， 域名
-	
+ // 匹配到的路由才会进来 
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 
-
+func HandleAll( w http.ResponseWriter, r *http.Request) bool {
+	// 任何请求都会进入到这里，比如过滤ip， 域名
+ // 匹配到的路由才会进来 
+	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
+}
 ```
 
 ### 设置请求头 <a id="header"></a>
@@ -1024,6 +1029,6 @@ router.DebugTpl()
 
 
 
-### 流程图总结
+### 流程图总结 （没有匹配路由不会进入下面的图）
 ![xmux流程图](xmux.jpg)
 
