@@ -250,6 +250,9 @@ func (r *Router) setHeader(route *Route) map[string]string {
 func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
 	matchMethod := false
+	for k, v := range r.header {
+		w.Header().Set(k, v)
+	}
 	if route, ok := r.urlRoute[req.URL.Path]; ok {
 
 		for _, v := range route.methods {
