@@ -221,7 +221,7 @@ func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 			vv.Field(i).SetUint(i64)
 
 		default:
-			return false, errors.New("not support type")
+			return false, errors.New("not support type, url: " + req.URL.Path)
 		}
 	}
 	return false, nil
