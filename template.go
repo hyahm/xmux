@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"encoding/json"
+	jsonv2 "encoding/json/v2"
 	"log"
 	"net/http"
 	"strings"
@@ -94,27 +95,29 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
 		cacheKey := GetInstance(r).CacheKey
 
-		if cacheKey != "" {
-			if IsUpdate(cacheKey) {
-				// 如果没有设置缓存，还是以前的处理方法
-				send, err = json.Marshal(GetInstance(r).Response)
-				if err != nil {
-					log.Println(err)
-				}
-				// 如果之前是更新的状态，那么就修改
-			} else {
-				// 如果不是更新的状态， 那么就不用更新，而是直接从缓存取值
-				send = GetCache(cacheKey)
-			}
-			SetCache(cacheKey, send)
+		if cacheKey != "" && !IsUpdate(cacheKey) {
+			// 如果是缓存的值，并且不在更新中就直接取缓存的值
+			send = GetCache(cacheKey)
 			w.Write(send)
+		}
+		// 如果没有设置缓存，还是以前的处理方法
+		if enableJsonV2 {
+			send, err = jsonv2.Marshal(GetInstance(r).Response)
+			if err != nil {
+				log.Println(err)
+			}
 		} else {
 			send, err = json.Marshal(GetInstance(r).Response)
 			if err != nil {
 				log.Println(err)
 			}
-			w.Write(send)
 		}
+		if cacheKey != "" {
+			SetCache(cacheKey, send)
+		}
+		// 如果之前是更新的状态，那么就修改
+
+		w.Write(send)
 
 	}
 	// log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, response: %v\n",

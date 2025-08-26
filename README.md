@@ -5,7 +5,7 @@ Based on native net HTTP is extremely simple and flexible, focusing on the routi
 Function is up to you
 
 ###  required 
-go version >= 1.18
+go version >= 1.25.0
 
 [video tutorial](https://www.bilibili.com/video/BV1Ji4y1D7o3/ )
 

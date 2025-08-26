@@ -42,7 +42,7 @@ const header = `{'typ': 'JWT',
 // 	// Unmarshal([]byte) error
 // }
 
-// 创建jwt
+// 创建jwt , 已废弃 请使用   github.com/dgrijalva/jwt-go
 func MakeJwt(salt string, tk interface{}) (string, error) {
 	payload, err := json.Marshal(tk)
 	if err != nil {
@@ -62,7 +62,7 @@ func getHc(b, salt string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-// 检查jwt, must be a point
+// 检查jwt, must be a point  , 已废弃 请使用   github.com/dgrijalva/jwt-go
 func GetJwt(jwt, salt string, token interface{}) error {
 	if reflect.TypeOf(token).Kind() != reflect.Ptr {
 		return errors.New("token must be a pointer")

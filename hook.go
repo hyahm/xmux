@@ -30,7 +30,7 @@ func handleAll(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func handleConnect(w http.ResponseWriter, r *http.Request) {
+func HandleConnect(w http.ResponseWriter, r *http.Request) {
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)

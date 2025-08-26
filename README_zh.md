@@ -8,7 +8,7 @@
 简体中文 | [English](./README.md) | [简体中文](./README_zh.md) 
 ### 环境条件
 
-go版本 >= 1.18
+go版本 >= 1.25.0
 ### 导航
 - [安装](#install)
 - [快速开始](#start)
