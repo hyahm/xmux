@@ -7,7 +7,7 @@
 
 简体中文 | [English](./README.md) | [简体中文](./README_zh.md) 
 ### 环境条件
-go版本 >= 1.25.0
+go版本 >= 1.25.0  
 go env -w GOEXPERIMENT=jsonv2 
 
 ### 导航
