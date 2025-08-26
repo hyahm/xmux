@@ -300,18 +300,24 @@ xmux.GetInstance(r).Get("key")
 
 - NotFoundRequiredField                                             : Processing tick for failed verification of required fields
 - UnmarshalError                                                   : Built in Unmarshal error hook
-- Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :  handle exit
-- Enter( w http.ResponseWriter, r *http.Request) bool              :  handle enter
+- Exit(start time.Time, w http.ResponseWriter, r *http.Request): // Only matched routes will enter here.
+- Enter(w http.ResponseWriter, r *http.Request) bool: // Only matched routes will enter here.
+- HandleAll(w http.ResponseWriter, r *http.Request) bool: // Added for performance considerations. All requests can obtain data here, replacing the previous request logging in Enter and Exit.
 
 ```go
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
-	// Any valid request will end up here
+	// matched url request will end up here
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 
 
 
 func enter( w http.ResponseWriter, r *http.Request) bool {
+	// matched url request will coming，
+	
+	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
+}
+func HandleAll( w http.ResponseWriter, r *http.Request) bool {
 	// Any request will coming，You can filter IP domain names and other security or debugging operations
 	
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)

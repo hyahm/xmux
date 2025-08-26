@@ -13,6 +13,7 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		for _, v := range method {
 			if v == http.MethodOptions {
 				exsitOption = true
+				break
 			}
 		}
 		if !exsitOption {

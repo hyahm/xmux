@@ -122,6 +122,7 @@ func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 }
 
 func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
+
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
@@ -150,10 +151,10 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		defer r.Exit(start, w, req)
 	}
 
-	if !r.DisableOption && req.Method == http.MethodOptions {
-		r.HandleOptions(w, req)
-		return
-	}
+	// if !r.DisableOption && req.Method == http.MethodOptions {
+	// 	r.HandleOptions(w, req)
+	// 	return
+	// }
 	if route.responseData != nil {
 		fd.Response = Clone(route.responseData)
 	}
@@ -248,7 +249,6 @@ func (r *Router) setHeader(route *Route) map[string]string {
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
-
 	matchMethod := false
 	if route, ok := r.urlRoute[req.URL.Path]; ok {
 
@@ -259,12 +259,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 		// route, ok := r.route[req.URL.Path][req.Method]
-		if !ok {
-			r.HandleNotFound(w, req)
-			atomic.AddInt32(&connections, -1)
-			return
-		}
-		if !matchMethod {
+		if !ok || !matchMethod {
 			r.HandleNotFound(w, req)
 			return
 		}
@@ -301,7 +296,6 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 		r.HandleNotFound(w, req)
-		atomic.AddInt32(&connections, -1)
 		return
 	}
 endloop:
@@ -317,7 +311,6 @@ endloop:
 		bindType:     thisRoute.bindType,
 		responseData: thisRoute.responseData,
 	}
-
 	// 设置缓存
 	setUrlCache(req.URL.Path+req.Method, thisRouteCache)
 	r.readFromCache(thisRouteCache, w, req)
@@ -588,6 +581,7 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 			for _, v := range newRoute.methods {
 				if v == http.MethodOptions {
 					exsitOption = true
+					break
 				}
 			}
 			if !exsitOption {

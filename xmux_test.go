@@ -32,6 +32,8 @@ func userGroup() *RouteGroup {
 
 func TestMain(t *testing.T) {
 	router := NewRouter()
+	router.SetHeader("Access-Control-Allow-Origin", "*").
+		SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	router.AddGroup(Pprof())
 	router.Prefix("/api")
 	// router.EnableConnect = true
