@@ -7,8 +7,9 @@
 
 简体中文 | [English](./README.md) | [简体中文](./README_zh.md) 
 ### 环境条件
-go版本 >= 1.25.0  
-go env -w GOEXPERIMENT=jsonv2 
+如果想使用json/v2    `go get github.com/hyahm/xmux@jsonv2`   
+
+go >= 1.23
 
 ### 导航
 - [安装](#install)
