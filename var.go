@@ -1,13 +1,8 @@
 package xmux
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
-	"fmt"
 	"net/http"
-	"os/exec"
-	"strings"
 	"sync"
 )
 
@@ -29,40 +24,7 @@ var ErrEmptyString = errors.New("empty string")
 
 var ErrTypeUnsupport = errors.New("data type is unsupported")
 
-var enableJsonV2 bool
-
-func getEnableJsonV2() {
-	cmd := exec.Command("go", "env")
-
-	// 创建一个 bytes.Buffer 来存储命令的输出
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	// 执行命令
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("Error running command:", err)
-		return
-	}
-	scanner := bufio.NewScanner(&out)
-	for scanner.Scan() {
-		value := scanner.Text()
-		if strings.Contains(scanner.Text(), "GOEXPERIMENT") {
-
-			v := strings.Split(value, "=")[1]
-			if v == "jsonv2" {
-				enableJsonV2 = true
-			}
-			break
-		}
-	}
-	// 打印
-	// 命令的输出
-
-}
-
 func init() {
-	getEnableJsonV2()
 	// for _, value := range os.Environ() {
 	// 	if strings.Contains(value, "GOEXPERIMENT") {
 	// 		fmt.Println(value)
@@ -70,7 +32,6 @@ func init() {
 
 	// }
 
-	// jsonv2 "encoding/json/v2"
 	uint8arr[0] = 128
 	uint8arr[1] = 64
 	uint8arr[2] = 32

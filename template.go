@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"encoding/json"
-	jsonv2 "encoding/json/v2"
 	"log"
 	"net/http"
 	"strings"
@@ -90,27 +89,18 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	// r.Body.Close()
-	var send []byte
-	var err error
 	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
 		cacheKey := GetInstance(r).CacheKey
 
 		if cacheKey != "" && !IsUpdate(cacheKey) {
 			// 如果是缓存的值，并且不在更新中就直接取缓存的值
-			send = GetCache(cacheKey)
+			send := GetCache(cacheKey)
 			w.Write(send)
 		}
 		// 如果没有设置缓存，还是以前的处理方法
-		if enableJsonV2 {
-			send, err = jsonv2.Marshal(GetInstance(r).Response)
-			if err != nil {
-				log.Println(err)
-			}
-		} else {
-			send, err = json.Marshal(GetInstance(r).Response)
-			if err != nil {
-				log.Println(err)
-			}
+		send, err := json.Marshal(GetInstance(r).Response)
+		if err != nil {
+			log.Println(err)
 		}
 		if cacheKey != "" {
 			SetCache(cacheKey, send)
