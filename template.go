@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"encoding/json"
 	jsonv2 "encoding/json/v2"
 	"log"
 	"net/http"
@@ -101,16 +100,9 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 			w.Write(send)
 		}
 		// 如果没有设置缓存，还是以前的处理方法
-		if enableJsonV2 {
-			send, err = jsonv2.Marshal(GetInstance(r).Response)
-			if err != nil {
-				log.Println(err)
-			}
-		} else {
-			send, err = json.Marshal(GetInstance(r).Response)
-			if err != nil {
-				log.Println(err)
-			}
+		send, err = jsonv2.Marshal(GetInstance(r).Response)
+		if err != nil {
+			log.Println(err)
 		}
 		if cacheKey != "" {
 			SetCache(cacheKey, send)

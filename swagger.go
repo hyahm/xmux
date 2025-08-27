@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"bytes"
-	"encoding/json"
 
 	jsonv2 "encoding/json/v2"
 	"html/template"
@@ -203,13 +202,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 			}
 
 		}
-		var send []byte
-		var err error
-		if enableJsonV2 {
-			send, err = jsonv2.Marshal(swagger, jsonv2.DefaultOptionsV2())
-		} else {
-			send, err = json.MarshalIndent(swagger, "", "  ")
-		}
+		send, err := jsonv2.Marshal(swagger, jsonv2.DefaultOptionsV2())
 
 		if err != nil {
 			log.Println(err)

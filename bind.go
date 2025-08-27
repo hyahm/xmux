@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"bytes"
-	"encoding/json"
 	jsonv2 "encoding/json/v2"
 	"encoding/xml"
 	"errors"
@@ -63,12 +62,7 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 			}
 		}
 	}
-	if enableJsonV2 {
-		err = jsonv2.Unmarshal(b, &fd.Data)
-		return false, err
-	}
-	err = json.Unmarshal(b, &fd.Data)
-
+	err = jsonv2.Unmarshal(b, &fd.Data)
 	return false, err
 }
 
