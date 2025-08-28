@@ -127,6 +127,11 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		w.Header().Set(k, v)
 	}
 
+	if !r.DisableOption && req.Method == http.MethodOptions {
+		r.HandleOptions(w, req)
+		return
+	}
+
 	// 进入前的钩子函数
 	if r.Enter != nil {
 		if r.Enter(w, req) {
@@ -151,10 +156,6 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		defer r.Exit(start, w, req)
 	}
 
-	// if !r.DisableOption && req.Method == http.MethodOptions {
-	// 	r.HandleOptions(w, req)
-	// 	return
-	// }
 	if route.responseData != nil {
 		fd.Response = Clone(route.responseData)
 	}
