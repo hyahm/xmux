@@ -34,6 +34,7 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 - [pprof group](#pprof)
 - [swagger group](#swagger)
 - [connection instance](#instance)
+- [limit](#limit)
 
 
 
@@ -1028,6 +1029,11 @@ func main() {
 	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
 	log.Fatal(router.Run())
 }
+```
+# limit <a id="limit" ></a>
+```go
+// Template for fixed window limiter. Other limiters such as Sliding Window Counter, Leaky Bucket, and Token Bucket are commented in the same file. This is because defining all variables in one place can reduce unnecessary memory consumption and requires some minor modifications.
+router.AddModule(xmux.LimitFixedWindowCounterTemplate)
 ```
 
 # Life cycle flow chart (If there is no matching route, it will not enter the figure below.)

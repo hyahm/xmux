@@ -33,6 +33,7 @@ go >= 1.23
 - [swagger组](#swagger)
 - [连接的实例](#instance)
 - [文件浏览](#browse)
+- [限流](#limit)
 
 
 ### 安装<a id="install"></a>  
@@ -992,6 +993,11 @@ func main() {
 }
 ```
 
+# 限流 <a id="limit"></a>
+```go 
+// 固定窗口的模板，其他的 滑动窗口计数器，漏桶算法，令牌桶算法  在同一个文件下注释，因为需要定义全部变量，减少没西药的内存消耗也是需要自己做少量修改
+router.AddModule(xmux.LimitFixedWindowCounterTemplate)
+```
 
 ### 性能分析
 

@@ -8,8 +8,8 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	name := Var(r)["name"]
-	w.Write([]byte("home admin" + name))
+	// name := Var(r)["name"]
+	w.Write([]byte("home admin"))
 }
 
 func grouphome(w http.ResponseWriter, r *http.Request) {
@@ -30,17 +30,33 @@ func userGroup() *RouteGroup {
 	return user
 }
 
-func TestMain(t *testing.T) {
-	router := NewRouter()
-	router.SetHeader("Access-Control-Allow-Origin", "*").
-		SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
-	router.AddGroup(Pprof())
-	router.Prefix("/api")
-	// router.EnableConnect = true
-	router.Get("/pp/{name}", home)
-	router.Connect("/connect", connect)
-	router.SetAddr(":9000")
+type AaaResponse struct {
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data,omitempty"`
+}
 
+func TestMain(t *testing.T) {
+	response := &AaaResponse{
+		Code: 200,
+		Msg:  "ok",
+	}
+	router := NewRouter().BindResponse(response)
+
+	router.SetHeader("Access-Control-Allow-Origin", "*")
+	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
+	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
+	router.SetHeader("Access-Control-Max-Age", "1728000")
+	// router.SetHeader("Access-Control-Allow-Origin", "*").
+	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
+	router.AddGroup(Pprof())
+	// router.Prefix("/api")
+	// router.EnableConnect = true
+	router.Get("/test", home)
+	router.HandleAll = nil
+	router.Connect("/connect", connect)
+	// router.SetAddr(":8080")
+	router.AddModule(LimitFixedWindowCounterTemplate)
 	router.AddGroup(userGroup())
 	log.Fatal(router.Run())
 }
