@@ -43,6 +43,7 @@ type rt struct {
 	Header       map[string]string
 	pagekeys     map[string]struct{}
 	module       []func(http.ResponseWriter, *http.Request) bool
+	postModule   []func(http.ResponseWriter, *http.Request) bool
 	dataSource   interface{} // 绑定数据结构，
 	bindType     bindType
 	responseData interface{}
@@ -70,6 +71,7 @@ type Router struct {
 	// params               map[string][]string // 记录所有路由， map[string]string 是正则匹配的参数
 	header             map[string]string // 全局路由头
 	module             *module           // 全局模块
+	postModule         *module           // 全局后置模块
 	responseData       interface{}
 	pagekeys           mstringstruct
 	SwaggerTitle       string
@@ -114,6 +116,14 @@ func (r *Router) AddPageKeys(pagekeys ...string) *Router {
 }
 
 func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Router {
+	if !r.new {
+		panic("must be use get router by NewRouter()")
+	}
+	r.module.add(handles...)
+	return r
+}
+
+func (r *Router) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Router {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
@@ -193,7 +203,13 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	if route.Handle.(http.HandlerFunc) != nil {
 		route.Handle.ServeHTTP(w, req)
 	}
-
+	// 处理后置模块
+	for _, module := range route.postModule {
+		ok := module(w, req)
+		if ok {
+			return
+		}
+	}
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -308,6 +324,7 @@ endloop:
 		Handle:       thisRoute.handle,
 		Header:       r.setHeader(thisRoute),
 		module:       thisRoute.module.GetModules(),
+		postModule:   thisRoute.postModule.GetModules(),
 		dataSource:   thisRoute.dataSource,
 		pagekeys:     thisRoute.pagekeys,
 		bindType:     thisRoute.bindType,
@@ -468,6 +485,10 @@ func NewRouter(cacheSize ...int) *Router {
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 		},
+		postModule: &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		},
 		HanleFavicon:         handleFavicon,
 		HandleOptions:        handleOptions,
 		HandleAll:            handleAll,
@@ -537,7 +558,7 @@ func (r *Router) merge(group *RouteGroup, route *Route) *Route {
 	// 最终页面权限
 	route.pagekeys = tempPages
 
-	// 模块合并
+	// 前置 模块合并
 	tempModules := r.module.cloneMudule()
 	// 组删除模块为了删全局
 	tempModules.delete(group.delmodule)
@@ -548,6 +569,18 @@ func (r *Router) merge(group *RouteGroup, route *Route) *Route {
 	// 添加私有模块
 	tempModules.add(route.module.funcOrder...)
 	route.module = tempModules
+
+	// 后置模块合并
+	tempPostModules := r.postModule.cloneMudule()
+	// 组删除模块为了删全局
+	tempPostModules.delete(group.delPostModule)
+	// 添加组模块
+	tempPostModules.add(group.postModule.funcOrder...)
+	// 私有删除模块
+	tempPostModules.delete(route.delPostModule)
+	// 添加私有模块
+	tempPostModules.add(route.postModule.funcOrder...)
+	route.postModule = tempPostModules
 	return route
 	// 与组的区别， 组里面这里是合并， 这里是删除
 }

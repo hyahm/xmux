@@ -273,6 +273,11 @@ func hf(w http.ResponseWriter, r *http.Request)  bool {
 	return true
 }
 
+func pm(w http.ResponseWriter, r *http.Request)  bool {
+	fmt.Println("post module")
+	return true
+}
+
 func hf1(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("66666")
 	return false
@@ -280,8 +285,16 @@ func hf1(w http.ResponseWriter, r *http.Request)  bool {
 
 func main() {
 	router := xmux.NewRouter().AddModule(hf).SetHeader("name", "cander")
-	router.Get("/home/{test}",home).AddModule(hf1)  // Module sequence hf -> hf1 -> home
-	router.Get("/test/{test}",home).DelModule(hf)  //  home
+
+	// Route-level middleware chain: hf → hf1 → home handler
+	router.Get("/home/{test}", home).AddModule(hf1)
+
+	// Route without hf: runs only home handler
+	router.Get("/test/{test}", home).DelModule(hf)
+
+	// Post-processing module (executed after the handler finishes)    hf -> home -> pm
+	router.Get("/pm/{test}", home).AddPostModule(pm)
+
 	router.Run()
 }
 

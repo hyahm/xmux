@@ -18,17 +18,20 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		tempPages[k] = struct{}{}
 	}
 	newRoute := &Route{
-		handle:      http.HandlerFunc(handler),
-		pagekeys:    make(map[string]struct{}),
-		new:         true,
-		methods:     methods,
-		header:      make(map[string]string),
-		delmodule:   make(map[string]struct{}),
-		delPageKeys: make(map[string]struct{}),
-		delheader:   make(map[string]struct{}),
-		prefixs:     gr.prefix,
-		delprefix:   gr.delprefix,
-		denyPrefix:  gr.denyPrefix,
+		handle:        http.HandlerFunc(handler),
+		pagekeys:      make(map[string]struct{}),
+		new:           true,
+		methods:       methods,
+		module:        gr.module.cloneMudule(),
+		postModule:    gr.postModule.cloneMudule(),
+		header:        make(map[string]string),
+		delmodule:     make(map[string]struct{}),
+		delPostModule: make(map[string]struct{}),
+		delPageKeys:   make(map[string]struct{}),
+		delheader:     make(map[string]struct{}),
+		prefixs:       gr.prefix,
+		delprefix:     gr.delprefix,
+		denyPrefix:    gr.denyPrefix,
 	}
 	if gr.module != nil {
 		newRoute.module = gr.module.cloneMudule()

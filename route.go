@@ -9,10 +9,12 @@ import (
 // 初始化临时使用， 最后会合并到 router
 type Route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	new       bool
-	handle    http.Handler        // handle
-	module    *module             // 增加的 modules
-	delmodule map[string]struct{} // 删除的modules
+	new           bool
+	handle        http.Handler        // handle
+	module        *module             // 增加的 modules
+	postModule    *module             // 增加的 modules
+	delmodule     map[string]struct{} // 删除的modules
+	delPostModule map[string]struct{} // 删除的modules
 	// url              string              // 路由的path
 	params           []string            // path正则名
 	pagekeys         map[string]struct{} // 页面权限
@@ -214,6 +216,20 @@ func (rt *Route) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return rt
 }
 
+func (rt *Route) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
+	if !rt.new {
+		panic("can not support init")
+	}
+	if rt.postModule == nil {
+		rt.postModule = &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		}
+	}
+	rt.postModule.add(handles...)
+	return rt
+}
+
 func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
 	if !rt.new {
 		panic("can not support init")
@@ -225,6 +241,20 @@ func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) b
 		rt.delmodule[helper.GetFuncName(handle)] = struct{}{}
 	}
 	rt.module.delete(rt.delmodule)
+	return rt
+}
+
+func (rt *Route) DelPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
+	if !rt.new {
+		panic("can not support init")
+	}
+	if rt.delPostModule == nil {
+		rt.delPostModule = make(map[string]struct{})
+	}
+	for _, handle := range handles {
+		rt.delPostModule[helper.GetFuncName(handle)] = struct{}{}
+	}
+	rt.postModule.delete(rt.delPostModule)
 	return rt
 }
 

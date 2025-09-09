@@ -16,7 +16,9 @@ type RouteGroup struct {
 	header           mstringstring
 	urlTpl           UrlRoute // 正则匹配的路由对应的methodsroute
 	module           *module
+	postModule       *module
 	delmodule        map[string]struct{}
+	delPostModule    map[string]struct{}
 	responseData     interface{}
 	bindResponseData bool
 	// routes           []*Route            // 通过Get,Post,Delete 等添加的路由列表
@@ -38,10 +40,15 @@ func NewRouteGroup() *RouteGroup {
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 		},
-		prefix:    []string{"/"},
-		delprefix: make(map[string]struct{}),
-		new:       true,
-		delmodule: make(map[string]struct{}),
+		postModule: &module{
+			filter:    make(map[string]struct{}),
+			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
+		},
+		prefix:        []string{"/"},
+		delprefix:     make(map[string]struct{}),
+		new:           true,
+		delmodule:     make(map[string]struct{}),
+		delPostModule: make(map[string]struct{}),
 		// params:    make(map[string][]string),
 		urlRoute: make(UrlRoute),
 		urlTpl:   make(UrlRoute),
@@ -141,12 +148,30 @@ func (g *RouteGroup) AddModule(handles ...func(http.ResponseWriter, *http.Reques
 	return g
 }
 
+func (g *RouteGroup) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
+	if !g.new {
+		panic("must be init by NewRouteGroup()")
+	}
+	g.postModule.add(handles...)
+	return g
+}
+
 func (g *RouteGroup) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
 	if !g.new {
 		panic("must be init by NewRouteGroup()")
 	}
 	for _, handle := range handles {
 		g.delmodule[helper.GetFuncName(handle)] = struct{}{}
+	}
+	return g
+}
+
+func (g *RouteGroup) DelPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
+	if !g.new {
+		panic("must be init by NewRouteGroup()")
+	}
+	for _, handle := range handles {
+		g.delPostModule[helper.GetFuncName(handle)] = struct{}{}
 	}
 	return g
 }

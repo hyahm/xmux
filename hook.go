@@ -3,7 +3,6 @@ package xmux
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"time"
@@ -26,7 +25,7 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 
 func handleAll(w http.ResponseWriter, r *http.Request) bool {
 	// w.Header().Add("Access-Control-Allow-Origin", "*")
-	log.Printf("method: %s\turl: %s\n", r.Method, r.URL.Path)
+	// log.Printf("method: %s\turl: %s\n", r.Method, r.URL.Path)
 	return false
 }
 

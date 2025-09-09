@@ -262,6 +262,11 @@ func hf(w http.ResponseWriter, r *http.Request)  bool {
 	return true
 }
 
+func pm(w http.ResponseWriter, r *http.Request)  bool {
+	fmt.Println("post module")
+	return true
+}
+
 func hf1(w http.ResponseWriter, r *http.Request)  bool {
 	fmt.Println("66666")
 	return false
@@ -271,6 +276,7 @@ func main() {
 	router := xmux.NewRouter().AddModule(hf).SetHeader("name", "cander")
 	router.Get("/home/{test}",home).AddModule(hf1)  // 此处会先执行 hf -> hf1 -> home
 	router.Get("/test/{test}",home).DelModule(hf)  // 此处直接执行 home
+	router.Get("/pm/{test}",home).AddPostModule(pm)  // 后置模块， 与前置模块一样使用，  处理函数执行完成后执行后置模块
 	router.Run()
 }
 
