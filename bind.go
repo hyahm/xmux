@@ -44,6 +44,7 @@ func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *Flo
 	if err != nil {
 		return false, err
 	}
+	req.Body.Close()
 	fd.Body = b
 	tt := reflect.TypeOf(fd.Data).Elem()
 	l := tt.NumField()

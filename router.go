@@ -47,6 +47,7 @@ type rt struct {
 	dataSource   interface{} // 绑定数据结构，
 	bindType     bindType
 	responseData interface{}
+	middleware   onion
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
@@ -199,7 +200,10 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 			return
 		}
 	}
+	if len(route.middleware.mws) > 0 && route.Handle != nil {
+		route.Handle = route.middleware.ThenFunc(route.Handle)
 
+	}
 	if route.Handle.(http.HandlerFunc) != nil {
 		route.Handle.ServeHTTP(w, req)
 	}
@@ -216,12 +220,39 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+	if r.ReadTimeout > 0 {
+		complete := make(chan struct{})
+
+		ctx, cancel := context.WithTimeout(context.Background(), r.ReadTimeout)
+		defer cancel()
+		go r.shhandle(w, req, complete)
+		for {
+			select {
+			case <-ctx.Done():
+				w.WriteHeader(http.StatusGatewayTimeout)
+				return
+			case <-complete:
+				return
+			}
+
+		}
+	}
+	r.shhandle(w, req)
+}
+
+func (r *Router) shhandle(w http.ResponseWriter, req *http.Request, complete ...chan struct{}) {
+	if len(complete) > 0 {
+		defer func() {
+			complete[0] <- struct{}{}
+		}()
+	}
 
 	if stop {
 		// fd.StatusCode = http.StatusLocked
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
+
 	if r.HandleAll != nil {
 		if r.HandleAll(w, req) {
 			return
@@ -329,6 +360,7 @@ endloop:
 		pagekeys:     thisRoute.pagekeys,
 		bindType:     thisRoute.bindType,
 		responseData: thisRoute.responseData,
+		middleware:   thisRoute.middleware,
 	}
 	// 设置缓存
 	setUrlCache(req.URL.Path+req.Method, thisRouteCache)

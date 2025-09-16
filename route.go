@@ -31,6 +31,11 @@ type Route struct {
 	dataSource       interface{} // 数据源
 	query            []Parameter
 	denyPrefix       bool
+	middleware       onion
+}
+
+func (rt *Route) Use(m ...Middleware) {
+	rt.middleware.Use(m...)
 }
 
 func (rt *Route) Prefix(prefix string) *Route {

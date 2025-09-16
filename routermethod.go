@@ -49,6 +49,9 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		delPageKeys:   make(map[string]struct{}),
 		prefixs:       make([]string, 0),
 		delprefix:     map[string]struct{}{},
+		middleware: onion{
+			mws: make([]Middleware, 0),
+		},
 	}
 	// prefix := path.Join(r.prefix...)
 	// prefix = path.Join(prefix, pattern)
