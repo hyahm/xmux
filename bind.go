@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tidwall/gjson"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -39,50 +38,52 @@ const (
 	MIMEYAML              = "application/x-yaml"
 )
 
-func (r *Router) unmarsharJson(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+func (r *Router) unmarsharJson(req *http.Request, fd *FlowData) (bool, error) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		return false, err
 	}
 	req.Body.Close()
 	fd.Body = b
-	tt := reflect.TypeOf(fd.Data).Elem()
-	l := tt.NumField()
-	for i := 0; i < l; i++ {
-		keys := tt.Field(i).Tag.Get("json")
-		tagkeys := strings.Split(keys, ",")
-		if tagkeys[0] == "" {
-			continue
-		}
-		key := tagkeys[0]
-		if len(tagkeys) > 1 {
-			if strings.Contains(keys[len(key):], "required") && !gjson.Get(string(b), key).Exists() {
-				if r.NotFoundRequireField(key, w, req) {
-					return true, nil
-				}
-			}
-		}
-	}
+	// tt := reflect.TypeOf(fd.Data).Elem()
+	// l := tt.NumField()
+	// for i := 0; i < l; i++ {
+	// 	keys := tt.Field(i).Tag.Get("json")
+	// 	tagkeys := strings.Split(keys, ",")
+	// 	if tagkeys[0] == "" {
+	// 		continue
+	// 	}
+	// 	key := tagkeys[0]
+	// 	if len(tagkeys) > 1 {
+	// 		if strings.Contains(keys[len(key):], "required") && !gjson.Get(string(b), key).Exists() {
+	// 			if r.NotFoundRequireField(key, w, req) {
+	// 				return true, nil
+	// 			}
+	// 		}
+	// 	}
+	// }
 	err = json.Unmarshal(b, &fd.Data)
 
 	return false, err
 }
 
-func (r *Router) unmarsharYaml(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+func (r *Router) unmarsharYaml(req *http.Request, fd *FlowData) (bool, error) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		return false, err
 	}
+	req.Body.Close()
 	fd.Body = b
 	err = yaml.Unmarshal(b, &fd.Data)
 	return false, err
 }
 
-func (r *Router) unmarsharXml(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+func (r *Router) unmarsharXml(req *http.Request, fd *FlowData) (bool, error) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		return false, err
 	}
+	req.Body.Close()
 	fd.Body = b
 	err = xml.Unmarshal(b, &fd.Data)
 	return false, err
@@ -93,19 +94,19 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 	defer req.Body.Close()
 	switch route.bindType {
 	case jsonT:
-		cont, err := r.unmarsharJson(w, req, fd)
+		cont, err := r.unmarsharJson(req, fd)
 		if err != nil {
 			return r.UnmarshalError(err, w, req)
 		}
 		return cont
 	case yamlT:
-		cont, err := r.unmarsharYaml(w, req, fd)
+		cont, err := r.unmarsharYaml(req, fd)
 		if err != nil {
 			return r.UnmarshalError(err, w, req)
 		}
 		return cont
 	case xmlT:
-		cont, err := r.unmarsharXml(w, req, fd)
+		cont, err := r.unmarsharXml(req, fd)
 		if err != nil {
 			return r.UnmarshalError(err, w, req)
 		}
@@ -121,7 +122,7 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 		ct := req.Header.Get("content-type")
 		headers := strings.Split(ct, ";")
 		if len(headers) == 1 && headers[0] == "" {
-			cont, err := r.unmarsharJson(w, req, fd)
+			cont, err := r.unmarsharJson(req, fd)
 			if err != nil {
 				return r.UnmarshalError(err, w, req)
 			}
@@ -129,7 +130,7 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 		}
 		for _, head := range headers {
 			if head == MIMEJSON {
-				cont, err := r.unmarsharJson(w, req, fd)
+				cont, err := r.unmarsharJson(req, fd)
 				if err != nil {
 					return r.UnmarshalError(err, w, req)
 				}
@@ -138,7 +139,7 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 				}
 			}
 			if head == MIMEXML || head == MIMEXML2 {
-				cont, err := r.unmarsharXml(w, req, fd)
+				cont, err := r.unmarsharXml(req, fd)
 				if err != nil {
 					return r.UnmarshalError(err, w, req)
 				}

@@ -6,9 +6,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/hyahm/gocache v0.0.0-20220522145614-dfeab3db5e17
 	github.com/quic-go/quic-go v0.54.0
-	github.com/tidwall/gjson v1.18.0
-	github.com/tidwall/match v1.1.1
-	github.com/tidwall/pretty v1.2.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
