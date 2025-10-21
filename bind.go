@@ -62,7 +62,9 @@ func (r *Router) unmarsharJson(req *http.Request, fd *FlowData) (bool, error) {
 	// 		}
 	// 	}
 	// }
-	err = json.Unmarshal(b, &fd.Data)
+	if len(b) > 0 {
+		err = json.Unmarshal(b, &fd.Data)
+	}
 
 	return false, err
 }
@@ -74,7 +76,10 @@ func (r *Router) unmarsharYaml(req *http.Request, fd *FlowData) (bool, error) {
 	}
 	req.Body.Close()
 	fd.Body = b
-	err = yaml.Unmarshal(b, &fd.Data)
+	if len(b) > 0 {
+		err = yaml.Unmarshal(b, &fd.Data)
+	}
+
 	return false, err
 }
 
@@ -85,7 +90,10 @@ func (r *Router) unmarsharXml(req *http.Request, fd *FlowData) (bool, error) {
 	}
 	req.Body.Close()
 	fd.Body = b
-	err = xml.Unmarshal(b, &fd.Data)
+	if len(b) > 0 {
+		err = xml.Unmarshal(b, &fd.Data)
+	}
+
 	return false, err
 }
 

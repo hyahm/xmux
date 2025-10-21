@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -52,7 +53,8 @@ func TestMain(t *testing.T) {
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	router.AddGroup(Pprof())
-
+	var b bytes.Buffer
+	b.Grow(100)
 	// router.Prefix("/api")
 	// router.EnableConnect = true
 	router.Get("/test", nil)
@@ -64,8 +66,8 @@ func TestMain(t *testing.T) {
 }
 
 type Binding struct {
-	ID   int64  `json:"id,required"`
-	Name string `json:"name,required"`
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func Recovery(key string) Middleware {
