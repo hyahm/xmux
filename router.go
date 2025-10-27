@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -63,6 +64,7 @@ type Router struct {
 	DisableOption        bool                                     // 禁止全局option
 	HandleOptions        func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound       func(http.ResponseWriter, *http.Request)
+	HandleRecover        func(http.ResponseWriter, *http.Request)
 	HandleAll            func(http.ResponseWriter, *http.Request) bool
 	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
@@ -220,6 +222,17 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			errStack := fmt.Errorf("panic: %v\n%s", err, debug.Stack())
+			log.Println(errStack)
+			if r.HandleRecover != nil {
+				r.HandleRecover(w, req)
+			}
+		}
+	}()
+
 	if r.ReadTimeout > 0 {
 		complete := make(chan struct{})
 

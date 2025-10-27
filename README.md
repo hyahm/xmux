@@ -238,6 +238,12 @@ HandleOptions:        handleoptions(),
 HandleNotFound: 	  handleNotFound(),  
 // /favicon
 HanleFavicon：        methodNotAllowed(),   
+HandleRecover :         //  recover handle
+
+
+router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("server error"))
+	}
 
 // The default method called is as follows. No route was found
 func handleNotFound(w http.ResponseWriter, r *http.Request)  {
@@ -246,6 +252,8 @@ func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 	GetInstance(r).StatusCode = http.StatusNotFound
 	w.WriteHeader(http.StatusNotFound)
 }
+
+
 
 ```
 

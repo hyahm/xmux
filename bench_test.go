@@ -11,6 +11,7 @@ import (
 
 func enter(w http.ResponseWriter, r *http.Request) bool {
 	fmt.Println(GetConnents())
+
 	return false
 }
 func BenchmarkOneRoute(B *testing.B) {

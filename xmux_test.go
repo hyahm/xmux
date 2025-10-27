@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -46,6 +45,9 @@ func TestMain(t *testing.T) {
 	// pool := NewPool()
 	router := NewRouter()
 	// router.HandleAll = LimitFixedWindowCounterTemplate
+	router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("服务器错误"))
+	}
 	router.SetHeader("Access-Control-Allow-Origin", "*")
 	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
@@ -53,15 +55,14 @@ func TestMain(t *testing.T) {
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	router.AddGroup(Pprof())
-	var b bytes.Buffer
-	b.Grow(100)
+	router.Enter = enter
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test", nil)
+	router.Get("/test", pp)
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	router.HandleAll = nil
 	// router.SetAddr(":8080")
-	router.AddGroup(userGroup())
+	// router.AddGroup(userGroup())
 	log.Fatal(router.SetAddr(":9999").Run())
 }
 
@@ -231,6 +232,9 @@ func getEntry(key string) *entry {
 }
 
 func pp(w http.ResponseWriter, r *http.Request) {
+
+	a := make([]string, 0)
+	fmt.Println(a[8])
 	key := r.URL.Path
 	e := getEntry(key)
 
