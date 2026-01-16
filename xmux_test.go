@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,8 +12,35 @@ import (
 func home(w http.ResponseWriter, r *http.Request) {
 	// name := Var(r)["name"]
 	// time.Sleep(time.Millisecond * 30)
-	// fmt.Println(1111)
-	// GetInstance(r).Set(RESPONSEBYTES, []byte("asjdlfjalsdf"))
+	m1 := map[string]string{
+		"message": "asdfasdf",
+	}
+	GetInstance(r).Set("xmux_response", m1)
+
+}
+
+func home2(w http.ResponseWriter, r *http.Request) {
+	// name := Var(r)["name"]
+	// time.Sleep(time.Millisecond * 30)
+	m2 := map[string]string{
+		"message": "asdfasdf",
+	}
+	GetInstance(r).Set("xmux_response", m2)
+
+}
+
+func ToJson(w http.ResponseWriter, r *http.Request) bool {
+	// name := Var(r)["name"]
+	// time.Sleep(time.Millisecond * 30)
+	x := GetInstance(r).Get("xmux_response")
+	fmt.Println(x)
+	b, err := json.Marshal(GetInstance(r).Get("xmux_response"))
+	if err != nil {
+		fmt.Println("aaaa")
+		return true
+	}
+	w.Write(b)
+	return false
 
 }
 
@@ -41,13 +69,19 @@ func userGroup() *RouteGroup {
 	return user
 }
 
+func Post(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("99999999")
+	return false
+}
+
 func TestMain(t *testing.T) {
 	// pool := NewPool()
 	router := NewRouter()
 	// router.HandleAll = LimitFixedWindowCounterTemplate
-	router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("服务器错误"))
-	}
+	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("服务器错误"))
+	// }
+	router.AddPostModule(ToJson)
 	router.SetHeader("Access-Control-Allow-Origin", "*")
 	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
@@ -58,11 +92,13 @@ func TestMain(t *testing.T) {
 	router.Enter = enter
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test", pp)
+	router.Get("/test", home)
+	router.Get("/bar", home2)
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	router.HandleAll = nil
 	// router.SetAddr(":8080")
 	// router.AddGroup(userGroup())
+	router.DebugAssignRoute("/test")
 	log.Fatal(router.SetAddr(":9999").Run())
 }
 

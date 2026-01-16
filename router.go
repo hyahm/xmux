@@ -130,7 +130,7 @@ func (r *Router) AddPostModule(handles ...func(http.ResponseWriter, *http.Reques
 	if !r.new {
 		panic("must be use get router by NewRouter()")
 	}
-	r.module.add(handles...)
+	r.postModule.add(handles...)
 	return r
 }
 
@@ -158,7 +158,11 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		StatusCode: 200,
 	}
 	allconn.Set(req, fd)
-	defer allconn.Del(req)
+	defer func() {
+		fmt.Println("delete")
+		allconn.Del(req)
+	}()
+
 	start := time.Now()
 	// option 请求处理
 
@@ -197,11 +201,11 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	fd.funcName = name[n+1:]
 	// 请求模块
 	for _, module := range route.module {
-		ok := module(w, req)
-		if ok {
+		if module(w, req) {
 			return
 		}
 	}
+	// 中间件
 	if len(route.middleware.mws) > 0 && route.Handle != nil {
 		route.Handle = route.middleware.ThenFunc(route.Handle)
 
@@ -211,8 +215,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 	// 处理后置模块
 	for _, module := range route.postModule {
-		ok := module(w, req)
-		if ok {
+		if module(w, req) {
 			return
 		}
 	}
@@ -719,12 +722,16 @@ func (r *Router) mergePrefix(newRoute *Route, url string) string {
 // 将路由组的信息合并到路由
 
 func debugPrint(url string, route *Route) {
-	names := make([]string, 0)
+	names := make([]string, 0, len(route.module.funcOrder))
 	for _, v := range route.module.funcOrder {
 		names = append(names, helper.GetFuncName(v))
 	}
-	log.Printf("url: %s, method: %s, header: %+v, module: %#v,  pages: %#v  responsedata: %v\n",
-		url, route.methods, route.header, names, route.pagekeys, route.responseData)
+	postNames := make([]string, 0, len(route.postModule.funcOrder))
+	for _, v := range route.postModule.funcOrder {
+		postNames = append(postNames, helper.GetFuncName(v))
+	}
+	log.Printf("url: %s, method: %s, header: %+v, module: %#v, postModule: %#v,  pages: %#v  responsedata: %v\n",
+		url, route.methods, route.header, names, postNames, route.pagekeys, route.responseData)
 
 }
 
