@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"path"
@@ -35,7 +34,6 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	// allurl := path.Join(subprefix...)
 	// allurl = PrettySlash(allurl + route.url)
 	// url, vars, ok := makeRoute(allurl)
-	fmt.Println("-----", r.postModule.cloneMudule())
 	newRoute := &Route{
 		handle:        http.HandlerFunc(handler),
 		pagekeys:      tempPages,
