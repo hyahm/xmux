@@ -179,7 +179,7 @@ func main() {
 func main() {
 	router := xmux.NewRouter().Prefix("test")
 	router.Get("/bbb", c)   // /test/bbb
-	router.Get("/ccc", c).DelPrefix("test")   // /test/ccc  
+	router.Get("/ccc", c).DelPrefix("test")   // /ccc  
 	g := xmux.NewRouteGroup()
 	g.Get("/aaa", noCache).DelModule(setKey) // /test/aaa
 	g.Get("/no/cache1", noCache1).DelModule(setKey).DelPrefix("test") // /no/cache1
