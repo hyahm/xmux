@@ -159,7 +159,6 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 	allconn.Set(req, fd)
 	defer func() {
-		fmt.Println("delete")
 		allconn.Del(req)
 	}()
 

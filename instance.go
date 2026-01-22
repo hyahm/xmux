@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 )
@@ -66,7 +65,6 @@ func GetInstance(r *http.Request) *FlowData {
 	allconn.mu.RLock()
 	defer allconn.mu.RUnlock()
 	if v, ok := allconn.conn[r]; ok {
-		fmt.Println("na get")
 		return v
 	}
 	return nil
@@ -75,7 +73,6 @@ func GetInstance(r *http.Request) *FlowData {
 func (data *FlowData) Set(k string, v interface{}) {
 	data.mu.Lock()
 	data.ctx[k] = v
-	fmt.Println(k)
 	data.mu.Unlock()
 }
 
@@ -100,7 +97,6 @@ func (data *FlowData) GetPageKeys() map[string]struct{} {
 func (data *FlowData) Get(k string) interface{} {
 	data.mu.RLock()
 	defer data.mu.RUnlock()
-	fmt.Println(k)
 	if v, ok := data.ctx[k]; ok {
 		return v
 	}
