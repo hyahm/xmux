@@ -881,7 +881,7 @@ You can refer to the permission template of xmux.DefaultPermissionTemplate
 
 
 
-> example of not bind return data
+> example of bind return struct
 ```go
 package main
 
@@ -897,7 +897,7 @@ import (
 func c(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("comming c")
 	now := time.Now().String()
-	xmux.GetInstance(r).Response.(*Response).Data = now
+	xmux.GetInstance(r).Response.(*Response).Data = now  // bind struct 
 }
 
 func noCache(w http.ResponseWriter, r *http.Request) {
@@ -930,6 +930,69 @@ func main() {
 	xmux.InitResponseCache(cth)
 	// If not bind response use xmux.DefaultCacheTemplateCacheWithoutResponse instead of xmux.DefaultCacheTemplateCacheWithResponse
 	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
+	router.BindResponse(r)
+	router.Get("/aaa", c)
+	router.Get("/update/aaa", noCache).DelModule(setKey)
+	router.Get("/no/cache1", noCache1).DelModule(setKey)
+	router.Run()
+}
+
+
+```
+
+
+
+> example of not bind return struct
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/hyahm/gocache"
+	"github.com/hyahm/xmux"
+)
+
+func c(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming c")
+	now := time.Now().String()
+	m1 := map[string]string{
+		"message": "asdfasdf",
+	}
+	b, _ := json.Marshal(m1)
+	SetCache(GetInstance(r).GetCacheKey(), b) // must be set cache
+	w.Write(b)
+}
+
+func noCache(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("update c")
+	xmux.NeedUpdate("/aaa")
+}
+
+func noCache1(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming noCache1")
+	now := time.Now().String()
+	xmux.GetInstance(r).Response.(*Response).Data = now
+}
+
+func setKey(w http.ResponseWriter, r *http.Request) bool {
+    //  you can use more descriptive key by params
+	xmux.GetInstance(r).SetCacheKey(r.URL.Path)
+	fmt.Print(r.URL.Path + " is cached")
+	return false
+}
+
+
+func main() {
+	r := &Response{
+		Code: 0,
+	}
+	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
+	xmux.InitResponseCache(cth)
+	
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse)
 	router.BindResponse(r)
 	router.Get("/aaa", c)
 	router.Get("/update/aaa", noCache).DelModule(setKey)
