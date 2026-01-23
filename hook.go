@@ -23,10 +23,10 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func handleAll(w http.ResponseWriter, r *http.Request) bool {
+func handleAll(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// w.Header().Add("Access-Control-Allow-Origin", "*")
 	// log.Printf("method: %s\turl: %s\n", r.Method, r.URL.Path)
-	return false
+	return
 }
 
 func HandleConnect(w http.ResponseWriter, r *http.Request) {

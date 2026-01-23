@@ -27,7 +27,7 @@ func noCache1(w http.ResponseWriter, r *http.Request) {
 }
 
 func setKey(w http.ResponseWriter, r *http.Request) bool {
-	xmux.GetInstance(r).CacheKey = r.URL.Path
+	xmux.GetInstance(r).SetCacheKey(r.URL.Path)
 	fmt.Println(r.URL.Path + "    is cachedaaa")
 	return false
 }
@@ -46,7 +46,7 @@ func main() {
 	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
 	xmux.InitResponseCache(cth)
 
-	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse).AddModule(xmux.DefaultCacheTemplateCacheWithResponse)
 	router.BindResponse(r).Prefix("test")
 	router.Get("/bbb", c)
 	router.Get("/ccc", c).DelPrefix("test")

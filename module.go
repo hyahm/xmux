@@ -6,8 +6,8 @@ import (
 	"github.com/hyahm/xmux/helper"
 )
 
-func DefaultModuleTemplate(w http.ResponseWriter, r *http.Request) bool {
-	return false
+func DefaultModuleTemplate(w http.ResponseWriter, r *http.Request) (exit bool) {
+	return
 }
 
 // 在启动的时候才会执行， 所以不用加锁
@@ -48,14 +48,14 @@ func (m *module) delete(delmodules map[string]struct{}) {
 	}
 }
 
-func (m *module) GetModules() []func(w http.ResponseWriter, r *http.Request) bool {
+func (m *module) GetModules() []func(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// m.mu.RLock()
 	// defer m.mu.RUnlock()
 	return m.funcOrder
 }
 
 // 添加模块
-func (m *module) add(mds ...func(w http.ResponseWriter, r *http.Request) bool) {
+func (m *module) add(mds ...func(w http.ResponseWriter, r *http.Request) (exit bool)) {
 	// m.mu.Lock()
 	// defer m.mu.Unlock()
 	// 添加, 不会重复添加 module

@@ -2,15 +2,14 @@ package xmux
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/hyahm/xmux/helper"
 )
 
-func enter(w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println(GetConnents())
+func enter(w http.ResponseWriter, r *http.Request) (exit bool) {
+	// fmt.Println(GetConnents())
 
 	return false
 }

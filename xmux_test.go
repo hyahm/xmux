@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+
+	"github.com/hyahm/gocache"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +17,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 	m1 := map[string]string{
 		"message": "asdfasdf",
 	}
-	GetInstance(r).Set("xmux_response", m1)
+	b, _ := json.Marshal(m1)
+	SetCache(GetInstance(r).GetCacheKey(), b)
+	w.Write(b)
+	// GetInstance(r).Response.(*Response).Msg = time.Now().String()
 
 }
 
@@ -26,21 +31,6 @@ func home2(w http.ResponseWriter, r *http.Request) {
 		"message": "asdfasdf",
 	}
 	GetInstance(r).Set("xmux_response", m2)
-
-}
-
-func ToJson(w http.ResponseWriter, r *http.Request) bool {
-	// name := Var(r)["name"]
-	// time.Sleep(time.Millisecond * 30)
-	x := GetInstance(r).Get("xmux_response")
-	fmt.Println(x)
-	b, err := json.Marshal(GetInstance(r).Get("xmux_response"))
-	if err != nil {
-		fmt.Println("aaaa")
-		return true
-	}
-	w.Write(b)
-	return false
 
 }
 
@@ -69,9 +59,20 @@ func userGroup() *RouteGroup {
 	return user
 }
 
-func Post(w http.ResponseWriter, r *http.Request) bool {
+func Post(w http.ResponseWriter, r *http.Request) (exit bool) {
 	fmt.Println("99999999")
 	return false
+}
+
+func setkey(w http.ResponseWriter, r *http.Request) (exit bool) {
+	fmt.Println(r.URL.Path)
+	GetInstance(r).SetCacheKey(r.URL.Path)
+	return
+}
+
+type Response struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
 }
 
 func TestMain(t *testing.T) {
@@ -81,11 +82,13 @@ func TestMain(t *testing.T) {
 	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
 	// 	w.Write([]byte("服务器错误"))
 	// }
-	router.AddPostModule(ToJson)
+	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
+	InitResponseCache(cth)
+
 	router.SetHeader("Access-Control-Allow-Origin", "*")
 	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
-	router.SetHeader("Access-Control-Max-Age", "1728000")
+	router.SetHeader("Access-Control-Max-Age", "1728000").AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse)
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	router.AddGroup(Pprof())
@@ -269,8 +272,7 @@ func getEntry(key string) *entry {
 
 func pp(w http.ResponseWriter, r *http.Request) {
 
-	a := make([]string, 0)
-	fmt.Println(a[8])
+	// a := make([]string, 0)
 	key := r.URL.Path
 	e := getEntry(key)
 

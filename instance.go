@@ -6,6 +6,7 @@ import (
 )
 
 // instance  数据二次封装, 用户各模块之间的数据传递
+const CacheKey = "XMUX_CACHEKEY"
 
 type FlowData struct {
 	Data any
@@ -18,7 +19,7 @@ type FlowData struct {
 	pages      map[string]struct{}
 	StatusCode int
 	Body       []byte
-	CacheKey   string
+	cacheKey   string
 }
 
 type conns struct {
@@ -74,6 +75,14 @@ func (data *FlowData) Set(k string, v interface{}) {
 	data.mu.Lock()
 	data.ctx[k] = v
 	data.mu.Unlock()
+}
+
+func (data *FlowData) SetCacheKey(key string) {
+	data.cacheKey = key
+}
+
+func (data *FlowData) GetCacheKey() string {
+	return data.cacheKey
 }
 
 func (data *FlowData) GetConnectId() int64 {

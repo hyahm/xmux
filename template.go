@@ -2,19 +2,20 @@ package xmux
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Request) bool {
+func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
-	cacheKey := GetInstance(r).CacheKey
+	cacheKey := GetInstance(r).GetCacheKey()
 	if cacheKey == "" {
-		return false
+		return
 	}
 	_, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
@@ -25,7 +26,7 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 		for {
 			select {
 			case <-time.After(time.Second):
-				return false
+				return
 			default:
 				time.Sleep(time.Millisecond * 10)
 				if !IsUpdate(cacheKey) {
@@ -37,36 +38,41 @@ func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Reques
 		}
 	case CacheNeedUpdate:
 		SetUpdate(cacheKey)
-		return false
+		return
 	case NotFoundCache:
 		SetUpdate(cacheKey)
-		return false
+		return
 	default:
-		return false
+		return
 	}
 }
 
-func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Request) bool {
+func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
-	cacheKey := GetInstance(r).CacheKey
+	cacheKey := GetInstance(r).GetCacheKey()
 	if cacheKey == "" {
 		// 没有启用缓存
-		return false
+		return
 	}
 
 	cb, cacheStatus := GetCacheIfUpdating(cacheKey)
+	fmt.Println(cacheStatus)
 	switch cacheStatus {
 	case CacheHit:
 		w.Write(cb)
 		return true
 	case CacheIsUpdateing:
 		// 如果在更新中，那么等待更新完毕再返回缓存， 如果等待1秒了还没返回就不等待缓存
+		timer := time.NewTimer(time.Second)
+		defer timer.Stop()
 		for {
+
 			select {
-			case <-time.After(time.Second):
-				return false
+			case <-timer.C:
+				fmt.Println(222)
+				return
 			default:
 				time.Sleep(time.Millisecond * 10)
 				if !IsUpdate(cacheKey) {
@@ -77,12 +83,12 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 		}
 	case CacheNeedUpdate:
 		SetUpdate(cacheKey)
-		return false
+		return
 	case NotFoundCache:
 		SetUpdate(cacheKey)
-		return false
+		return
 	default:
-		return false
+		return
 	}
 
 }
@@ -90,12 +96,13 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	// r.Body.Close()
 	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
-		cacheKey := GetInstance(r).CacheKey
-
+		cacheKey := GetInstance(r).GetCacheKey()
+		// 缓存
 		if cacheKey != "" && !IsUpdate(cacheKey) {
 			// 如果是缓存的值，并且不在更新中就直接取缓存的值
 			send := GetCache(cacheKey)
 			w.Write(send)
+			return
 		}
 		// 如果没有设置缓存，还是以前的处理方法
 		send, err := json.Marshal(GetInstance(r).Response)
@@ -118,7 +125,7 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	// 	string(send))
 }
 
-func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
+func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// 如果是管理员的，直接就过
 	// if uid == <adminId> {
 	// 	retrun false
@@ -127,7 +134,7 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 	pages := GetInstance(r).GetPageKeys()
 	// 如果长度为0的话，说明任何人都可以访问
 	if len(pages) == 0 {
-		return false
+		return
 	}
 	// todo: get user.role
 	role := ""
@@ -150,7 +157,7 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (post boo
 	for index, ok := range result {
 		currFuncName := GetInstance(r).GetFuncName()
 		if ok && strings.Contains(currFuncName, pl[index]) {
-			return false
+			return
 		}
 	}
 	// no permission

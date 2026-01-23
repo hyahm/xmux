@@ -49,22 +49,22 @@ func init() {
 	counter = NewFixedWindowCounter(1*time.Second, 1000) // 每秒最多允许1000个请求
 }
 
-func LimitFixedWindowCounterTemplate(w http.ResponseWriter, r *http.Request) bool {
+func LimitFixedWindowCounterTemplate(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// GetConnents() 是全局连接数
 	if !counter.Allow() {
 		w.WriteHeader(http.StatusTooManyRequests)
 		return true
 	}
-	return false
+	return
 }
 
-func LimitFixedWindowCounterTemplate1(w http.ResponseWriter, r *http.Request) bool {
+func LimitFixedWindowCounterTemplate1(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// GetConnents() 是全局连接数
 	if GetConnents() > 1000 {
 		w.WriteHeader(http.StatusTooManyRequests)
 		return true
 	}
-	return false
+	return
 }
 
 // var swc SlidingWindowCounter
