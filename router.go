@@ -330,13 +330,13 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		thisRoute = route
 	} else {
 		for reUrl := range r.urlTpl {
+
 			re := regexp.MustCompile(reUrl)
 			// req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
 				route, ok := r.urlTpl[reUrl]
 				if ok {
 					// 匹配请求
-
 					for _, v := range route.methods {
 						if v == req.Method {
 							matchMethod = true

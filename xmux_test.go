@@ -12,10 +12,10 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	// name := Var(r)["name"]
+	name := Var(r)["asdfsdf"]
 	// time.Sleep(time.Millisecond * 30)
 	m1 := map[string]string{
-		"message": "asdfasdf",
+		"message": name,
 	}
 	b, _ := json.Marshal(m1)
 	SetCache(GetInstance(r).GetCacheKey(), b)
@@ -45,7 +45,7 @@ func adminhandle(w http.ResponseWriter, r *http.Request) {
 
 func adminGroup() *RouteGroup {
 	admin := NewRouteGroup().Prefix("test")
-	admin.Get("/admin/{bbb}", home)
+	admin.Get("/admin/{b}", home)
 	admin.Get("/admin", adminhandle)
 	admin.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age}", grouphome)
 	return admin
@@ -95,14 +95,14 @@ func TestMain(t *testing.T) {
 	router.Enter = enter
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test", home)
+	router.Get("/test/{asdfsdf}", home)
 	router.Get("/bar", home2)
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	router.HandleAll = nil
 	// router.SetAddr(":8080")
 	// router.AddGroup(userGroup())
 	router.DebugAssignRoute("/test")
-	log.Fatal(router.SetAddr(":9999").Run())
+	log.Fatal(router.SetAddr(":19999").Run())
 }
 
 type Binding struct {

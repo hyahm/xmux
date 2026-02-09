@@ -1,16 +1,16 @@
 package xmux
 
 import (
+	"log"
 	"path"
 	"strings"
 )
 
 const (
 	str      = "([^\\/]+)"
-	word     = "(\\w+)"
+	word     = `([a-zA-Z0-9_]+)`
 	interger = "(\\d+)"
 	all      = "(.*?)"
-	sep      = ","
 )
 
 // 将多个连续斜杠合成一个， 去掉末尾的斜杠，
@@ -47,26 +47,26 @@ func PrettySlash(p string) string {
 	return np
 }
 
-// func cleanPath(p string) string {
-// 	if p == "" {
-// 		return "/"
-// 	}
-// 	if p[0] != '/' {
-// 		p = "/" + p
-// 	}
-// 	np := path.Clean(p)
-// 	// path.Clean removes trailing slash except for root;
-// 	// put the trailing slash back if necessary.
-// 	if p[len(p)-1] == '/' && np != "/" {
-// 		// Fast path for common case of p being the string we want:
-// 		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
-// 			np = p
-// 		} else {
-// 			np += "/"
-// 		}
-// 	}
-// 	return np
-// }
+func cleanPath(p string) string {
+	if p == "" {
+		return "/"
+	}
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	np := path.Clean(p)
+	// path.Clean removes trailing slash except for root;
+	// put the trailing slash back if necessary.
+	if p[len(p)-1] == '/' && np != "/" {
+		// Fast path for common case of p being the string we want:
+		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
+			np = p
+		} else {
+			np += "/"
+		}
+	}
+	return np
+}
 
 // 返回正则表达式的url 和 params(key)
 func match(path string) (string, []string) {
@@ -83,8 +83,13 @@ func match(path string) (string, []string) {
 	)
 	for _, v := range pl {
 		block, vl := macheOne(v, "", []string{})
-		pathlist = append(pathlist, block)
-		varlist = append(varlist, vl...)
+		if block != "" {
+			pathlist = append(pathlist, block)
+		}
+		if len(vl) > 0 {
+			varlist = append(varlist, vl...)
+		}
+
 	}
 	var newpath string
 	// 合拼路径
@@ -96,159 +101,6 @@ func match(path string) (string, []string) {
 		newpath = "^" + strings.Join(pathlist, "/") + "$"
 	}
 	return newpath, varlist
-}
-
-// path 是完整的url  newpath 是未处理的 path
-func macheOne(path, newpath string, varlist []string) (string, []string) {
-	// var varlist []string
-	// 找第一个{
-	firstPrev := strings.Index(path, "{")
-	if firstPrev == -1 {
-		// 找不到就是完全匹配, 也就不是正则
-		return newpath + path, varlist
-	}
-
-	// 保存头部可能存在的字符串
-	head := path[:firstPrev]
-	// 保存已经去掉开头字符串的后面字符串
-	newPath := path[firstPrev+1:]
-
-	if path[firstPrev+1:] == "" {
-		return newpath + path, varlist
-	}
-	if newPath[:3] == "re:" {
-		// 如果后面是正则，那么先匹配到下一个:
-		nextColon := strings.Index(newPath[3:], ":")
-		firstSuffix := strings.Index(newPath[3+nextColon:], "}")
-		if firstSuffix <= 0 {
-			panic("路径: " + path + "有问题，{}之间必须要有别名来获取值或者括号没匹配")
-			// 找不到就是完全匹配, 也就不是正则
-		}
-		vars := newPath[4+nextColon : 3+nextColon+firstSuffix]
-		vars = strings.Trim(vars, " ")
-		if strings.Count(vars, ",") == 0 {
-			varlist = append(varlist, vars)
-		} else {
-			trimvar := make([]string, 0)
-			for _, v := range strings.Split(vars, ",") {
-				trimvar = append(trimvar, strings.Trim(v, " "))
-			}
-			varlist = append(varlist, trimvar...)
-		}
-		newpath += head + newPath[3:3+nextColon]
-		path = newPath[4+nextColon+firstSuffix:]
-	} else {
-		// 第一个 } 的位置
-		firstSuffix := strings.Index(path, "}")
-		if firstSuffix <= 0 {
-			panic("路径: " + path + "有问题，{}之间必须要有别名来获取值或者括号没匹配")
-			// 找不到就是完全匹配, 也就不是正则
-		}
-		// 按照:切割，分离标识和key
-		count := strings.Count(path[firstPrev+1:firstSuffix], ":")
-		if count > 1 {
-			panic("路径: " + path + "有问题，非正则的{}里面最多只能出现一个:")
-		}
-		re, opt := normal(path[firstPrev+1 : firstSuffix])
-		opt = strings.Trim(opt, " ")
-		varlist = append(varlist, opt)
-		newpath += head + re
-		path = path[firstSuffix+1:]
-	}
-	if strings.Trim(path, " ") == "" {
-		return newpath, varlist
-	}
-	return macheOne(path, newpath, varlist)
-	// 找
-	// if firstPrev > 0 {
-	// 	// 找不到就是完全匹配, 也就不是正则
-	// 	return path, varlist
-	// }
-	// 找第一个}
-	// end = strings.Index(path, "}")
-	// if firstSuffix == -1 {
-	// 	// 找不到就是完全匹配,只是路径带了{
-	// 	return path, varlist
-	// }
-	// 过来的都是有正则规则
-	// if firstPrev > end {
-	// 	// }{ 这样的也是完全匹配
-	// 	return path, varlist
-	// }
-	// // 保存尾部可能存在的字符串
-	// tail := path[end+1:]
-	// //   ==========  进入正则匹配区
-	// // 去掉{} 和 2边的空格
-	// re := strings.Trim(path[firstprev+1:end], " ")
-	// if re == "" {
-	// 	// /{}  类似这样的会
-	// 	panic("invalid uri " + path)
-	// } else {
-	// 	//判断: 目前只支持
-	// 	// 没有:, {name}, {int:id}, {re:(.khjk)dfdf([a|b]):path,word}
-	// 	// 一个:
-	// 	// 二个 :
-	// 	// 其他的全是错误的匹配
-	// 	ts := strings.Split(re, ":")
-	// 	switch len(ts) {
-
-	// 	case 1:
-	// 		// 没有:
-	// 		opt := strings.Trim(ts[0], " ")
-	// 		varlist = append(varlist, opt)
-	// 		return head + word + tail, varlist
-	// 	case 2:
-	// 		// 一个:
-	// 		// 判断类型
-	// 		typ := strings.Trim(ts[0], " ")
-	// 		typ = strings.ToLower(typ)
-	// 		opt := strings.Trim(ts[1], " ")
-	// 		varlist = append(varlist, opt)
-	// 		switch typ {
-	// 		case "int":
-	// 			return head + interger + tail, varlist
-	// 		case "word":
-	// 			return head + word + tail, varlist
-	// 		case "all":
-	// 			return head + all + tail, varlist
-	// 		case "string":
-	// 			return head + str + tail, varlist
-	// 		default:
-	// 			// 默认使用path匹配
-	// 			return head + word + tail, varlist
-	// 		}
-
-	// 	case 3:
-	// 		// 二个:
-	// 		// 参数必须是re， 如果不是。 默认改成re
-	// 		typ := strings.Trim(ts[0], " ")
-	// 		typ = strings.ToLower(typ)
-	// 		opts := strings.Split(ts[2], sep)
-	// 		for _, opt := range opts {
-	// 			opt = strings.Trim(opt, " ")
-	// 			varlist = append(varlist, opt)
-	// 		}
-
-	// 		if typ != "re" {
-	// 			// panic
-	// 			panic("pattern not support" + path)
-	// 		}
-	// 		// 正则2边不能有空格
-	// 		ts[1] = strings.Trim(ts[1], " ")
-
-	// 		// 正则必须与参数个数匹配
-	// 		// 参数必须是, 分割
-	// 		// 查找有多少对小括号
-	// 		pc := parenthesesCount(ts[1], 0)
-	// 		if pc != len(varlist) {
-	// 			panic("pattern not support" + path)
-	// 		}
-	// 		return head + ts[1] + tail, varlist
-	// 	default:
-	// 		panic("pattern not support" + path)
-	// 	}
-	// }
-
 }
 
 // 非正则匹配
@@ -283,22 +135,135 @@ func normal(path string) (string, string) {
 	}
 }
 
-// func parenthesesCount(s string, c int) int {
-// 	// 计算有多少对小括号
-// 	start := strings.Index(s, "(")
-// 	if start == -1 {
-// 		return c
-// 	}
+// macheOne 解析带{}占位符的URL路径，返回处理后的路径和提取的变量名列表
+// path: 待解析的完整URL路径模板
+// newpath: 拼接中的处理后路径
+// varlist: 收集的变量名列表
+func macheOne(path, newpath string, varlist []string) (string, []string) {
+	// 找第一个{的位置
+	firstPrev := strings.Index(path, "{")
+	if firstPrev == -1 {
+		// 找不到{，直接拼接剩余路径并返回
+		return newpath + path, varlist
+	}
 
-// 	end := strings.Index(s, ")")
-// 	if end == -1 {
-// 		return c
+	// 提取{之前的头部字符串
+	head := path[:firstPrev]
+	// 剩余需要处理的路径（去掉{）
+	remainingPath := path[firstPrev+1:]
+
+	// 边界：{是最后一个字符（无闭合}）
+	if remainingPath == "" {
+		log.Fatal("路径: " + path + " 有问题，{后无内容，缺少闭合}和变量定义")
+	}
+
+	if strings.HasPrefix(remainingPath, "re:") {
+		// 处理正则类型：{re:正则表达式:变量名} 格式
+		// 跳过"re:"后找第一个:（分割正则和变量名）
+		colonAfterRe := strings.Index(remainingPath[3:], ":")
+		if colonAfterRe == -1 {
+			log.Fatal("路径: " + path + " 有问题，正则类型需格式 {re:正则:变量名}")
+		}
+
+		// 找闭合}的位置
+		closingBrace := strings.Index(remainingPath[3+colonAfterRe:], "}")
+		if closingBrace == -1 {
+			log.Fatal("路径: " + path + " 有问题，正则类型缺少闭合}")
+		}
+
+		// 提取变量名（支持多个变量用,分隔）
+		varNamesStr := remainingPath[3+colonAfterRe+1 : 3+colonAfterRe+closingBrace]
+		varNamesStr = strings.Trim(varNamesStr, " ")
+		if varNamesStr != "" {
+			if strings.Contains(varNamesStr, ",") {
+				// 分割多变量并去空格
+				for _, v := range strings.Split(varNamesStr, ",") {
+					trimmed := strings.Trim(v, " ")
+					if trimmed != "" { // 过滤空字符串
+						varlist = append(varlist, trimmed)
+					}
+				}
+			} else {
+				varlist = append(varlist, varNamesStr)
+			}
+		} else {
+			log.Fatal("路径: " + path + " 有问题，正则类型{}内变量名不能为空")
+		}
+
+		// 拼接处理后的路径（正则表达式部分）
+		regexPart := remainingPath[3 : 3+colonAfterRe]
+		newpath += head + regexPart
+		// 更新剩余待处理路径（跳过当前}）
+		path = remainingPath[3+colonAfterRe+closingBrace+1:]
+	} else {
+		// 处理普通类型：{类型:变量名} 或 {变量名} 格式
+		// 找闭合}的位置
+		closingBrace := strings.Index(path, "}")
+		if closingBrace == -1 {
+			log.Fatal("路径: " + path + " 有问题，缺少闭合}")
+		}
+		if closingBrace == firstPrev+1 {
+			log.Fatal("路径: " + path + " 有问题，{}之间不能为空")
+		}
+
+		// 提取{}内的内容（类型:变量名 或 变量名）
+		contentInBraces := path[firstPrev+1 : closingBrace]
+		// 检查:的数量（最多1个）
+		colonCount := strings.Count(contentInBraces, ":")
+		if colonCount > 1 {
+			log.Fatal("路径: " + path + " 有问题，非正则的{}里面最多只能出现一个:")
+		}
+
+		// 解析普通类型的匹配规则和变量名
+		re, opt := normal(contentInBraces)
+		if opt == "" {
+			log.Fatal("路径: " + path + " 有问题，非正则类型{}内变量名不能为空")
+		}
+		varlist = append(varlist, opt)
+
+		// 拼接处理后的路径（匹配规则部分）
+		newpath += head + re
+		// 更新剩余待处理路径（跳过当前}）
+		path = path[closingBrace+1:]
+	}
+
+	// 递归处理剩余路径（先trim避免空字符串递归）
+	trimmedPath := strings.TrimSpace(path)
+	if trimmedPath == "" {
+		return newpath, varlist
+	}
+	return macheOne(trimmedPath, newpath, varlist)
+}
+
+// normal 解析非正则类型的{}内容，返回匹配正则和变量名
+// 支持格式：变量名 或 类型:变量名（类型：int/word/all/string）
+// func normal(path string) (string, string) {
+// 	ts := strings.SplitN(path, ":", 2) // SplitN避免多个:分割错误
+// 	switch len(ts) {
+// 	case 1:
+// 		// 无类型，默认word匹配，变量名为ts[0]
+// 		opt := strings.Trim(ts[0], " ")
+// 		return word, opt
+// 	case 2:
+// 		// 有类型：类型:变量名
+// 		typ := strings.Trim(ts[0], " ")
+// 		typ = strings.ToLower(typ)
+// 		opt := strings.Trim(ts[1], " ")
+
+// 		switch typ {
+// 		case "int":
+// 			return interger, opt
+// 		case "word":
+// 			return word, opt
+// 		case "all":
+// 			return all, opt
+// 		case "string":
+// 			return str, opt
+// 		default:
+// 			// 未知类型，默认使用word匹配
+// 			return word, opt
+// 		}
+// 	default:
+// 		panic("路径: " + path + " 有问题，非正则类型{}内格式错误")
 // 	}
-// 	if end < start {
-// 		s = s[end+1:]
-// 		return parenthesesCount(s, c)
-// 	}
-// 	s = s[end+1:]
-// 	c++
-// 	return parenthesesCount(s, c)
 // }
