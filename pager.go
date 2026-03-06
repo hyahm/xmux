@@ -46,3 +46,15 @@ func GetPaginationLimit(total, page, pageSize int) (finalPage int, offset int, l
 
 	return finalPage, offset, limit
 }
+
+// GetPageData 从给定的数据切片中提取指定页码的数据
+func GetPageData[T any](data []T, pageIndex, pageSize int) []T {
+	maxPage := (len(data) + pageSize - 1) / pageSize
+	if pageIndex > maxPage {
+		return make([]T, 0)
+	}
+	if pageIndex == maxPage {
+		return data[(pageIndex-1)*pageSize:]
+	}
+	return data[(pageIndex-1)*pageSize : pageIndex*pageSize]
+}
