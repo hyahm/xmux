@@ -56,16 +56,17 @@ func userGroup() *RouteGroup {
 	// user.Get("/group", home).Use(CombineHandlers())
 	user.Get("/group", home)
 	user.AddGroup(adminGroup()).DelPostModule(postModule)
+	// GetInstance(r).GetConnectId()
 	return user
 }
 
 func Post(w http.ResponseWriter, r *http.Request) (exit bool) {
-	fmt.Println("99999999")
 	return false
 }
 
 func setkey(w http.ResponseWriter, r *http.Request) (exit bool) {
 	fmt.Println(r.URL.Path)
+	fmt.Println(GetInstance(r))
 	GetInstance(r).SetCacheKey(r.URL.Path)
 	return
 }

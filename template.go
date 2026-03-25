@@ -71,7 +71,6 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 
 			select {
 			case <-timer.C:
-				fmt.Println(222)
 				return
 			default:
 				time.Sleep(time.Millisecond * 10)

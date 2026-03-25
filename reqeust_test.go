@@ -27,6 +27,6 @@ func TestRequest(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(string(b))
+	t.Log(string(b))
 	response.Body.Close()
 }

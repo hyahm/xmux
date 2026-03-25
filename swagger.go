@@ -3,9 +3,9 @@ package xmux
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -205,7 +205,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 		send, err := json.MarshalIndent(swagger, "", "  ")
 
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 		w.Write(send)
 	}
