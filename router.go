@@ -13,7 +13,6 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -23,8 +22,9 @@ import (
 
 var connections int32 = -1
 
-const CTX = "XMUX_CTX"
+// const CTX = "XMUX_CTX"
 const PAGES = "XMUX_PAGES"
+const xmux_module = "xmux_module"
 
 var stop bool
 
@@ -54,24 +54,24 @@ type rt struct {
 }
 
 type Router struct {
-	addr                 string
-	prefix               []string
-	MaxPrintLength       int
-	Exit                 func(time.Time, http.ResponseWriter, *http.Request)
-	new                  bool                                          // 判断是否是通过newRouter 来初始化的
-	Enter                func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
-	ReadTimeout          time.Duration
-	HanleFavicon         func(http.ResponseWriter, *http.Request)
-	DisableOption        bool                                     // 禁止全局option
-	HandleOptions        func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
-	HandleNotFound       func(http.ResponseWriter, *http.Request)
-	HandleRecover        func(http.ResponseWriter, *http.Request)
-	HandleAll            func(http.ResponseWriter, *http.Request) bool
-	NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
-	UnmarshalError       func(error, http.ResponseWriter, *http.Request) bool
-	IgnoreSlash          bool     // 忽略地址多个斜杠， 默认不忽略
-	urlRoute             UrlRoute // 单实例路由， 组路由最后也会合并过来
-	urlTpl               UrlRoute // 正则路由， 组路由最后也会合并过来
+	addr           string
+	prefix         []string
+	MaxPrintLength int
+	Exit           func(time.Time, http.ResponseWriter, *http.Request)
+	new            bool                                          // 判断是否是通过newRouter 来初始化的
+	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
+	ReadTimeout    time.Duration
+	HanleFavicon   func(http.ResponseWriter, *http.Request)
+	DisableOption  bool                                     // 禁止全局option
+	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
+	HandleNotFound func(http.ResponseWriter, *http.Request)
+	HandleRecover  func(http.ResponseWriter, *http.Request)
+	HandleAll      func(http.ResponseWriter, *http.Request) bool
+	// NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
+	UnmarshalError func(error, http.ResponseWriter, *http.Request) bool
+	IgnoreSlash    bool     // 忽略地址多个斜杠， 默认不忽略
+	urlRoute       UrlRoute // 单实例路由， 组路由最后也会合并过来
+	urlTpl         UrlRoute // 正则路由， 组路由最后也会合并过来
 	// params               map[string][]string // 记录所有路由， map[string]string 是正则匹配的参数
 	header             map[string]string // 全局路由头
 	module             *module           // 全局模块
@@ -83,6 +83,8 @@ type Router struct {
 	SwaggerVersion     string
 }
 
+// 设置超时的时候注意   只有 module和 postmodule 的函数块才会中断， enter, exit , handle 不受影响， 如果有耗时代码， 请放到 handle，
+// 因为 postmodule 也会中断， 所以尽量不使用 postmodule， 可以写入到 exit
 func (r *Router) SetTimeout(t time.Duration) *Router {
 	if !r.new {
 		panic("must be use get router by NewRouter()")
@@ -140,7 +142,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
-	if !r.DisableOption && req.Method == http.MethodOptions {
+	if !r.DisableOption && req.Method == http.MethodOptions && r.HandleOptions != nil {
 		r.HandleOptions(w, req)
 		return
 	}
@@ -153,15 +155,16 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 	ci := time.Now().UnixNano()
 	fd := &FlowData{
-		ctx:        make(map[string]interface{}),
-		mu:         &sync.RWMutex{},
+		ctx: make(map[string]interface{}),
+		// mu:         &sync.RWMutex{},
 		connectId:  ci,
 		StatusCode: 200,
+		module:     route.module,
 	}
-
+	// add ctx data
 	ctx := context.WithValue(req.Context(), xmux_context, fd)
 	req = req.WithContext(ctx)
-
+	// add module
 	start := time.Now()
 	// option 请求处理
 
@@ -198,6 +201,43 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	name := runtime.FuncForPC(reflect.ValueOf(route.Handle).Pointer()).Name()
 	n := strings.LastIndex(name, ".")
 	fd.funcName = name[n+1:]
+	if r.ReadTimeout > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), r.ReadTimeout)
+		defer cancel()
+		for _, module := range route.module {
+			select {
+			case <-ctx.Done():
+				w.WriteHeader(http.StatusGatewayTimeout)
+				return
+			default:
+				if module(w, req) {
+					return
+				}
+			}
+
+		}
+		// 中间件
+		if len(route.middleware.mws) > 0 && route.Handle != nil {
+			route.Handle = route.middleware.ThenFunc(route.Handle)
+
+		}
+		if route.Handle.(http.HandlerFunc) != nil {
+			route.Handle.ServeHTTP(w, req)
+		}
+		// 处理后置模块
+		for _, module := range route.postModule {
+			select {
+			case <-ctx.Done():
+				w.WriteHeader(http.StatusGatewayTimeout)
+				return
+			default:
+				if module(w, req) {
+					return
+				}
+			}
+		}
+		return
+	}
 	// 请求模块
 	for _, module := range route.module {
 		if module(w, req) {
@@ -226,42 +266,17 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
-		if err := recover(); err != nil {
+		if err := recover(); err != nil && r.HandleRecover != nil {
 			errStack := fmt.Errorf("panic: %v\n%s", err, debug.Stack())
-			log.Println(errStack)
-			if r.HandleRecover != nil {
-				r.HandleRecover(w, req)
-			}
+			fmt.Println(errStack)
+			r.HandleRecover(w, req)
 		}
 	}()
 
-	if r.ReadTimeout > 0 {
-		complete := make(chan struct{})
-
-		ctx, cancel := context.WithTimeout(context.Background(), r.ReadTimeout)
-		defer cancel()
-		go r.shhandle(w, req, complete)
-		for {
-			select {
-			case <-ctx.Done():
-				w.WriteHeader(http.StatusGatewayTimeout)
-				return
-			case <-complete:
-				return
-			}
-
-		}
-	}
 	r.shhandle(w, req)
 }
 
-func (r *Router) shhandle(w http.ResponseWriter, req *http.Request, complete ...chan struct{}) {
-	if len(complete) > 0 {
-		defer func() {
-			complete[0] <- struct{}{}
-		}()
-	}
-
+func (r *Router) shhandle(w http.ResponseWriter, req *http.Request) {
 	if stop {
 		// fd.StatusCode = http.StatusLocked
 		w.WriteHeader(http.StatusLocked)
@@ -290,6 +305,7 @@ func (r *Router) shhandle(w http.ResponseWriter, req *http.Request, complete ...
 		// 寻址
 		r.serveHTTP(w, req)
 	}
+
 }
 
 func (r *Router) setHeader(route *Route) map[string]string {
@@ -325,7 +341,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 		// route, ok := r.route[req.URL.Path][req.Method]
-		if !ok || !matchMethod {
+		if (!ok || !matchMethod) && r.HandleNotFound != nil {
 			r.HandleNotFound(w, req)
 			return
 		}
@@ -344,7 +360,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 							break
 						}
 					}
-					if !matchMethod {
+					if !matchMethod && r.HandleNotFound != nil {
 						r.HandleNotFound(w, req)
 						return
 					}
@@ -360,8 +376,11 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 
 			}
 		}
-		r.HandleNotFound(w, req)
-		return
+		if r.HandleNotFound != nil {
+			r.HandleNotFound(w, req)
+			return
+		}
+
 	}
 endloop:
 
@@ -537,11 +556,12 @@ func NewRouter(cacheSize ...int) *Router {
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 		},
-		HanleFavicon:         handleFavicon,
-		HandleOptions:        handleOptions,
-		HandleAll:            handleAll,
-		HandleNotFound:       handleNotFound,
-		NotFoundRequireField: notFoundRequireField,
+		HanleFavicon:   handleFavicon,
+		HandleOptions:  handleOptions,
+		HandleAll:      handleAll,
+		HandleNotFound: handleNotFound,
+		HandleRecover:  func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500); w.Write([]byte("server panic")) },
+		// NotFoundRequireField: notFoundRequireField,
 
 		UnmarshalError: unmarshalError,
 	}

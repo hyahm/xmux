@@ -129,22 +129,15 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 		// 根据请求头自动解析
 		ct := req.Header.Get("content-type")
 		headers := strings.Split(ct, ";")
-		if len(headers) == 1 && headers[0] == "" {
-			cont, err := r.unmarsharJson(req, fd)
-			if err != nil {
-				return r.UnmarshalError(err, w, req)
-			}
-			return cont
-		}
+
 		for _, head := range headers {
+			head = strings.Trim(head, " ")
 			if head == MIMEJSON {
 				cont, err := r.unmarsharJson(req, fd)
 				if err != nil {
 					return r.UnmarshalError(err, w, req)
 				}
-				if cont {
-					return true
-				}
+				return cont
 			}
 			if head == MIMEXML || head == MIMEXML2 {
 				cont, err := r.unmarsharXml(req, fd)
@@ -159,15 +152,18 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 				if err != nil {
 					return r.UnmarshalError(err, w, req)
 				}
-				if cont {
-					return true
-				}
+				return cont
 			}
 
 		}
+		// cont, err := r.unmarsharJson(req, fd)
+		// if err != nil {
+		// 	return r.UnmarshalError(err, w, req)
+		// }
 
 	}
-	return false
+	w.Write([]byte("unsupport content-type"))
+	return true
 }
 
 func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
@@ -197,13 +193,13 @@ func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 		}
 		key := tagkeys[0]
 		value := req.FormValue(key)
-		if len(tagkeys) > 1 {
-			if (strings.Contains(keys[len(key):], "required")) && value == "" {
-				if r.NotFoundRequireField(key, w, req) {
-					return true, nil
-				}
-			}
-		}
+		// if len(tagkeys) > 1 {
+		// 	if (strings.Contains(keys[len(key):], "required")) && value == "" {
+		// 		// if r.NotFoundRequireField(key, w, req) {
+		// 		return true, nil
+		// 		// }
+		// 	}
+		// }
 
 		switch tt.Field(i).Type.Kind() {
 

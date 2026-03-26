@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"net/http"
-	"sync"
 )
 
 // instance  数据二次封装, 用户各模块之间的数据传递
@@ -13,8 +12,8 @@ const xmux_context = "XMUX_CONTEXT"
 type FlowData struct {
 	Data any
 	// 处理后的数据
-	ctx        map[string]interface{} // 用来传递自定义值
-	mu         *sync.RWMutex
+	ctx map[string]interface{} // 用来传递自定义值
+	// mu         *sync.RWMutex
 	Response   interface{} // 返回的数据结构
 	connectId  int64
 	funcName   string
@@ -22,6 +21,7 @@ type FlowData struct {
 	StatusCode int
 	Body       []byte
 	cacheKey   string
+	module     []func(w http.ResponseWriter, r *http.Request) bool
 }
 
 // type conns struct {
@@ -77,9 +77,9 @@ func GetInstance(r *http.Request) *FlowData {
 }
 
 func (data *FlowData) Set(k string, v interface{}) {
-	data.mu.Lock()
+	// data.mu.Lock()
 	data.ctx[k] = v
-	data.mu.Unlock()
+	// data.mu.Unlock()
 }
 
 func (data *FlowData) SetCacheKey(key string) {
@@ -91,26 +91,32 @@ func (data *FlowData) GetCacheKey() string {
 }
 
 func (data *FlowData) GetConnectId() int64 {
-	data.mu.RLock()
-	defer data.mu.RUnlock()
+	// data.mu.RLock()
+	// defer data.mu.RUnlock()
 	return data.connectId
 }
 
 func (data *FlowData) GetFuncName() string {
-	data.mu.RLock()
-	defer data.mu.RUnlock()
+	// data.mu.RLock()
+	// defer data.mu.RUnlock()
 	return data.funcName
 }
 
+func (data *FlowData) GetModules() []func(http.ResponseWriter, *http.Request) bool {
+	// data.mu.RLock()
+	// defer data.mu.RUnlock()
+	return data.module
+}
+
 func (data *FlowData) GetPageKeys() map[string]struct{} {
-	data.mu.RLock()
-	defer data.mu.RUnlock()
+	// data.mu.RLock()
+	// defer data.mu.RUnlock()
 	return data.pages
 }
 
 func (data *FlowData) Get(k string) interface{} {
-	data.mu.RLock()
-	defer data.mu.RUnlock()
+	// data.mu.RLock()
+	// defer data.mu.RUnlock()
 	if v, ok := data.ctx[k]; ok {
 		return v
 	}
@@ -118,7 +124,7 @@ func (data *FlowData) Get(k string) interface{} {
 }
 
 func (data *FlowData) Del(k string) {
-	data.mu.Lock()
+	// data.mu.Lock()
 	delete(data.ctx, k)
-	data.mu.Unlock()
+	// data.mu.Unlock()
 }

@@ -4,7 +4,22 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 )
+
+var limiter = rate.NewLimiter(100, 200)
+
+// 限流中间件（兼容 xmux 的 http.Handler 风格）
+func RateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !limiter.Allow() {
+			http.Error(w, "too many requests", http.StatusTooManyRequests)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 type FixedWindowCounter struct {
 	windowSize    time.Duration // 窗口大小
