@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 )
 
@@ -35,28 +34,7 @@ func (b *BaseFlow) Chain(fns ...func() error) {
 	}
 }
 
-// 错误控制
-func (b *BaseFlow) SetErr(err error) {
-	if b.err == nil {
-		b.err = err
-	}
-}
-func (b *BaseFlow) HasErr() bool { return b.err != nil }
-func (b *BaseFlow) Err() error   { return b.err }
-
-// 统一JSON输出
-func (b *BaseFlow) JSON(data interface{}, msg ...string) {
-	res := map[string]interface{}{
-		"code": 0,
-		"msg":  "success",
-		"data": data,
-	}
-	if b.err != nil {
-		res["code"] = -1
-		res["msg"] = b.err.Error()
-	}
-	json.NewEncoder(b.W).Encode(res)
-}
+func (b *BaseFlow) Err() error { return b.err }
 
 type Flow interface {
 	Init(w http.ResponseWriter, r *http.Request)
