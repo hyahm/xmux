@@ -1,72 +1,37 @@
 package xmux
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
-	"sync/atomic"
 	"testing"
-	"time"
+
+	"github.com/hyahm/gocache"
 )
 
-var count int32
-
 func home(w http.ResponseWriter, r *http.Request) {
+	name := Var(r)["asdfsdf"]
+	// time.Sleep(time.Millisecond * 30)
+	m1 := map[string]string{
+		"message": name,
+	}
+	b, _ := json.Marshal(m1)
+	SetCache(GetInstance(r).GetCacheKey(), b)
+	w.Write(b)
+	// GetInstance(r).Response.(*Response).Msg = time.Now().String()
+
+}
+
+func home2(w http.ResponseWriter, r *http.Request) {
 	// name := Var(r)["name"]
-	time.Sleep(time.Millisecond * 10)
-	g := GetInstance(r).Get("xmux_comb").(*requestGroup)
-	responseBody := []byte("home admin")
-	fmt.Println("home admin")
-	key := r.URL.String()
-	atomic.AddInt32(&count, 1)
-	fmt.Println(atomic.LoadInt32(&count))
-	// 1. 锁内：把当前等待者全部“预置”到通道里
-	requestCoalescing.mu.Lock()
-	n := g.connects
-	for i := 0; i < n; i++ {
-		g.done <- responseBody
+	// time.Sleep(time.Millisecond * 30)
+	m2 := map[string]string{
+		"message": "asdfasdf",
 	}
-	delCombineHandlers(key)
-	requestCoalescing.mu.Unlock()
+	GetInstance(r).Set("xmux_response", m2)
 
-	// 2. 锁外：等他们全部拿走（可选，如果不需要回执可删掉）
-	for i := 0; i < n; i++ {
-		<-g.callback
-	}
-
-	w.Write(responseBody)
-	// go func(g *requestGroup, reponseBody []byte) {
-	// 真正执行业务
-	// requestCoalescing.mu.Lock()
-
-	// defer requestCoalescing.mu.Unlock()
-
-	// if g.connects > 0 {
-	// 	all := make(chan struct{})
-	// 	go func() {
-	// 		for range g.connects {
-	// 			<-g.callback
-	// 		}
-	// 		fmt.Println("处理完一轮")
-	// 		all <- struct{}{}
-	// 	}()
-	// 	// 直接锁定， 新的请求等待解锁再进行
-	// 	for range g.connects {
-	// 		g.done <- reponseBody
-	// 	}
-	// 	<-all
-	// 	// close(g.done) // 广播完成
-	// 	fmt.Println("g.connects:", g.connects)
-
-	// }
-	// delCombineHandlers(key)
-	// // }(g, reponseBody)
-
-	// w.Write(responseBody)
-	// 把 key 从 map 移除，后续请求可再次触发新业务
-	// w.Write([]byte("home admin"))
-	// time.Sleep(1 * time.Second)
 }
 
 func grouphome(w http.ResponseWriter, r *http.Request) {
@@ -80,118 +45,265 @@ func adminhandle(w http.ResponseWriter, r *http.Request) {
 
 func adminGroup() *RouteGroup {
 	admin := NewRouteGroup().Prefix("test")
-	admin.Get("/admin/{bbb}", home)
-	admin.Get("/admin", adminhandle).DelPostModule()
+	admin.Get("/admin/{b}", home)
+	admin.Get("/admin", adminhandle)
 	admin.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age}", grouphome)
 	return admin
 }
 
 func userGroup() *RouteGroup {
-	user := NewRouteGroup().Prefix("test")
-	user.Get("/group", grouphome)
+	user := NewRouteGroup()
+	// user.Get("/group", home).Use(CombineHandlers())
+	user.Get("/group", home)
 	user.AddGroup(adminGroup()).DelPostModule(postModule)
+	// GetInstance(r).GetConnectId()
 	return user
 }
 
-func TestMain(t *testing.T) {
+func Post(w http.ResponseWriter, r *http.Request) (exit bool) {
+	return false
+}
 
+func setkey(w http.ResponseWriter, r *http.Request) (exit bool) {
+	fmt.Println(r.URL.Path)
+	fmt.Println(GetInstance(r))
+	GetInstance(r).SetCacheKey(r.URL.Path)
+	return
+}
+
+type Response struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+func TestMain(t *testing.T) {
+	// pool := NewPool()
 	router := NewRouter()
 	// router.HandleAll = LimitFixedWindowCounterTemplate
+	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("服务器错误"))
+	// }
+	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
+	InitResponseCache(cth)
+
 	router.SetHeader("Access-Control-Allow-Origin", "*")
 	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
-	router.SetHeader("Access-Control-Max-Age", "1728000")
+	router.SetHeader("Access-Control-Max-Age", "1728000").AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse)
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
-	router.AddGroup(Pprof()).AddPostModule(postModule)
-
+	router.AddGroup(Pprof())
+	router.Enter = enter
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test", nil)
-	router.Get("/post", pp)
+	router.Get("/test/{asdfsdf}", home)
+	router.Get("/bar", home2)
+	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	router.HandleAll = nil
 	// router.SetAddr(":8080")
-	router.AddGroup(userGroup())
-	log.Fatal(router.SetAddr(":9999").Run())
+	// router.AddGroup(userGroup())
+	router.DebugAssignRoute("/test")
+	log.Fatal(router.SetAddr(":19999").Run())
+}
+
+type Binding struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func Recovery(key string) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if err := recover(); err != nil {
+					log.Printf("panic: %v", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				}
+			}()
+			key := r.URL.Path
+			e := getEntry(key)
+
+			mu.Lock()
+			//---------- 生产者路径 ----------
+			if !e.done {
+				e.count++   // 正在计算
+				mu.Unlock() // 放锁去 IO
+
+				// 模拟耗时计算
+				// resp := []byte("这是 " + key + " 的处理结果")
+				next.ServeHTTP(w, r)
+				mu.Lock()
+				e.response = GetInstance(r).Get(key).([]byte)
+				e.done = true
+				e.cond.Broadcast()
+				mu.Unlock()
+				return
+			}
+			//---------- 消费者路径 ----------
+			e.count++
+			for !e.done {
+				e.cond.Wait() // 内部会临时放锁
+			}
+			data := append([]byte(nil), e.response...) // 锁内深拷贝
+			e.count--
+			if e.count == 0 { // 最后一个离开
+				delete(entries, key) // 安全删除
+			}
+			mu.Unlock()
+
+			w.Write(data)
+
+		})
+	}
+}
+
+// Middleware 返回 http.Handler 中间件
+// opts: 可传入 KeyFunc，默认用 r.URL.Path
+func (p *Pool) Middleware(next http.HandlerFunc, opts ...KeyFunc) http.HandlerFunc {
+	keyFn := func(r *http.Request) string { return r.URL.Path }
+	if len(opts) > 0 && opts[0] != nil {
+		keyFn = opts[0]
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := keyFn(r)
+		e := p.getEntry(key)
+
+		p.mu.Lock()
+		// 生产者路径
+		if !e.done {
+			e.count++
+			p.mu.Unlock()
+
+			// 执行业务 handler 拿结果
+			rec := &responseRecorder{ResponseWriter: w, status: 200}
+			next(rec, r)
+
+			p.mu.Lock()
+			e.response = rec.body
+			e.done = true
+			e.cond.Broadcast()
+			p.mu.Unlock()
+			return
+		}
+
+		// 消费者路径
+		e.count++
+		for !e.done {
+			e.cond.Wait()
+		}
+		data := append([]byte(nil), e.response...)
+		e.count--
+		if e.count == 0 {
+			delete(p.data, key)
+		}
+		p.mu.Unlock()
+
+		// 把缓存内容写回客户端
+		w.Write(data)
+	}
+}
+
+// 内部拿 entry（锁内）
+func (p *Pool) getEntry(key string) *entry {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	e := p.data[key]
+	if e == nil {
+		e = &entry{cond: sync.NewCond(&p.mu)}
+		p.data[key] = e
+	}
+	return e
+}
+
+// KeyFunc 允许调用方自定义分组 key
+type KeyFunc func(r *http.Request) string
+
+// responseRecorder 把响应内容截下来复用
+type responseRecorder struct {
+	http.ResponseWriter
+	body   []byte
+	status int
+}
+
+func (r *responseRecorder) Write(p []byte) (int, error) {
+	r.body = append(r.body, p...)
+	return len(p), nil
 }
 
 func postModule(w http.ResponseWriter, r *http.Request) bool {
+
 	fmt.Println("这是一个后置模块")
 	return false
 }
 
-func pp(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("这是一个处理函数")
-}
-
-// 1. 一个请求组，负责合并等待
-type requestGroup struct {
-	done chan []byte // 关闭即代表业务完成
-	// val      []byte        // 业务结果
-	connects int
-	callback chan struct{}
-}
-
-// 2. 全局中心：相同 key 复用同一个 group
-
-type combineHandlers struct {
+// Pool 按 key 缓存请求结果
+type Pool struct {
 	mu   sync.Mutex
-	inFL map[string]*requestGroup
+	data map[string]*entry
 }
 
-var requestCoalescing = &combineHandlers{
-	inFL: make(map[string]*requestGroup),
-	mu:   sync.Mutex{},
+type entry struct {
+	done     bool
+	response []byte
+	count    int32
+	cond     *sync.Cond
 }
 
-func getCombineHandlers(key string) (*requestGroup, bool) {
-	requestCoalescing.mu.Lock()
-	defer requestCoalescing.mu.Unlock()
-	g, ok := requestCoalescing.inFL[key]
-	return g, ok
+func NewPool() *Pool {
+	return &Pool{data: make(map[string]*entry)}
 }
 
-func setCombineHandlers(key string) {
-	requestCoalescing.mu.Lock()
-	if g, ok := requestCoalescing.inFL[key]; ok {
-		g.connects++
+var (
+	mu      sync.Mutex // 只用一把 Lock，简化生命周期
+	entries = make(map[string]*entry)
+)
+
+// 拿到或新建 entry（锁内）
+func getEntry(key string) *entry {
+	mu.Lock()
+	defer mu.Unlock()
+	e := entries[key]
+	if e == nil {
+		e = &entry{cond: sync.NewCond(&mu)}
+		entries[key] = e
 	}
-	requestCoalescing.mu.Unlock()
-
+	return e
 }
 
-func delCombineHandlers(key string) {
-	// 外面已经加锁了， 再加就死锁了
-	delete(requestCoalescing.inFL, key)
-}
+func pp(w http.ResponseWriter, r *http.Request) {
 
-func initCombineHandlers(key string) *requestGroup {
-	requestCoalescing.mu.Lock()
-	g := &requestGroup{
-		done:     make(chan []byte, 100), // 足够大即可
-		connects: 0,
-		callback: make(chan struct{}, 100),
+	// a := make([]string, 0)
+	key := r.URL.Path
+	e := getEntry(key)
+
+	mu.Lock()
+	//---------- 生产者路径 ----------
+	if !e.done {
+		e.count++   // 正在计算
+		mu.Unlock() // 放锁去 IO
+
+		// 模拟耗时计算
+		resp := []byte("这是 " + key + " 的处理结果")
+
+		mu.Lock()
+		e.response = resp
+		e.done = true
+		e.cond.Broadcast()
+		mu.Unlock()
+		return
 	}
-	requestCoalescing.inFL[key] = g
-	requestCoalescing.mu.Unlock()
-	return g
-}
-
-func OptimizerModule(w http.ResponseWriter, r *http.Request) bool {
-	key := r.URL.String()
-	g, ok := getCombineHandlers(key)
-	if ok {
-		// 已有进行中的请求，直接等待
-		setCombineHandlers(key)
-		rb := <-g.done
-		g.callback <- struct{}{}
-		w.Write(rb)
-		return true
-	} else {
-		// 第一个请求，建组并启动
-		g := initCombineHandlers(key)
-		GetInstance(r).Set("xmux_comb", g)
-		return false
+	//---------- 消费者路径 ----------
+	e.count++
+	for !e.done {
+		e.cond.Wait() // 内部会临时放锁
 	}
+	data := append([]byte(nil), e.response...) // 锁内深拷贝
+	e.count--
+	if e.count == 0 { // 最后一个离开
+		delete(entries, key) // 安全删除
+	}
+	mu.Unlock()
 
+	w.Write(data)
 }

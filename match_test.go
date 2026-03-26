@@ -5,10 +5,17 @@ import (
 )
 
 func TestMatch(t *testing.T) {
-	l, v := match("/download/aa{re:v([1-9]+)-([1-9]+)-([1-9]+):v1,v2,v3}bb{word}")
-	// l, v := match("/download/{name}")
-	t.Log(l)
-	t.Log(v)
+	list := []string{
+		"/download/aa{re:v([1-9]+)-([1-9]+)-([1-9]+):v1,v2,v3}bb{word}",
+		"/download/{a}/{b}",
+	}
+	for _, v := range list {
+		l, v := match(v)
+		// l, v := match("/download/{name}")
+		t.Log(l)
+		t.Log(v)
+	}
+
 }
 
 func TestCleanPath(t *testing.T) {

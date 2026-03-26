@@ -4,7 +4,22 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 )
+
+var limiter = rate.NewLimiter(100, 200)
+
+// 限流中间件（兼容 xmux 的 http.Handler 风格）
+func RateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !limiter.Allow() {
+			http.Error(w, "too many requests", http.StatusTooManyRequests)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 type FixedWindowCounter struct {
 	windowSize    time.Duration // 窗口大小
@@ -49,22 +64,22 @@ func init() {
 	counter = NewFixedWindowCounter(1*time.Second, 1000) // 每秒最多允许1000个请求
 }
 
-func LimitFixedWindowCounterTemplate(w http.ResponseWriter, r *http.Request) bool {
+func LimitFixedWindowCounterTemplate(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// GetConnents() 是全局连接数
 	if !counter.Allow() {
 		w.WriteHeader(http.StatusTooManyRequests)
 		return true
 	}
-	return false
+	return
 }
 
-func LimitFixedWindowCounterTemplate1(w http.ResponseWriter, r *http.Request) bool {
+func LimitFixedWindowCounterTemplate1(w http.ResponseWriter, r *http.Request) (exit bool) {
 	// GetConnents() 是全局连接数
 	if GetConnents() > 1000 {
 		w.WriteHeader(http.StatusTooManyRequests)
 		return true
 	}
-	return false
+	return
 }
 
 // var swc SlidingWindowCounter

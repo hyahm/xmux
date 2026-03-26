@@ -1,6 +1,5 @@
 # xmux
-基于原生net.http 极简高灵活性 专注前后端分离项目的路由   
-功能自己做主  
+基于原生net.http 极简高灵活性可拔插模块的路由 
 
 
 [视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
@@ -34,7 +33,10 @@ go >= 1.23
 - [连接的实例](#instance)
 - [文件浏览](#browse)
 - [限流](#limit)
+- [熔断](#limit)
+- [超时取消](#timeout)
 
+> 注意， 末尾带了 Template 的模块可能并不满足自己的要求， 建议看看源码 是否满足自己的需求做一些修改（代码量基本都小于20行）  
 
 ### 安装<a id="install"></a>  
 ```
@@ -224,11 +226,20 @@ func main() {
 ```
 
 
-### 三大全局handle
+### 钩子函数
 ```go
-HandleOptions:        handleoptions(),   //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理, 默认会返回ok， 也可以自定义
-HandleNotFound: 	  handleNotFound(),   // 默认返回404 ， 也可以自定义
-HanleFavicon：        methodNotAllowed(),    // 默认请求 favicon
+HanleFavicon和 HandleNotFound 是一个 handle  因为走到这里必定返回， 其他的其实全是模块
+
+HandleOptions:          //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理, 默认会返回ok， 也可以自定义
+HandleNotFound: 	    // 默认返回404 ， 也可以自定义
+HanleFavicon：            // 默认请求 favicon
+
+Exit
+Enter                
+HandleAll:            handleAll,
+NotFoundRequireField: notFoundRequireField,
+
+UnmarshalError: unmarshalError,
 
 // 默认调用的方法如下， 没有找到路由
 func handleNotFound(w http.ResponseWriter, r *http.Request)  {
@@ -238,9 +249,10 @@ func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 	w.WriteHeader(http.StatusNotFound)
 }
 
+
 ```
 
-###  模块 （代替其他框架的中间件功能，并且更灵活更简单）<a id="module"></a>
+###  模块 （xmux核心理念 代替其他框架的中间件功能，并且更灵活更简单 ）<a id="module"></a>
 **核心理念： 任何逻辑都可以是一个模块， 最后组合而成的就是一个完整接口功能**
 
 - 模块类 优先级   
@@ -1001,8 +1013,53 @@ func main() {
 
 # 限流 <a id="limit"></a>
 ```go 
-// 固定窗口的模板，其他的 滑动窗口计数器，漏桶算法，令牌桶算法  在同一个文件下注释，因为需要定义全部变量，减少没西药的内存消耗也是需要自己做少量修改
-router.AddModule(xmux.LimitFixedWindowCounterTemplate)
+// 每秒 10 个请求，突发 20
+router.AddModule(xmux.RateLimit(10, 20))
+```
+
+# 熔断 <a id="limit"></a>
+```go 
+// 一个熔断对应一个name, 注意带Template的不是通用方法，一件复制一份做修改
+router.AddModule(xmux.CircuitBreakerTemplate("api", 3*time.Second))
+```
+
+# 超时 <a id="timeout"></a>
+```go 
+func a(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("a")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+func b(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("b")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+func d(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("d")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+func e(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("e")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+// 基于 模块控制的超时， 不仅仅是超时返回， 后端流程模块同样会中断， 你感觉不到，
+// 全局接口超时， 超时中断只会影响前置module 和 后置  postmodule， 不影响 本身的 handle（也就是下方的home， 不如一些执行时间长的）
+router.SetTimeout(time.Second * 5)
+router.Get("/test", home).AddModule(a, b, e, e)
+
+//  与全局的不一样，这里是会对传入的 module 有效， 记住，SetTimeout里面传入了就不要添加到 AddModule， 会重复执行
+router.Get("/test", xmux.SetTimeout(time.Second*5, a, b, d, e))
+
+// 上面5秒超时， 所以， 只会打印 
+a
+b
 ```
 
 ### 性能分析

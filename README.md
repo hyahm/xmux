@@ -1,8 +1,5 @@
-# xmux
-
-Based on native net HTTP is extremely simple and flexible, focusing on the routing of front and back-end separation projects
-
-Function is up to you
+# xmux  
+Native net/http based · Minimal · Flexible · Pluggable Router
 
 ###  required 
 
@@ -179,7 +176,7 @@ func main() {
 func main() {
 	router := xmux.NewRouter().Prefix("test")
 	router.Get("/bbb", c)   // /test/bbb
-	router.Get("/ccc", c).DelPrefix("test")   // /test/ccc  
+	router.Get("/ccc", c).DelPrefix("test")   // /ccc  
 	g := xmux.NewRouteGroup()
 	g.Get("/aaa", noCache).DelModule(setKey) // /test/aaa
 	g.Get("/no/cache1", noCache1).DelModule(setKey).DelPrefix("test") // /no/cache1
@@ -238,6 +235,12 @@ HandleOptions:        handleoptions(),
 HandleNotFound: 	  handleNotFound(),  
 // /favicon
 HanleFavicon：        methodNotAllowed(),   
+HandleRecover :         //  recover handle
+
+
+router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("server error"))
+	}
 
 // The default method called is as follows. No route was found
 func handleNotFound(w http.ResponseWriter, r *http.Request)  {
@@ -246,6 +249,8 @@ func handleNotFound(w http.ResponseWriter, r *http.Request)  {
 	GetInstance(r).StatusCode = http.StatusNotFound
 	w.WriteHeader(http.StatusNotFound)
 }
+
+
 
 ```
 
@@ -873,7 +878,7 @@ You can refer to the permission template of xmux.DefaultPermissionTemplate
 
 
 
-> example of not bind return data
+> example of bind return struct
 ```go
 package main
 
@@ -889,7 +894,7 @@ import (
 func c(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("comming c")
 	now := time.Now().String()
-	xmux.GetInstance(r).Response.(*Response).Data = now
+	xmux.GetInstance(r).Response.(*Response).Data = now  // bind struct 
 }
 
 func noCache(w http.ResponseWriter, r *http.Request) {
@@ -922,6 +927,69 @@ func main() {
 	xmux.InitResponseCache(cth)
 	// If not bind response use xmux.DefaultCacheTemplateCacheWithoutResponse instead of xmux.DefaultCacheTemplateCacheWithResponse
 	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithResponse)
+	router.BindResponse(r)
+	router.Get("/aaa", c)
+	router.Get("/update/aaa", noCache).DelModule(setKey)
+	router.Get("/no/cache1", noCache1).DelModule(setKey)
+	router.Run()
+}
+
+
+```
+
+
+
+> example of not bind return struct
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/hyahm/gocache"
+	"github.com/hyahm/xmux"
+)
+
+func c(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming c")
+	now := time.Now().String()
+	m1 := map[string]string{
+		"message": "asdfasdf",
+	}
+	b, _ := json.Marshal(m1)
+	SetCache(GetInstance(r).GetCacheKey(), b) // must be set cache
+	w.Write(b)
+}
+
+func noCache(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("update c")
+	xmux.NeedUpdate("/aaa")
+}
+
+func noCache1(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("comming noCache1")
+	now := time.Now().String()
+	xmux.GetInstance(r).Response.(*Response).Data = now
+}
+
+func setKey(w http.ResponseWriter, r *http.Request) bool {
+    //  you can use more descriptive key by params
+	xmux.GetInstance(r).SetCacheKey(r.URL.Path)
+	fmt.Print(r.URL.Path + " is cached")
+	return false
+}
+
+
+func main() {
+	r := &Response{
+		Code: 0,
+	}
+	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
+	xmux.InitResponseCache(cth)
+	
+	router := xmux.NewRouter().AddModule(setKey, xmux.DefaultCacheTemplateCacheWithoutResponse)
 	router.BindResponse(r)
 	router.Get("/aaa", c)
 	router.Get("/update/aaa", noCache).DelModule(setKey)
@@ -1042,11 +1110,61 @@ func main() {
 	router.AddGroup(FileBrowse("/static", "D:\\ProgramData", true, false))
 	log.Fatal(router.Run())
 }
+
 ```
-# limit <a id="limit" ></a>
+# Rate Limit <a id="limit"></a>
 ```go
-// Template for fixed window limiter. Other limiters such as Sliding Window Counter, Leaky Bucket, and Token Bucket are commented in the same file. This is because defining all variables in one place can reduce unnecessary memory consumption and requires some minor modifications.
-router.AddModule(xmux.LimitFixedWindowCounterTemplate)
+// 10 requests per second, burst up to 20
+router.AddModule(xmux.RateLimit(10, 20))
+```
+
+# Circuit Breaker <a id="circuit-breaker"></a>
+```go
+// One circuit breaker rule corresponds to one name.
+// Note that methods with "Template" are not generic — make a copy and modify for each use case.
+router.AddModule(xmux.CircuitBreakerTemplate("api", 3*time.Second))
+```
+
+# Timeout <a id="timeout"></a>
+```go
+func a(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("a")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+func b(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("b")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+func d(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("d")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+func e(w http.ResponseWriter, r *http.Request) bool {
+	fmt.Println("e")
+	time.Sleep(time.Second * 2)
+	return false
+}
+
+// Timeout controlled at module level.
+// It not only returns a timeout response, but also interrupts the backend module flow.
+// Global interface timeout only affects pre-modules and post-modules,
+// not the handler itself (e.g. long-running logic like the home handler below).
+router.SetTimeout(time.Second * 5)
+router.Get("/test", home).AddModule(a, b, e, e)
+
+// Different from the global version — this only applies to the modules passed in.
+// IMPORTANT: Do NOT add these modules again in AddModule, or they will run twice.
+router.Get("/test", xmux.SetTimeout(time.Second*5, a, b, d, e))
+
+// With a 5-second timeout, only the following will be printed:
+a
+b
 ```
 
 # Life cycle flow chart (If there is no matching route, it will not enter the figure below.)

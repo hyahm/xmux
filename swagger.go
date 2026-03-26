@@ -3,19 +3,19 @@ package xmux
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 )
 
 type MethodStrcut struct {
-	Summary    string              `json:"summary,omitempty" yaml:"summary"`
-	Parameters []Parameter         `json:"parameters,omitempty" yaml:"parameters"`
-	Responses  map[string]Response `json:"responses,omitempty" yaml:"responses"`
-	Produces   []string            `json:"produces,omitempty" yaml:"produces" required:""`
-	Consumes   []string            `json:"consumes,omitempty" yaml:"consumes"`
+	Summary    string                     `json:"summary,omitempty" yaml:"summary"`
+	Parameters []Parameter                `json:"parameters,omitempty" yaml:"parameters"`
+	Responses  map[string]SwaggerResponse `json:"responses,omitempty" yaml:"responses"`
+	Produces   []string                   `json:"produces,omitempty" yaml:"produces" required:""`
+	Consumes   []string                   `json:"consumes,omitempty" yaml:"consumes"`
 }
 
 type ParameterType string
@@ -50,7 +50,7 @@ type Type struct {
 	Description string `json:"description" yaml:"description"`
 }
 
-type Response struct {
+type SwaggerResponse struct {
 	Description string            `json:"type,omitempty" yaml:"type"`
 	Schema      map[string]string `json:"schema,omitempty" yaml:"schema"`
 }
@@ -139,7 +139,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 			ms := MethodStrcut{
 				Summary:  mr.summary,
 				Produces: []string{"application/json"},
-				Responses: map[string]Response{"200": {
+				Responses: map[string]SwaggerResponse{"200": {
 					Description: "",
 				}},
 			}
@@ -162,7 +162,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 				ms := MethodStrcut{
 					Summary:  mr.summary,
 					Produces: []string{"application/json"},
-					Responses: map[string]Response{"200": {
+					Responses: map[string]SwaggerResponse{"200": {
 						Description: "",
 					}},
 				}
@@ -205,7 +205,7 @@ func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) htt
 		send, err := json.MarshalIndent(swagger, "", "  ")
 
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 		}
 		w.Write(send)
 	}
