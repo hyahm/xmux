@@ -62,7 +62,7 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		// 正则匹配的
 		if _, ok := r.urlTpl[url]; ok {
 			if _, ok := r.urlTpl[url]; ok {
-				m, exsit := SliceExsit(r.urlTpl[url].methods, method)
+				m, exsit := SliceExist(r.urlTpl[url].methods, method)
 				if exsit {
 					log.Fatal("method : " + m + "  duplicate, url: " + url)
 				}
@@ -78,7 +78,7 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		// 如果存在就判断是否存在method
 		if _, ok := r.urlRoute[url]; ok {
 			if _, ok := r.urlRoute[url]; ok {
-				m, exsit := SliceExsit(r.urlRoute[url].methods, method)
+				m, exsit := SliceExist(r.urlRoute[url].methods, method)
 				if exsit {
 					log.Fatal("method : " + m + "  duplicate, url: " + url)
 				}

@@ -3,6 +3,9 @@ package xmux
 import (
 	"errors"
 	"net/http"
+	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -66,4 +69,35 @@ func setParams(key string, params params) {
 	paramsLocker.Lock()
 	allparams[key] = params
 	paramsLocker.Unlock()
+}
+
+// router.go 中添加
+// PageKeyFuncMap 返回 pagekey -> []funcName 的映射
+func (r *Router) PageKeyFuncMap() map[string][]string {
+	result := make(map[string][]string)
+	// 遍历所有精确匹配路由
+	for _, route := range r.urlRoute {
+		funcName := getFuncName(route.handle)
+		for pk := range route.pagekeys {
+			result[pk] = append(result[pk], funcName)
+		}
+	}
+	// 遍历所有正则匹配路由
+	for _, route := range r.urlTpl {
+		funcName := getFuncName(route.handle)
+		for pk := range route.pagekeys {
+			result[pk] = append(result[pk], funcName)
+		}
+	}
+	return result
+}
+
+// 辅助函数：从 handle 提取 funcName
+func getFuncName(handle http.Handler) string {
+	name := runtime.FuncForPC(reflect.ValueOf(handle).Pointer()).Name()
+	n := strings.LastIndex(name, ".")
+	if n >= 0 {
+		return name[n+1:]
+	}
+	return name
 }

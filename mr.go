@@ -22,49 +22,49 @@ func (mr UrlRoute) AddModule(handles ...func(http.ResponseWriter, *http.Request)
 
 func (mr UrlRoute) Bind(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].Bind(Clone(dest))
+		mr[method].Bind(DeepCopy(dest))
 	}
 	return mr
 }
 
 func (mr UrlRoute) BindResponse(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].BindResponse(Clone(dest))
+		mr[method].BindResponse(DeepCopy(dest))
 	}
 	return mr
 }
 
 func (mr UrlRoute) BindByContentType(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].BindByContentType(Clone(dest))
+		mr[method].BindByContentType(DeepCopy(dest))
 	}
 	return mr
 }
 
 func (mr UrlRoute) BindForm(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].BindForm(Clone(dest))
+		mr[method].BindForm(DeepCopy(dest))
 	}
 	return mr
 }
 
 func (mr UrlRoute) BindJson(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].BindJson(Clone(dest))
+		mr[method].BindJson(DeepCopy(dest))
 	}
 	return mr
 }
 
 func (mr UrlRoute) BindXml(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].BindXml(Clone(dest))
+		mr[method].BindXml(DeepCopy(dest))
 	}
 	return mr
 }
 
 func (mr UrlRoute) BindYaml(dest interface{}) UrlRoute {
 	for method := range mr {
-		mr[method].BindYaml(Clone(dest))
+		mr[method].BindYaml(DeepCopy(dest))
 	}
 	return mr
 }

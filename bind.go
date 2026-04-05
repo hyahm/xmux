@@ -214,10 +214,10 @@ func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 		case reflect.Bool:
 			ok, _ := strconv.ParseBool(value)
 			vv.Field(i).Set(reflect.ValueOf(ok))
-		case reflect.Int, reflect.Int64:
+		case reflect.Int, reflect.Int64, reflect.Int8, reflect.Int16, reflect.Int32:
 			i64, _ := strconv.ParseInt(value, 10, 64)
 			vv.Field(i).SetInt(i64)
-		case reflect.Uint64:
+		case reflect.Uint64, reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32:
 			i64, _ := strconv.ParseUint(value, 10, 64)
 			vv.Field(i).SetUint(i64)
 

@@ -24,20 +24,11 @@ var connections int32 = -1
 
 // const CTX = "XMUX_CTX"
 const PAGES = "XMUX_PAGES"
-const xmux_module = "xmux_module"
 
-var stop bool
+// var stop bool
 
 func GetConnents() int32 {
 	return connections
-}
-
-func StopService() {
-	stop = true
-}
-
-func StartService() {
-	stop = false
 }
 
 type rt struct {
@@ -50,6 +41,7 @@ type rt struct {
 	bindType     bindType
 	responseData interface{}
 	middleware   onion
+	funcName     string
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
@@ -160,6 +152,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		connectId:  ci,
 		StatusCode: 200,
 		module:     route.module,
+		funcName:   route.funcName,
 	}
 	// add ctx data
 	ctx := context.WithValue(req.Context(), xmux_context, fd)
@@ -174,7 +167,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 
 	if route.responseData != nil {
-		fd.Response = Clone(route.responseData)
+		fd.Response = DeepCopy(route.responseData)
 	}
 	if route.dataSource != nil {
 		base := reflect.TypeOf(route.dataSource)
@@ -198,11 +191,9 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	// pages
 	fd.pages = route.pagekeys
 	// 当前函数名去掉目录层级后的
-	name := runtime.FuncForPC(reflect.ValueOf(route.Handle).Pointer()).Name()
-	n := strings.LastIndex(name, ".")
-	fd.funcName = name[n+1:]
+
 	if r.ReadTimeout > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), r.ReadTimeout)
+		ctx, cancel := context.WithTimeout(req.Context(), r.ReadTimeout)
 		defer cancel()
 		for _, module := range route.module {
 			select {
@@ -277,11 +268,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) shhandle(w http.ResponseWriter, req *http.Request) {
-	if stop {
-		// fd.StatusCode = http.StatusLocked
-		w.WriteHeader(http.StatusLocked)
-		return
-	}
 
 	if r.HandleAll != nil {
 		if r.HandleAll(w, req) {
@@ -386,6 +372,8 @@ endloop:
 
 	// todo: 后面补充prefix
 	// 缓存handler
+	name := runtime.FuncForPC(reflect.ValueOf(thisRoute.handle).Pointer()).Name()
+	n := strings.LastIndex(name, ".")
 	thisRouteCache := &rt{
 		Handle:       thisRoute.handle,
 		Header:       r.setHeader(thisRoute),
@@ -396,6 +384,7 @@ endloop:
 		bindType:     thisRoute.bindType,
 		responseData: thisRoute.responseData,
 		middleware:   thisRoute.middleware,
+		funcName:     name[n+1:],
 	}
 	// 设置缓存
 	setUrlCache(req.URL.Path+req.Method, thisRouteCache)
@@ -604,9 +593,9 @@ func (r *Router) merge(group *RouteGroup, route *Route) *Route {
 	// 本身要是绑定了数据，就不需要找上级了
 	if !route.bindResponseData {
 		if group.bindResponseData {
-			route.responseData = Clone(group.responseData)
+			route.responseData = DeepCopy(group.responseData)
 		} else {
-			route.responseData = Clone(r.responseData)
+			route.responseData = DeepCopy(r.responseData)
 		}
 	}
 
@@ -669,7 +658,7 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 	// 匹配理由的合并
 	for url, route := range group.urlRoute {
 		if _, ok := r.urlRoute[url]; ok {
-			v, ok := SliceExsit(r.urlRoute[url].methods, route.methods)
+			v, ok := SliceExist(r.urlRoute[url].methods, route.methods)
 			if ok {
 				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
@@ -698,7 +687,7 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 
 	for url, tpl := range group.urlTpl {
 		if _, ok := r.urlTpl[url]; ok {
-			v, ok := SliceExsit(r.urlTpl[url].methods, tpl.methods)
+			v, ok := SliceExist(r.urlTpl[url].methods, tpl.methods)
 			if ok {
 				log.Fatal("method : " + v + "  duplicate, url: " + url)
 			}
