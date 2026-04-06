@@ -44,7 +44,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 	url, vars, ok := makeRoute(pattern)
 	if ok {
 		if _, ok := gr.urlTpl[url]; ok {
-			m, exsit := SliceExsit(gr.urlTpl[url].methods, newRoute.methods)
+			m, exsit := SliceExist(gr.urlTpl[url].methods, newRoute.methods)
 			if exsit {
 				log.Fatal("method : " + m + "  duplicate, url: " + url)
 			}
@@ -57,7 +57,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 
 	} else {
 		if _, ok := gr.urlRoute[url]; ok {
-			m, exsit := SliceExsit(gr.urlRoute[url].methods, newRoute.methods)
+			m, exsit := SliceExist(gr.urlRoute[url].methods, newRoute.methods)
 			if exsit {
 				log.Fatal("method : " + m + "  duplicate, url: " + url)
 			}

@@ -105,7 +105,7 @@ func createTLS() {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 	}
-	privCa, _ := rsa.GenerateKey(rand.Reader, 1024)
+	privCa, _ := rsa.GenerateKey(rand.Reader, 2048)
 	createCertificateFile("ca", ca, privCa, ca, nil)
 	server := &x509.Certificate{
 		SerialNumber: big.NewInt(sn),
@@ -135,7 +135,7 @@ func createTLS() {
 
 	server.IPAddresses = append(server.IPAddresses, hosts...)
 
-	privSer, _ := rsa.GenerateKey(rand.Reader, 1024)
+	privSer, _ := rsa.GenerateKey(rand.Reader, 2048)
 	createCertificateFile("server", server, privSer, ca, privCa)
 	// client := &x509.Certificate{
 	// 	SerialNumber: big.NewInt(sn),
@@ -172,11 +172,11 @@ func createCertificateFile(name string, cert *x509.Certificate, key *rsa.Private
 		Headers: map[string]string{},
 		Bytes:   ca_b}
 	ca_b64 := pem.EncodeToMemory(certificate)
-	ioutil.WriteFile(ca_f, ca_b64, 0744)
+	os.WriteFile(ca_f, ca_b64, 0600)
 
 	priv_f := name + ".key"
 	priv_b := x509.MarshalPKCS1PrivateKey(priv)
-	ioutil.WriteFile(priv_f, priv_b, 0744)
+	os.WriteFile(priv_f, priv_b, 0600)
 	var privateKey = &pem.Block{Type: "PRIVATE KEY",
 		Headers: map[string]string{},
 		Bytes:   priv_b}

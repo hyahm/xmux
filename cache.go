@@ -65,7 +65,7 @@ func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 		// 判断是否存在，存在， 如果正在更新，并且值是nil
 		value, gok := rc.store.Get(key)
 		if !gok {
-			fmt.Println("somthing wrong")
+			fmt.Println("something wrong")
 		}
 		switch status {
 		case 0:

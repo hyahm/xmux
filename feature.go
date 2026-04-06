@@ -78,3 +78,12 @@ func CircuitBreakerTemplate(name string, timeout time.Duration) func(w http.Resp
 		return false
 	}
 }
+
+// FlowData 内置数据实例
+// type FlowData struct {
+// 	Data map[string]interface{}
+// }
+
+// func GetInstance(r *http.Request) *FlowData {
+// 	return &FlowData{Data: make(map[string]interface{})}
+// }

@@ -18,6 +18,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 		"message": name,
 	}
 	b, _ := json.Marshal(m1)
+	GetInstance(r).GetFuncName()
 	SetCache(GetInstance(r).GetCacheKey(), b)
 	w.Write(b)
 	// GetInstance(r).Response.(*Response).Msg = time.Now().String()
@@ -96,9 +97,12 @@ func TestMain(t *testing.T) {
 	router.Enter = enter
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/{all:all}/bar", home2)
+	router.Get("/test/{asdfsdf}", home).AddPageKeys("admin")
+	router.Get("/bar", home2).AddPageKeys("admin")
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	router.HandleAll = nil
+	pf := router.PageKeyFuncMap()
+	fmt.Println(pf)
 	// router.SetAddr(":8080")
 	// router.AddGroup(userGroup())
 	router.DebugIncludeTpl("/bar")
