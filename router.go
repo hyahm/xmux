@@ -323,7 +323,7 @@ func (r *Router) setHeader(route *Route) map[string]string {
 	return headers
 }
 
-var re = regexp.MustCompile(`https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]`)
+// var re = regexp.MustCompile(`https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]`)
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
@@ -348,7 +348,7 @@ func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		thisRoute = route
 	} else {
 		for reUrl := range r.urlTpl {
-			// re := regexp.MustCompile(reUrl)
+			re := regexp.MustCompile(reUrl)
 			// req.URL.Path = strings.Trim(req.URL.Path, " ")
 			if re.MatchString(req.URL.Path) {
 				route, ok := r.urlTpl[reUrl]

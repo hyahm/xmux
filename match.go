@@ -1,6 +1,7 @@
 package xmux
 
 import (
+	"fmt"
 	"log"
 	"path"
 	"strings"
@@ -220,7 +221,7 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 			log.Fatal("路径: " + path + " 有问题，非正则类型{}内变量名不能为空")
 		}
 		varlist = append(varlist, opt)
-
+		fmt.Println(re)
 		// 拼接处理后的路径（匹配规则部分）
 		newpath += head + re
 		// 更新剩余待处理路径（跳过当前}）
@@ -234,36 +235,3 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 	}
 	return macheOne(trimmedPath, newpath, varlist)
 }
-
-// normal 解析非正则类型的{}内容，返回匹配正则和变量名
-// 支持格式：变量名 或 类型:变量名（类型：int/word/all/string）
-// func normal(path string) (string, string) {
-// 	ts := strings.SplitN(path, ":", 2) // SplitN避免多个:分割错误
-// 	switch len(ts) {
-// 	case 1:
-// 		// 无类型，默认word匹配，变量名为ts[0]
-// 		opt := strings.Trim(ts[0], " ")
-// 		return word, opt
-// 	case 2:
-// 		// 有类型：类型:变量名
-// 		typ := strings.Trim(ts[0], " ")
-// 		typ = strings.ToLower(typ)
-// 		opt := strings.Trim(ts[1], " ")
-
-// 		switch typ {
-// 		case "int":
-// 			return interger, opt
-// 		case "word":
-// 			return word, opt
-// 		case "all":
-// 			return all, opt
-// 		case "string":
-// 			return str, opt
-// 		default:
-// 			// 未知类型，默认使用word匹配
-// 			return word, opt
-// 		}
-// 	default:
-// 		panic("路径: " + path + " 有问题，非正则类型{}内格式错误")
-// 	}
-// }

@@ -31,7 +31,7 @@ func home2(w http.ResponseWriter, r *http.Request) {
 		"message": "asdfasdf",
 	}
 	GetInstance(r).Set("xmux_response", m2)
-
+	w.Write([]byte("aaaaa"))
 }
 
 func grouphome(w http.ResponseWriter, r *http.Request) {
@@ -96,13 +96,12 @@ func TestMain(t *testing.T) {
 	router.Enter = enter
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test/{asdfsdf}", home)
-	router.Get("/bar", home2)
+	router.Get("/{all:all}/bar", home2)
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	router.HandleAll = nil
 	// router.SetAddr(":8080")
 	// router.AddGroup(userGroup())
-	router.DebugAssignRoute("/test")
+	router.DebugIncludeTpl("/bar")
 	log.Fatal(router.SetAddr(":19999").Run())
 }
 
