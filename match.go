@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"log"
 	"path"
 	"strings"
@@ -221,7 +220,7 @@ func macheOne(path, newpath string, varlist []string) (string, []string) {
 			log.Fatal("路径: " + path + " 有问题，非正则类型{}内变量名不能为空")
 		}
 		varlist = append(varlist, opt)
-		fmt.Println(re)
+
 		// 拼接处理后的路径（匹配规则部分）
 		newpath += head + re
 		// 更新剩余待处理路径（跳过当前}）
