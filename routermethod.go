@@ -7,7 +7,7 @@ import (
 )
 
 // get this route
-func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method ...string) *Route {
+func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method ...string) *Route {
 	if !r.DisableOption {
 		var exsitOption bool
 		for _, v := range method {
@@ -159,17 +159,11 @@ func (r *Router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 // 	}
 // }
 
-func (r *Router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodPost)
 }
 
-func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler,
 		http.MethodDelete, http.MethodGet, http.MethodHead,
 		http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace,
@@ -183,47 +177,29 @@ func (r *Router) Any(pattern string, handler func(http.ResponseWriter, *http.Req
 // 	return mr
 // }
 
-func (r *Router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 
 	return r.defindMethod(pattern, handler, http.MethodGet)
 }
 
-func (r *Router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 
 	return r.defindMethod(pattern, handler, http.MethodConnect)
 }
 
-func (r *Router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
 	return r.defindMethod(pattern, handler, methods...)
 }
 
-func (r *Router) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodDelete)
 }
 
-func (r *Router) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodHead)
 }
 
-func (r *Router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodOptions)
 }
 
@@ -234,23 +210,14 @@ func (r *Router) Options(pattern string, handler func(http.ResponseWriter, *http
 // 	return r.defindMethod(pattern, handler, http.MethodConnect)
 // }
 
-func (r *Router) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodPatch)
 }
 
-func (r *Router) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodTrace)
 }
 
-func (r *Router) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
 	return r.defindMethod(pattern, handler, http.MethodPut)
 }

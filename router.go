@@ -45,12 +45,11 @@ type rt struct {
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
-type Router struct {
+type router struct {
 	addr           string
 	prefix         []string
 	MaxPrintLength int
 	Exit           func(time.Time, http.ResponseWriter, *http.Request)
-	new            bool                                          // 判断是否是通过newRouter 来初始化的
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
 	HanleFavicon   func(http.ResponseWriter, *http.Request)
@@ -77,33 +76,21 @@ type Router struct {
 
 // 设置超时的时候注意   只有 module和 postmodule 的函数块才会中断， enter, exit , handle 不受影响， 如果有耗时代码， 请放到 handle，
 // 因为 postmodule 也会中断， 所以尽量不使用 postmodule， 可以写入到 exit
-func (r *Router) SetTimeout(t time.Duration) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) SetTimeout(t time.Duration) *router {
 	r.ReadTimeout = t
 	return r
 }
-func (r *Router) BindResponse(response interface{}) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) BindResponse(response interface{}) *router {
 	r.responseData = response
 	return r
 }
 
-func (r *Router) SetHeader(k, v string) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) SetHeader(k, v string) *router {
 	r.header[k] = v
 	return r
 }
 
-func (r *Router) AddPageKeys(pagekeys ...string) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) AddPageKeys(pagekeys ...string) *router {
 	if r.pagekeys == nil {
 		r.pagekeys = make(map[string]struct{})
 	}
@@ -113,23 +100,17 @@ func (r *Router) AddPageKeys(pagekeys ...string) *Router {
 	return r
 }
 
-func (r *Router) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *router {
 	r.module.add(handles...)
 	return r
 }
 
-func (r *Router) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *router {
 	r.postModule.add(handles...)
 	return r
 }
 
-func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
+func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Request) {
 
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
@@ -251,10 +232,7 @@ func (r *Router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 }
 
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	defer func() {
 		if err := recover(); err != nil && r.HandleRecover != nil {
@@ -267,7 +245,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.shhandle(w, req)
 }
 
-func (r *Router) shhandle(w http.ResponseWriter, req *http.Request) {
+func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 	if r.HandleAll != nil {
 		if r.HandleAll(w, req) {
@@ -294,7 +272,7 @@ func (r *Router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (r *Router) setHeader(route *Route) map[string]string {
+func (r *router) setHeader(route *Route) map[string]string {
 	// 设置请求头
 	headers := make(map[string]string)
 	for k, v := range r.header {
@@ -312,7 +290,7 @@ func (r *Router) setHeader(route *Route) map[string]string {
 // var re = regexp.MustCompile(`https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]`)
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
-func (r *Router) serveHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *Route
 	matchMethod := false
 	for k, v := range r.header {
@@ -391,15 +369,12 @@ endloop:
 	r.readFromCache(thisRouteCache, w, req)
 }
 
-func (r *Router) SetAddr(addr string) *Router {
+func (r *router) SetAddr(addr string) *router {
 	r.addr = addr
 	return r
 }
 
-func (r *Router) Run(addr ...string) error {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Run(addr ...string) error {
 	if len(addr) > 0 {
 		r.addr = addr[0]
 	}
@@ -412,10 +387,7 @@ func (r *Router) Run(addr ...string) error {
 	return svc.ListenAndServe()
 }
 
-func (r *Router) Debug(ctx context.Context) {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) Debug(ctx context.Context) {
 	svc := &http.Server{
 		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
@@ -428,10 +400,7 @@ func (r *Router) Debug(ctx context.Context) {
 
 }
 
-func (r *Router) RunUnsafeTLS(opt ...string) error {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) RunUnsafeTLS(opt ...string) error {
 	addr := ":443"
 	if len(opt) > 0 {
 		addr = opt[0]
@@ -460,7 +429,7 @@ func (r *Router) RunUnsafeTLS(opt ...string) error {
 	return nil
 }
 
-func (r *Router) RunQuic(certPemFile, keyPemFile string, addr ...string) error {
+func (r *router) RunQuic(certPemFile, keyPemFile string, addr ...string) error {
 	certPem, err := os.ReadFile(certPemFile)
 	if err != nil {
 		return err
@@ -493,10 +462,7 @@ func (r *Router) RunQuic(certPemFile, keyPemFile string, addr ...string) error {
 	return s.ListenAndServe()
 }
 
-func (r *Router) RunTLS(certFile, keyFile string) error {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) RunTLS(certFile, keyFile string) error {
 
 	if strings.Trim(keyFile, "") == "" {
 		keyFile = "server.key"
@@ -521,16 +487,15 @@ func (r *Router) RunTLS(certFile, keyFile string) error {
 	return svc.ListenAndServeTLS(certFile, keyFile)
 }
 
-func NewRouter(cacheSize ...int) *Router {
+func NewRouter(cacheSize ...int) *router {
 	var c int
 	if len(cacheSize) > 0 {
 		c = cacheSize[0]
 	}
 	initUrlCache(c)
-	return &Router{
+	return &router{
 		addr:           ":8080",
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
-		new:            true,
 		prefix:         []string{"/"},
 		urlRoute:       make(UrlRoute),
 		urlTpl:         make(UrlRoute),
@@ -556,7 +521,7 @@ func NewRouter(cacheSize ...int) *Router {
 	}
 }
 
-func (r *Router) cloneHeader() mstringstring {
+func (r *router) cloneHeader() mstringstring {
 	tempHeader := make(map[string]string)
 	for k, v := range r.header {
 		tempHeader[k] = v
@@ -564,7 +529,7 @@ func (r *Router) cloneHeader() mstringstring {
 	return tempHeader
 }
 
-func (r *Router) Prefix(prefixs ...string) *Router {
+func (r *router) Prefix(prefixs ...string) *router {
 	if len(prefixs) == 0 {
 		return r
 	}
@@ -574,7 +539,7 @@ func (r *Router) Prefix(prefixs ...string) *Router {
 }
 
 // 组路由合并到每个单路由里面
-func (r *Router) merge(group *RouteGroup, route *Route) *Route {
+func (r *router) merge(group *RouteGroup, route *Route) *Route {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
@@ -644,10 +609,7 @@ func (r *Router) merge(group *RouteGroup, route *Route) *Route {
 
 // 组路由添加到router里面,
 // 挂载到group之前， 全局的变量已经挂载到route 里面了， 所以不用再管组变量了
-func (r *Router) AddGroup(group *RouteGroup) *Router {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) AddGroup(group *RouteGroup) *router {
 	// 将路由的所有变量全部移交到route
 	if group.urlTpl == nil && group.urlRoute == nil {
 		return nil
@@ -703,7 +665,7 @@ func (r *Router) AddGroup(group *RouteGroup) *Router {
 	return r
 }
 
-func (r *Router) mergePrefix(newRoute *Route, url string) string {
+func (r *router) mergePrefix(newRoute *Route, url string) string {
 	newAddPrefix := append(r.prefix, newRoute.prefixs...)
 	prefixs := make([]string, 0)
 	if len(newRoute.delprefix) > 0 {
@@ -744,19 +706,13 @@ func debugPrint(url string, route *Route) {
 
 }
 
-func (r *Router) DebugRoute() {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) DebugRoute() {
 	for url, mr := range r.urlRoute {
 		debugPrint(url, mr)
 	}
 }
 
-func (r *Router) DebugAssignRoute(thisurl string) {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) DebugAssignRoute(thisurl string) {
 	for url, mr := range r.urlRoute {
 		if thisurl == url {
 			debugPrint(url, mr)
@@ -764,19 +720,13 @@ func (r *Router) DebugAssignRoute(thisurl string) {
 	}
 }
 
-func (r *Router) DebugTpl() {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) DebugTpl() {
 	for url, mr := range r.urlTpl {
 		debugPrint(url, mr)
 	}
 }
 
-func (r *Router) DebugIncludeTpl(pattern string) {
-	if !r.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (r *router) DebugIncludeTpl(pattern string) {
 	for url, mr := range r.urlTpl {
 		if strings.Contains(url, pattern) {
 			debugPrint(url, mr)

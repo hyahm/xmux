@@ -94,7 +94,7 @@ type SwaggerUIOpts struct {
 	Title string
 }
 
-func (r *Router) ShowSwagger(url, host string, schemes ...string) *RouteGroup {
+func (r *router) ShowSwagger(url, host string, schemes ...string) *RouteGroup {
 	jsonPath := "/swagger.json"
 	swagger := NewRouteGroup().BindResponse(nil).SetHeader("Access-Control-Allow-Origin", "*")
 	swagger.SetHeader("Content-Type", "sec-ch-ua;sec-ch-ua-mobile;sec-ch-ua-platform")
@@ -112,7 +112,7 @@ func (r *Router) ShowSwagger(url, host string, schemes ...string) *RouteGroup {
 	return swagger
 }
 
-func JsonFile(jsonPath, url, host string, router *Router, schemes ...string) http.HandlerFunc {
+func JsonFile(jsonPath, url, host string, router *router, schemes ...string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 拿到路由
 		ss := schemes

@@ -157,7 +157,7 @@ func (m *mockWriter) WriteString(s string) (n int, err error) {
 
 func (m *mockWriter) WriteHeader(int) {}
 
-func runRequest(B *testing.B, r *Router, method, path string) {
+func runRequest(B *testing.B, r *router, method, path string) {
 	// create fake request
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {

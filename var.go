@@ -73,7 +73,7 @@ func setParams(key string, params params) {
 
 // router.go 中添加
 // PageKeyFuncMap 返回 pagekey -> []funcName 的映射
-func (r *Router) PageKeyFuncMap() map[string][]string {
+func (r *router) PageKeyFuncMap() map[string][]string {
 	result := make(map[string][]string)
 	// 遍历所有精确匹配路由
 	for _, route := range r.urlRoute {

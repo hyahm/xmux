@@ -28,7 +28,7 @@ func (dog *Dog) GetContent(w http.ResponseWriter, r *http.Request) {
 	// GetInstance(r).Data.Mofa()
 }
 
-func (*Router) BindStruct() {
+func (*router) BindStruct() {
 	//
 }
 

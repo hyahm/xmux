@@ -38,7 +38,7 @@ const (
 	MIMEYAML              = "application/x-yaml"
 )
 
-func (r *Router) unmarsharJson(req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarsharJson(req *http.Request, fd *FlowData) (bool, error) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		return false, err
@@ -69,7 +69,7 @@ func (r *Router) unmarsharJson(req *http.Request, fd *FlowData) (bool, error) {
 	return false, err
 }
 
-func (r *Router) unmarsharYaml(req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarsharYaml(req *http.Request, fd *FlowData) (bool, error) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		return false, err
@@ -83,7 +83,7 @@ func (r *Router) unmarsharYaml(req *http.Request, fd *FlowData) (bool, error) {
 	return false, err
 }
 
-func (r *Router) unmarsharXml(req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarsharXml(req *http.Request, fd *FlowData) (bool, error) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		return false, err
@@ -97,7 +97,7 @@ func (r *Router) unmarsharXml(req *http.Request, fd *FlowData) (bool, error) {
 	return false, err
 }
 
-func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) bool {
+func (r *router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) bool {
 	// 数据绑定
 	defer req.Body.Close()
 	switch route.bindType {
@@ -166,7 +166,7 @@ func (r *Router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 	return true
 }
 
-func (r *Router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
 	cl := req.Header.Get("Content-Length")
 	length, err := strconv.Atoi(cl)
 	if err == nil && length > 0 {
