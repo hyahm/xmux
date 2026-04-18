@@ -1,3 +1,24 @@
+## 🤝 Contributing
+
+Contributions, issues and feature requests are welcome!
+Feel free to check [issues page](https://github.com/用户名/项目名/issues) and pull requests.
+
+### How to Contribute
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### 🏷 Labels
+- `good first issue` — Easy tasks for newcomers
+- `help wanted` — Contributions are highly appreciated
+- `bug` — Something isn't working
+- `enhancement` — New feature or request
+
+All contributors will be recognized in the project.
+
+
 # xmux  
 Native net/http based · Minimal · Flexible · Pluggable Router
 
