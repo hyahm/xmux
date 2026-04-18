@@ -228,11 +228,11 @@ func main() {
 
 ### 钩子函数
 ```go
-HanleFavicon和 HandleNotFound 是一个 handle  因为走到这里必定返回， 其他的其实全是模块
+HandleFavicon和 HandleNotFound 是一个 handle  因为走到这里必定返回， 其他的其实全是模块
 
 HandleOptions:          //这个是全局的options 请求处理， 前端预请求免除每次都要写个预请求的处理, 默认会返回ok， 也可以自定义
 HandleNotFound: 	    // 默认返回404 ， 也可以自定义
-HanleFavicon：            // 默认请求 favicon
+HandleFavicon：            // 默认请求 favicon
 
 Exit
 Enter                

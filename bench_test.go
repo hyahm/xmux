@@ -9,8 +9,6 @@ import (
 )
 
 func enter(w http.ResponseWriter, r *http.Request) (exit bool) {
-	// fmt.Println(GetConnents())
-
 	return false
 }
 func BenchmarkOneRoute(B *testing.B) {
@@ -57,31 +55,10 @@ func BenchmarkOneRouteJSON(B *testing.B) {
 	}{"ok"}
 	router.Get("/json", func(w http.ResponseWriter, r *http.Request) {
 		send, _ := json.Marshal(data)
-		// w.Write([]byte(`{"status": "ok}`))
 		w.Write(send)
 	})
 	runRequest(B, router, "GET", "/json")
 }
-
-// func BenchmarkOneRouteHTML(B *testing.B) {
-// 	router := NewRouter()
-// 	t := template.Must(template.NewRouter("index").Parse(`
-// 		<html><body><h1>{{.}}</h1></body></html>`))
-// 	router.SetHTMLTemplate(t)
-
-// 	router.Get("/html", func(w http.ResponseWriter, r *http.Request) {
-// 		c.HTML(http.StatusOK, "index", "hola")
-// 	})
-// 	runRequest(B, router, "GET", "/html")
-// }
-
-// func BenchmarkOneRouteSet(B *testing.B) {
-// 	router := NewRouter()
-// 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-// 		c.Set("key", "value")
-// 	})
-// 	runRequest(B, router, "GET", "/ping")
-// }
 
 func BenchmarkOneRouteString(B *testing.B) {
 	router := NewRouter()
@@ -112,7 +89,6 @@ func Benchmark404(B *testing.B) {
 	router.Any("/something", func(w http.ResponseWriter, r *http.Request) {})
 	router.HandleNotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	})
-	// router.NoRoute(func(w http.ResponseWriter, r *http.Request) {})
 	runRequest(B, router, "GET", "/ping")
 }
 
@@ -158,7 +134,6 @@ func (m *mockWriter) WriteString(s string) (n int, err error) {
 func (m *mockWriter) WriteHeader(int) {}
 
 func runRequest(B *testing.B, r *router, method, path string) {
-	// create fake request
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
 		panic(err)

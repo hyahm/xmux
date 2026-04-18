@@ -234,7 +234,7 @@ HandleOptions:        handleoptions(),
 //404 is returned by default. You can also customize it
 HandleNotFound: 	  handleNotFound(),  
 // /favicon
-HanleFavicon：        methodNotAllowed(),   
+HandleFavicon：        methodNotAllowed(),   
 HandleRecover :         //  recover handle
 
 

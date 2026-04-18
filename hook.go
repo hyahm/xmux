@@ -19,13 +19,10 @@ func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bo
 }
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Add("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusNotFound)
 }
 
 func handleAll(w http.ResponseWriter, r *http.Request) (exit bool) {
-	// w.Header().Add("Access-Control-Allow-Origin", "*")
-	// log.Printf("method: %s\turl: %s\n", r.Method, r.URL.Path)
 	return
 }
 

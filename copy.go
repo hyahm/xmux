@@ -5,25 +5,6 @@ import (
 	"time"
 )
 
-// func Clone(src interface{}) interface{} {
-// 	if src == nil {
-// 		return nil
-// 	}
-// 	g := reflect.TypeOf(src)
-// 	if g.Kind() != reflect.Ptr {
-// 		panic("bindReponse must be a pointer")
-// 	}
-// 	if g.Elem().Kind() != reflect.Struct {
-// 		panic("bindReponse must be a pointer struct")
-// 	}
-// 	gv := reflect.ValueOf(src).Elem()
-// 	v := reflect.New(g.Elem())
-// 	for i := 0; i < gv.NumField(); i++ {
-// 		v.Elem().Field(i).Set(gv.Field(i))
-// 	}
-// 	return v.Interface()
-// }
-
 // DeepCopy 真正的递归深拷贝，支持任意类型
 func DeepCopy(src interface{}) interface{} {
 	if src == nil {

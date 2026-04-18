@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"net/http"
+	"regexp"
 
 	"github.com/hyahm/xmux/helper"
 )
@@ -32,6 +33,7 @@ type Route struct {
 	query            []Parameter
 	denyPrefix       bool
 	middleware       onion
+	regex            *regexp.Regexp // 预编译的正则表达式
 }
 
 func (rt *Route) Use(m ...Middleware) {
@@ -268,12 +270,6 @@ func (rt *Route) SwaggerAddParameter(pt Parameter) *Route {
 		panic("can not support init")
 	}
 	rt.query = append(rt.query, pt)
-	// if rt.delmodule == nil {
-	// 	rt.delmodule = make(map[string]struct{})
-	// }
-	// for _, handle := range handles {
-	// 	rt.delmodule[GetFuncName(handle)] = struct{}{}
-	// }
-	// rt.module.delete(rt.delmodule)
+
 	return rt
 }

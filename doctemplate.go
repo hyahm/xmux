@@ -214,11 +214,3 @@ var tpl = `<!DOCTYPE html>
 
 </html>
 `
-
-// <script type="text/javascript" src="/-/js/left.js"></script>
-// <script type="text/javascript" src="/-/js/slimscroll.js"></script>
-// <script type="text/javascript" src="/-/js/click.js"></script>
-// <script type="text/javascript" src="http://download.hyahm.com/js/jquery.min.js"></script>
-// <script type="text/javascript" src="http://download.hyahm.com/js/jquery.slimscroll.min.js"></script>
-// <script type="text/javascript" src="http://download.hyahm.com/js/left-side-menu.js"></script>
-// <script type="text/javascript" src="http://download.hyahm.com/js/click.js"></script>

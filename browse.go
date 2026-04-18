@@ -539,10 +539,6 @@ func PopulateTemplateData(pattern, rootDir, currentDir string, limit, offset int
 
 		// 生成相对URL
 		item.URL = filepath.ToSlash(filepath.Join(pattern, info.Name()))
-		// if err == nil {
-		// 	// 转换为URL路径格式（使用斜杠）
-		// item.URL = filepath.ToSlash(relPath)
-		// }
 
 		// 初始化FileItem的方法
 		item.initHumanModTime()

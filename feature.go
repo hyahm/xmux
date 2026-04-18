@@ -13,8 +13,6 @@ import (
 // 基于module增加超时， 与全局的不一样，这里是会对传入的 module 有效
 func SetTimeout(d time.Duration, m ...func(http.ResponseWriter, *http.Request) bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// chain := make([]func(http.ResponseWriter, *http.Request) bool, 0)
-		// chain = append(chain, m...)
 		ctx, cancel := context.WithTimeout(context.Background(), d)
 		defer cancel()
 		// time.Sleep(time.Second * 4)

@@ -20,28 +20,6 @@ const header = `{'typ': 'JWT',
 'alg': 'HS256'
 }`
 
-// type Jwter interface {
-// 	// type Token struct {
-// 	// 	Id       int64  `json:"id"`
-// 	// 	NickName string `json:"nickname"`
-// 	// 	Roles    string `json:"roles"`
-// 	// 	UserName string `json:"username"`
-// 	// 	Avatar   string `json:"avatar"`
-// 	// 	Exp      int64  `json:"exp"`
-// 	// }
-// 	// func (tk *Token) Marshal() []byte {
-// 	// 	payload, err := json.Marshal(tk)
-// 	// 	if err != nil {
-// 	// 		return nil
-// 	// 	}
-// 	// func (tk *Token) Unmarshal(b []byte) error {
-// 	// 	return json.Unmarshal(b, tk)
-// 	// }
-
-// 	// Marshal() []byte
-// 	// Unmarshal([]byte) error
-// }
-
 // 创建jwt , 已废弃 请使用   github.com/dgrijalva/jwt-go
 func MakeJwt(salt string, tk interface{}) (string, error) {
 	payload, err := json.Marshal(tk)

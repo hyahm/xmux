@@ -21,16 +21,12 @@ type RouteGroup struct {
 	delPostModule    map[string]struct{}
 	responseData     interface{}
 	bindResponseData bool
-	// routes           []*Route            // 通过Get,Post,Delete 等添加的路由列表
-
-	// key, url ,  value 是正则匹配的参数名， 如果长度是0， 那就是完全匹配， 大于0就是正则匹配
-	// params      map[string][]string
-	delheader   map[string]struct{}
-	pagekeys    mstringstruct // 页面权限
-	prefix      []string
-	delprefix   map[string]struct{}
-	delPageKeys map[string]struct{}
-	denyPrefix  bool
+	delheader        map[string]struct{}
+	pagekeys         mstringstruct // 页面权限
+	prefix           []string
+	delprefix        map[string]struct{}
+	delPageKeys      map[string]struct{}
+	denyPrefix       bool
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -194,21 +190,6 @@ func (g *RouteGroup) DelPrefix(prefixs ...string) *RouteGroup {
 	return g
 }
 
-// 组里面也包括路由 后面的其实还是patter和handle,
-// 根据路径来判断是不是正则表达式， 分别挂载到组路由的tpl 和 route 中
-// 路径对应的 params 全部都在 pattern 中
-// 返回url 和 是否是正则表达式
-//
-//	func (g *RouteGroup) makeRoute(pattern string) (string, []string, bool) {
-//		// 格式路径
-//		if v, listvar := match(pattern); len(listvar) > 0 {
-//			return v, listvar, true
-//			// 判断是否重复
-//		} else {
-//			return pattern, nil, false
-//		}
-//	}
-//
 // 第三个参数返回的true 就是正则
 func makeRoute(pattern string) (string, []string, bool) {
 	// 格式路径
@@ -317,11 +298,6 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 	if group == nil || (group.urlTpl == nil && group.urlRoute == nil) {
 		return g
 	}
-
-	// g.prefix = append(g.prefix, group.prefix...)
-	// for k := range group.delprefix {
-	// 	g.delprefix[k] = struct{}{}
-	// }
 
 	// 缺少 请求头， 前缀， 模块， 响应数据 的合并
 	for url, route := range group.urlRoute {

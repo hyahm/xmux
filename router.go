@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"reflect"
-	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -52,7 +51,7 @@ type router struct {
 	Exit           func(time.Time, http.ResponseWriter, *http.Request)
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
-	HanleFavicon   func(http.ResponseWriter, *http.Request)
+	HandleFavicon  func(http.ResponseWriter, *http.Request)
 	DisableOption  bool                                     // 禁止全局option
 	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound func(http.ResponseWriter, *http.Request)
@@ -311,33 +310,27 @@ func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 		thisRoute = route
 	} else {
-		for reUrl := range r.urlTpl {
-			re := regexp.MustCompile(reUrl)
-			// req.URL.Path = strings.Trim(req.URL.Path, " ")
-			if re.MatchString(req.URL.Path) {
-				route, ok := r.urlTpl[reUrl]
-				if ok {
-					// 匹配请求
-					for _, v := range route.methods {
-						if v == req.Method {
-							matchMethod = true
-							break
-						}
+		for _, route := range r.urlTpl {
+			if route.regex != nil && route.regex.MatchString(req.URL.Path) {
+				// 匹配请求
+				for _, v := range route.methods {
+					if v == req.Method {
+						matchMethod = true
+						break
 					}
-					if !matchMethod && r.HandleNotFound != nil {
-						r.HandleNotFound(w, req)
-						return
-					}
-					ap := make(map[string]string)
-					vl := re.FindStringSubmatch(req.URL.Path)
-					for i, v := range route.params {
-						ap[v] = vl[i+1]
-					}
-					thisRoute = route
-					setParams(req.URL.Path, ap)
-					goto endloop
 				}
-
+				if !matchMethod && r.HandleNotFound != nil {
+					r.HandleNotFound(w, req)
+					return
+				}
+				ap := make(map[string]string)
+				vl := route.regex.FindStringSubmatch(req.URL.Path)
+				for i, v := range route.params {
+					ap[v] = vl[i+1]
+				}
+				thisRoute = route
+				setParams(req.URL.Path, ap)
+				goto endloop
 			}
 		}
 		if r.HandleNotFound != nil {
@@ -510,7 +503,7 @@ func NewRouter(cacheSize ...int) *router {
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 		},
-		HanleFavicon:   handleFavicon,
+		HandleFavicon:  handleFavicon,
 		HandleOptions:  handleOptions,
 		HandleAll:      handleAll,
 		HandleNotFound: handleNotFound,

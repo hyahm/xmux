@@ -137,20 +137,6 @@ func createTLS() {
 
 	privSer, _ := rsa.GenerateKey(rand.Reader, 2048)
 	createCertificateFile("server", server, privSer, ca, privCa)
-	// client := &x509.Certificate{
-	// 	SerialNumber: big.NewInt(sn),
-	// 	Subject: pkix.Name{
-	// 		Organization:       []string{"scs"},
-	// 		OrganizationalUnit: []string{"hyahm"},
-	// 	},
-	// 	NotBefore:    time.Now(),
-	// 	NotAfter:     time.Now().AddDate(10, 0, 0),
-	// 	SubjectKeyId: []byte{1, 2, 3, 4, 7},
-	// 	ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-	// 	KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-	// }
-	// privCli, _ := rsa.GenerateKey(rand.Reader, 1024)
-	// CreateCertificateFile("client", client, privCli, ca, privCa)
 
 }
 
