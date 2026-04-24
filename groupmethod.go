@@ -3,6 +3,7 @@ package xmux
 import (
 	"log"
 	"net/http"
+	"regexp"
 )
 
 // get this route
@@ -43,6 +44,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 	}
 	url, vars, ok := makeRoute(pattern)
 	if ok {
+		newRoute.regex = regexp.MustCompile(url)
 		if _, ok := gr.urlTpl[url]; ok {
 			m, exsit := SliceExist(gr.urlTpl[url].methods, newRoute.methods)
 			if exsit {

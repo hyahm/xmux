@@ -311,6 +311,7 @@ func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		thisRoute = route
 	} else {
 		for _, route := range r.urlTpl {
+			fmt.Println(route.regex)
 			if route.regex != nil && route.regex.MatchString(req.URL.Path) {
 				// 匹配请求
 				for _, v := range route.methods {

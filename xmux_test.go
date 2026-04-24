@@ -55,7 +55,7 @@ func adminGroup() *RouteGroup {
 func userGroup() *RouteGroup {
 	user := NewRouteGroup()
 	// user.Get("/group", home).Use(CombineHandlers())
-	user.Get("/group", home)
+	user.Get("/user/{asdfsdf}/{int:gg}", home)
 	user.AddGroup(adminGroup()).DelPostModule(postModule)
 	// GetInstance(r).GetConnectId()
 	return user
@@ -104,7 +104,7 @@ func TestMain(t *testing.T) {
 	// pf := router.PageKeyFuncMap()
 	// fmt.Println(pf)
 	// router.SetAddr(":8080")
-	// router.AddGroup(userGroup())
+	router.AddGroup(userGroup())
 	// router.DebugIncludeTpl("/bar")
 	log.Fatal(router.SetAddr(":19999").Run())
 }
