@@ -360,7 +360,7 @@ name
 - UnmarshalError                                                   : 内置解析解析错误的勾子
 - Exit (start time.Time, w http.ResponseWriter, r *http.Request)   :    // 匹配到的路由才会进来 
 - Enter( w http.ResponseWriter, r *http.Request) bool              :    // 匹配到的路由才会进来 
-- HandleAll(w http.ResponseWriter,r *http.Request)   bool            :     为了性能考虑新增   所有请求都能在这里获取到数据， 用来替代之前的 enter 和  exit 的请求记录
+- HandleAll(w http.ResponseWriter,r *http.Request)   bool            :     为了性能考虑新增   所有请求都能在这里获取到数据， 用来替代之前的 enter 的请求记录
 ```go
 
 func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
@@ -378,7 +378,6 @@ func enter( w http.ResponseWriter, r *http.Request) bool {
 
 func HandleAll( w http.ResponseWriter, r *http.Request) bool {
 	// 任何请求都会进入到这里，比如过滤ip， 域名
- // 匹配到的路由才会进来 
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
 ```

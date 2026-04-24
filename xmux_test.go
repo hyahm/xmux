@@ -62,6 +62,7 @@ func userGroup() *RouteGroup {
 }
 
 func Post(w http.ResponseWriter, r *http.Request) (exit bool) {
+	fmt.Println("post")
 	return false
 }
 
@@ -87,20 +88,20 @@ func TestMain(t *testing.T) {
 	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
 	InitResponseCache(cth)
 
-	router.SetHeader("Access-Control-Allow-Origin", "*")
+	router.SetHeader("Access-Control-Allow-Origin", "*").AddModule(Post)
 	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
 	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
 	router.SetHeader("Access-Control-Max-Age", "1728000").AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse)
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	// router.AddGroup(Pprof())
-	router.Enter = enter
+	// router.Enter = enter
+	router.ModuleContinue = true
 	// router.Prefix("/api")
 	// router.EnableConnect = true
 	router.Get("/test/{asdfsdf}/{int:gg}", home).AddPageKeys("admin")
 	// router.Get("/bar", home2).AddPageKeys("admin")
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
-	router.HandleAll = nil
 	// pf := router.PageKeyFuncMap()
 	// fmt.Println(pf)
 	// router.SetAddr(":8080")

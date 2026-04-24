@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -63,10 +62,7 @@ func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 
 	if status, ok := rc.status[key]; ok {
 		// 判断是否存在，存在， 如果正在更新，并且值是nil
-		value, gok := rc.store.Get(key)
-		if !gok {
-			fmt.Println("something wrong")
-		}
+		value, _ := rc.store.Get(key)
 		switch status {
 		case 0:
 			return value, CacheHit

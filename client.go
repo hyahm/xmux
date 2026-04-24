@@ -2,8 +2,6 @@ package xmux
 
 import (
 	"crypto/tls"
-	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/quic-go/quic-go/http3"
@@ -25,6 +23,6 @@ func QuicGetClient(url string) {
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Println(string(body))
+	// body, _ := io.ReadAll(resp.Body)
+	// fmt.Println(string(body))
 }

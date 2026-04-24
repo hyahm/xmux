@@ -354,12 +354,12 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 
 
 
-func enter( w http.ResponseWriter, r *http.Request) bool {
+func enter( w http.ResponseWriter, r *http.Request) (callbak bool) {
 	// matched url request will coming，
 	
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
 }
-func HandleAll( w http.ResponseWriter, r *http.Request) bool {
+func HandleAll( w http.ResponseWriter, r *http.Request) (callbak bool) {
 	// Any request will coming，You can filter IP domain names and other security or debugging operations
 	
 	fmt.Println(time.Since(start).Seconds(), r.URL.Path)
