@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -58,7 +57,6 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 	}
 
 	cb, cacheStatus := GetCacheIfUpdating(cacheKey)
-	fmt.Println(cacheStatus)
 	switch cacheStatus {
 	case CacheHit:
 		w.Write(cb)

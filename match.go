@@ -85,7 +85,7 @@ func match(path string) (string, []string) {
 		newpath = strings.Join(pathlist, "/")
 	} else {
 		// 正则匹配
-		newpath = "^" + strings.Join(pathlist, "/") + "$"
+		newpath = "^/" + strings.Join(pathlist, "/") + "$"
 	}
 	return newpath, varlist
 }
