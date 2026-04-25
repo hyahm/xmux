@@ -1,0 +1,22 @@
+[{
+    "url": "/test",
+    "methods": ["GET"],
+    "children": [{
+        "url": "/user",
+        "methods": ["GET"],
+
+        "children": [{
+            "url": "/test/admin/b",
+            "methods": ["GET"]
+        }
+         , {
+            "url": "/test/admin",
+            "methods": ["GET"]
+        }
+         , {
+            "url": "/test/aaa/c",
+            "methods": ["GET"]
+        }
+        ]
+    }]
+}]

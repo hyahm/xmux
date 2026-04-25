@@ -9,8 +9,7 @@ import (
 )
 
 // 服务启动前的操作， 所以里面的map 都是单线程不需要加锁的
-type RouteGroup struct {
-	new bool
+type routeGroup struct {
 	// 感觉还没到method， 应该先uri后缀的
 	urlRoute         UrlRoute // 完全匹配的路由对应的methodsroute
 	header           mstringstring
@@ -27,10 +26,11 @@ type RouteGroup struct {
 	delprefix        map[string]struct{}
 	delPageKeys      map[string]struct{}
 	denyPrefix       bool
+	routerTrees      RouterTree
 }
 
-func NewRouteGroup() *RouteGroup {
-	return &RouteGroup{
+func NewRouteGroup() *routeGroup {
+	group := &routeGroup{
 		header: make(map[string]string),
 		module: &module{
 			filter:    make(map[string]struct{}),
@@ -42,29 +42,29 @@ func NewRouteGroup() *RouteGroup {
 		},
 		prefix:        []string{"/"},
 		delprefix:     make(map[string]struct{}),
-		new:           true,
 		delmodule:     make(map[string]struct{}),
 		delPostModule: make(map[string]struct{}),
 		// params:    make(map[string][]string),
 		urlRoute: make(UrlRoute),
 		urlTpl:   make(UrlRoute),
+
 		// routes:    make([]*Route, 0),
 	}
+	if enableRouterTree {
+		group.routerTrees = RouterTree{
+			Metas: make([]Meta, 0),
+		}
+	}
+	return group
 }
 
-func (g *RouteGroup) BindResponse(response interface{}) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) BindResponse(response interface{}) *routeGroup {
 	g.responseData = response
 	g.bindResponseData = true
 	return g
 }
 
-func (g *RouteGroup) DebugAssignRoute(thisurl string) {
-	if !g.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (g *routeGroup) DebugAssignRoute(thisurl string) {
 	for url, mr := range g.urlRoute {
 		if thisurl == url {
 			debugPrint(url, mr)
@@ -73,10 +73,7 @@ func (g *RouteGroup) DebugAssignRoute(thisurl string) {
 	}
 }
 
-func (g *RouteGroup) DebugIncludeTpl(pattern string) {
-	if !g.new {
-		panic("must be use get router by NewRouter()")
-	}
+func (g *routeGroup) DebugIncludeTpl(pattern string) {
 	for url, mr := range g.urlTpl {
 		if strings.Contains(url, pattern) {
 			debugPrint(url, mr)
@@ -84,14 +81,11 @@ func (g *RouteGroup) DebugIncludeTpl(pattern string) {
 	}
 }
 
-func (g *RouteGroup) DenyPrefix() {
+func (g *routeGroup) DenyPrefix() {
 	g.denyPrefix = true
 }
 
-func (g *RouteGroup) AddPageKeys(pagekeys ...string) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) AddPageKeys(pagekeys ...string) *routeGroup {
 	// 接口的请求头
 	for _, v := range pagekeys {
 		if g.pagekeys == nil {
@@ -102,18 +96,12 @@ func (g *RouteGroup) AddPageKeys(pagekeys ...string) *RouteGroup {
 	return g
 }
 
-func (g *RouteGroup) SetHeader(k, v string) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) SetHeader(k, v string) *routeGroup {
 	g.header[k] = v
 	return g
 }
 
-func (g *RouteGroup) DelHeader(headers ...string) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) DelHeader(headers ...string) *routeGroup {
 	if g.delheader == nil {
 		g.delheader = make(map[string]struct{})
 	}
@@ -123,10 +111,7 @@ func (g *RouteGroup) DelHeader(headers ...string) *RouteGroup {
 	return g
 }
 
-func (g *RouteGroup) DelPageKeys(pagekeys ...string) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) DelPageKeys(pagekeys ...string) *routeGroup {
 	if g.delPageKeys == nil {
 		g.delPageKeys = make(map[string]struct{})
 	}
@@ -136,54 +121,36 @@ func (g *RouteGroup) DelPageKeys(pagekeys ...string) *RouteGroup {
 	return g
 }
 
-func (g *RouteGroup) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *routeGroup {
 	g.module.add(handles...)
 	return g
 }
 
-func (g *RouteGroup) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *routeGroup {
 	g.postModule.add(handles...)
 	return g
 }
 
-func (g *RouteGroup) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *routeGroup {
 	for _, handle := range handles {
 		g.delmodule[helper.GetFuncName(handle)] = struct{}{}
 	}
 	return g
 }
 
-func (g *RouteGroup) DelPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) DelPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *routeGroup {
 	for _, handle := range handles {
 		g.delPostModule[helper.GetFuncName(handle)] = struct{}{}
 	}
 	return g
 }
 
-func (g *RouteGroup) Prefix(prefixs ...string) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) Prefix(prefixs ...string) *routeGroup {
 	g.prefix = append(g.prefix, prefixs...)
 	return g
 }
 
-func (g *RouteGroup) DelPrefix(prefixs ...string) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) DelPrefix(prefixs ...string) *routeGroup {
 	for _, prefix := range prefixs {
 		g.delprefix[prefix] = struct{}{}
 	}
@@ -201,7 +168,7 @@ func makeRoute(pattern string) (string, []string, bool) {
 	}
 }
 
-func (g *RouteGroup) merge(group *RouteGroup, route *Route) *Route {
+func (g *routeGroup) merge(group *routeGroup, route *route) *route {
 
 	// 合并head
 	tempHeader := g.header.clone()
@@ -290,10 +257,7 @@ func (g *RouteGroup) merge(group *RouteGroup, route *Route) *Route {
 }
 
 // 组路由添加到组路由
-func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
-	if !g.new {
-		panic("must be init by NewRouteGroup()")
-	}
+func (g *routeGroup) AddGroup(group *routeGroup) *routeGroup {
 	// 将路由的所有变量全部移交到route
 	if group == nil || (group.urlTpl == nil && group.urlRoute == nil) {
 		return g
@@ -325,6 +289,8 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		}
 		g.urlTpl[url] = newRoute
 	}
-
+	if enableRouterTree {
+		g.routerTrees.AddChild(&group.routerTrees)
+	}
 	return g
 }

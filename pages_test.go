@@ -4,39 +4,39 @@ import (
 	"testing"
 )
 
-func G2() *RouteGroup {
+func G2() *routeGroup {
 	g2 := NewRouteGroup().AddPageKeys("g2")
 	g2.Get("/g2", nil)
 	return g2
 }
 
-func G3() *RouteGroup {
+func G3() *routeGroup {
 	g3 := NewRouteGroup()
 	g3.Get("/g3", nil).AddPageKeys("g3")
 	return g3
 }
 
-func G4() *RouteGroup {
+func G4() *routeGroup {
 	g4 := NewRouteGroup().DelPageKeys("g4")
 	g4.Get("/g4", nil)
 	g4.Get("/g4_1", nil).AddPageKeys("g4_1")
 	return g4
 }
 
-func G5() *RouteGroup {
+func G5() *routeGroup {
 	g5 := NewRouteGroup().AddPageKeys("g5")
 	g5.Get("/g5", nil).AddPageKeys("g2")
 	return g5
 }
 
-func G6() *RouteGroup {
+func G6() *routeGroup {
 	g6 := NewRouteGroup().AddPageKeys("g6")
 	g6.Get("/g6", nil).DelPageKeys("g3")
 	g6.Get("/g6_1", nil).DelPageKeys("g1")
 	return g6
 }
 
-func G1() *RouteGroup {
+func G1() *routeGroup {
 
 	g1 := NewRouteGroup().AddPageKeys("g1")
 	g1.AddGroup(G2())

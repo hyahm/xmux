@@ -94,7 +94,7 @@ type SwaggerUIOpts struct {
 	Title string
 }
 
-func (r *router) ShowSwagger(url, host string, schemes ...string) *RouteGroup {
+func (r *router) ShowSwagger(url, host string, schemes ...string) *routeGroup {
 	jsonPath := "/swagger.json"
 	swagger := NewRouteGroup().BindResponse(nil).SetHeader("Access-Control-Allow-Origin", "*")
 	swagger.SetHeader("Content-Type", "sec-ch-ua;sec-ch-ua-mobile;sec-ch-ua-platform")

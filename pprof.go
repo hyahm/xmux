@@ -4,7 +4,7 @@ import (
 	"net/http/pprof"
 )
 
-func Pprof() *RouteGroup {
+func Pprof() *routeGroup {
 	pp := NewRouteGroup().BindResponse(nil)
 
 	pp.Get("/debug/pprof/{all:name}", pprof.Index)

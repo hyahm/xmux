@@ -44,7 +44,7 @@ func adminhandle(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("mmmmmmmm admin")
 }
 
-func adminGroup() *RouteGroup {
+func adminGroup() *routeGroup {
 	admin := NewRouteGroup().Prefix("test")
 	admin.Get("/admin/{b}", home)
 	admin.Get("/admin", adminhandle)
@@ -52,7 +52,7 @@ func adminGroup() *RouteGroup {
 	return admin
 }
 
-func userGroup() *RouteGroup {
+func userGroup() *routeGroup {
 	user := NewRouteGroup()
 	// user.Get("/group", home).Use(CombineHandlers())
 	user.Get("/user/{asdfsdf}/{int:gg}", home)
@@ -80,7 +80,7 @@ type Response struct {
 
 func TestMain(t *testing.T) {
 	// pool := NewPool()
-	router := NewRouter()
+	router := NewRouter(WithMakeRouterTree())
 	// router.HandleAll = LimitFixedWindowCounterTemplate
 	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
 	// 	w.Write([]byte("服务器错误"))
@@ -107,6 +107,7 @@ func TestMain(t *testing.T) {
 	// router.SetAddr(":8080")
 	router.AddGroup(userGroup())
 	// router.DebugIncludeTpl("/bar")
+	fmt.Println(string(ToJson()))
 	log.Fatal(router.SetAddr(":19999").Run())
 }
 

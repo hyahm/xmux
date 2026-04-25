@@ -318,7 +318,7 @@ func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (r *router) setHeader(route *Route) map[string]string {
+func (r *router) setHeader(route *route) map[string]string {
 	// 设置请求头
 	headers := make(map[string]string)
 	for k, v := range r.header {
@@ -337,7 +337,7 @@ func (r *router) setHeader(route *Route) map[string]string {
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
-	var thisRoute *Route
+	var thisRoute *route
 	matchMethod := false
 	for k, v := range r.header {
 		w.Header().Set(k, v)
@@ -527,12 +527,36 @@ func (r *router) RunTLS(certFile, keyFile string) error {
 	return svc.ListenAndServeTLS(certFile, keyFile)
 }
 
-func NewRouter(cacheSize ...int) *router {
-	var c int
-	if len(cacheSize) > 0 {
-		c = cacheSize[0]
+type routeparam struct {
+	cacheSize      int
+	makeRouterTree bool
+}
+
+func WithCacheSize(size int) func(*routeparam) {
+	return func(rp *routeparam) {
+		rp.cacheSize = size
 	}
-	initUrlCache(c)
+}
+
+func WithMakeRouterTree() func(*routeparam) {
+	return func(rp *routeparam) {
+		rp.makeRouterTree = true
+	}
+}
+
+func NewRouter(params ...func(*routeparam)) *router {
+	rp := &routeparam{}
+	for _, opt := range params {
+		opt(rp)
+	}
+
+	if rp.cacheSize > 0 {
+		initUrlCache(rp.cacheSize)
+	}
+	if rp.makeRouterTree {
+		enableRouterTree = true
+		initRouterTree()
+	}
 	return &router{
 		addr:           ":8080",
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
@@ -555,7 +579,6 @@ func NewRouter(cacheSize ...int) *router {
 		HandleNotFound: handleNotFound,
 		HandleRecover:  func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500); w.Write([]byte("server panic")) },
 		// NotFoundRequireField: notFoundRequireField,
-
 		UnmarshalError: unmarshalError,
 	}
 }
@@ -578,7 +601,7 @@ func (r *router) Prefix(prefixs ...string) *router {
 }
 
 // 组路由合并到每个单路由里面
-func (r *router) merge(group *RouteGroup, route *Route) *Route {
+func (r *router) merge(group *routeGroup, route *route) *route {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
@@ -648,7 +671,7 @@ func (r *router) merge(group *RouteGroup, route *Route) *Route {
 
 // 组路由添加到router里面,
 // 挂载到group之前， 全局的变量已经挂载到route 里面了， 所以不用再管组变量了
-func (r *router) AddGroup(group *RouteGroup) *router {
+func (r *router) AddGroup(group *routeGroup) *router {
 	// 将路由的所有变量全部移交到route
 	if group.urlTpl == nil && group.urlRoute == nil {
 		return nil
@@ -700,11 +723,13 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		r.urlTpl[url] = newRoute
 
 	}
-
+	if enableRouterTree {
+		routerTrees.AddChild(&group.routerTrees)
+	}
 	return r
 }
 
-func (r *router) mergePrefix(newRoute *Route, url string) string {
+func (r *router) mergePrefix(newRoute *route, url string) string {
 	newAddPrefix := append(r.prefix, newRoute.prefixs...)
 	prefixs := make([]string, 0)
 	if len(newRoute.delprefix) > 0 {
@@ -731,7 +756,7 @@ func (r *router) mergePrefix(newRoute *Route, url string) string {
 
 // 将路由组的信息合并到路由
 
-func debugPrint(url string, route *Route) {
+func debugPrint(url string, route *route) {
 	names := make([]string, 0, len(route.module.funcOrder))
 	for _, v := range route.module.funcOrder {
 		names = append(names, helper.GetFuncName(v))

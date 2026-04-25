@@ -294,7 +294,7 @@ func getContentType(filename string) string {
 	}
 }
 
-func FileBrowse(pattern, rootDir string, listDir bool, download bool) *RouteGroup {
+func FileBrowse(pattern, rootDir string, listDir bool, download bool) *routeGroup {
 	g := NewRouteGroup().BindResponse(nil)
 
 	g.Get(pattern+"{all:filename}", func(w http.ResponseWriter, r *http.Request) {
