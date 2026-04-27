@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"testing"
-
-	"github.com/hyahm/gocache"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +45,7 @@ func adminhandle(w http.ResponseWriter, r *http.Request) {
 func adminGroup() *RouteGroup {
 	admin := NewRouteGroup().Prefix("test")
 	admin.Get("/admin/{b}", home)
-	admin.Get("/admin", adminhandle)
+	admin.Get("/admin", adminhandle).DelPageKeys("editor")
 	admin.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age}", grouphome)
 	return admin
 }
@@ -78,20 +76,39 @@ type Response struct {
 	Msg  string `json:"msg"`
 }
 
+func PermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
+
+	// Get the permission of the corresponding URI, which is set by addpagekeys and delpagekeys
+	pages := GetInstance(r).GetPageKeys()
+	// If the length is 0, it means that anyone can access it
+	if len(pages) == 0 {
+		return false
+	}
+	// Get the corresponding role of the user and judge that it is all in
+	roles := []string{"editor"} //Obtain the user's permission from the database or redis
+	for _, role := range roles {
+		if _, ok := pages[role]; ok {
+			//What matches here is the existence of this permission. Continue to follow for so long
+			return false
+		}
+	}
+	// no permission
+	w.Write([]byte("no permission"))
+	return true
+}
+
 func TestMain(t *testing.T) {
 	// pool := NewPool()
-	router := NewRouter()
+	router := NewRouter().AddModule(PermissionTemplate)
 	// router.HandleAll = LimitFixedWindowCounterTemplate
 	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
 	// 	w.Write([]byte("服务器错误"))
 	// }
-	cth := gocache.NewCache[string, []byte](100, gocache.LFU)
-	InitResponseCache(cth)
-
-	router.SetHeader("Access-Control-Allow-Origin", "*").AddModule(Post)
-	router.SetHeader("Content-Type", "application/x-www-form-urlencoded,application/json; charset=UTF-8")
-	router.SetHeader("Access-Control-Allow-Headers", "Content-Type")
-	router.SetHeader("Access-Control-Max-Age", "1728000").AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse)
+	// cth := gocache.NewCache[string, []byte](100, gocache.LFU)
+	// InitResponseCache(cth)
+	router.AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse).AddModule(Post)
+	initRouteTree()
+	router.AddModule(Cors).AddPageKeys("admin", "editor")
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	// router.AddGroup(Pprof())
@@ -99,7 +116,7 @@ func TestMain(t *testing.T) {
 	router.ModuleContinue = true
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test/{asdfsdf}/{int:gg}", home).AddPageKeys("admin")
+	router.Get("/test", home).DelPageKeys("editor")
 	// router.Get("/bar", home2).AddPageKeys("admin")
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	// pf := router.PageKeyFuncMap()
@@ -107,6 +124,7 @@ func TestMain(t *testing.T) {
 	// router.SetAddr(":8080")
 	router.AddGroup(userGroup())
 	// router.DebugIncludeTpl("/bar")
+	GetRouteTreeJson()
 	log.Fatal(router.SetAddr(":19999").Run())
 }
 

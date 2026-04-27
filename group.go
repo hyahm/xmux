@@ -27,6 +27,7 @@ type RouteGroup struct {
 	delprefix        map[string]struct{}
 	delPageKeys      map[string]struct{}
 	denyPrefix       bool
+	routeTree        []*Tree
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -46,8 +47,9 @@ func NewRouteGroup() *RouteGroup {
 		delmodule:     make(map[string]struct{}),
 		delPostModule: make(map[string]struct{}),
 		// params:    make(map[string][]string),
-		urlRoute: make(UrlRoute),
-		urlTpl:   make(UrlRoute),
+		urlRoute:  make(UrlRoute),
+		urlTpl:    make(UrlRoute),
+		routeTree: make([]*Tree, 0),
 		// routes:    make([]*Route, 0),
 	}
 }
@@ -325,6 +327,6 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		}
 		g.urlTpl[url] = newRoute
 	}
-
+	addGroupRouteTree(g.routeTree, group.routeTree)
 	return g
 }

@@ -117,6 +117,10 @@ func (rt *Route) DelPageKeys(pagekeys ...string) *Route {
 	for _, key := range pagekeys {
 		rt.delPageKeys[key] = struct{}{}
 	}
+	for _, v := range pagekeys {
+		delete(rt.pagekeys, v)
+	}
+
 	return rt
 }
 

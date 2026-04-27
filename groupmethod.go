@@ -71,6 +71,18 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		// 	// 如果不存在就创建一个 route
 
 	}
+	if gr.routeTree == nil {
+		gr.routeTree = make([]*Tree, 0)
+	}
+
+	gr.routeTree = append(gr.routeTree, &Tree{
+		Url:         url,
+		Modules:     newRoute.module.GetModules(),
+		PostModules: newRoute.postModule.GetModules(),
+		Method:      newRoute.methods,
+		Roles:       make([]string, 0),
+		Children:    make([]*Tree, 0),
+	})
 	return newRoute
 }
 

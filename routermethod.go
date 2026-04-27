@@ -1,6 +1,8 @@
 package xmux
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"path"
@@ -94,6 +96,20 @@ func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		r.urlRoute[url] = newRoute
 
 	}
+	fmt.Println(url)
+	routeTree = append(routeTree, &Tree{
+		Url:         url,
+		Modules:     newRoute.module.GetModules(),
+		PostModules: newRoute.postModule.GetModules(),
+		Method:      newRoute.methods,
+		Roles:       make([]string, 0),
+		Children:    make([]*Tree, 0),
+	})
+	b, err := json.MarshalIndent(routeTree, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(b))
 	return newRoute
 }
 

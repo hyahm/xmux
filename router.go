@@ -555,7 +555,6 @@ func NewRouter(cacheSize ...int) *router {
 		HandleNotFound: handleNotFound,
 		HandleRecover:  func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500); w.Write([]byte("server panic")) },
 		// NotFoundRequireField: notFoundRequireField,
-
 		UnmarshalError: unmarshalError,
 	}
 }
@@ -700,7 +699,7 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		r.urlTpl[url] = newRoute
 
 	}
-
+	addGroupRouteTree(routeTree, group.routeTree)
 	return r
 }
 
