@@ -1,7 +1,6 @@
 package xmux
 
 import (
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -9,21 +8,11 @@ import (
 )
 
 func unmarshalError(err error, w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println(err)
-	return false
-}
-
-func notFoundRequireField(key string, w http.ResponseWriter, r *http.Request) bool {
-	fmt.Println("required field not found", key)
 	return false
 }
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
-}
-
-func handleAll(w http.ResponseWriter, r *http.Request) (exit bool) {
-	return
 }
 
 func HandleConnect(w http.ResponseWriter, r *http.Request) {

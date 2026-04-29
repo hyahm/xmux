@@ -4,10 +4,12 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+
+	"github.com/google/uuid"
 )
 
 // get this route
-func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
+func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *route {
 
 	temphead := make(map[string]string)
 	for k, v := range gr.header {
@@ -18,11 +20,11 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 	for k := range gr.pagekeys {
 		tempPages[k] = struct{}{}
 	}
-	newRoute := &Route{
+	newRoute := &route{
 		handle:        http.HandlerFunc(handler),
 		pagekeys:      make(map[string]struct{}),
-		new:           true,
 		methods:       methods,
+		uuid:          uuid.New().String(),
 		module:        gr.module.cloneMudule(),
 		postModule:    gr.postModule.cloneMudule(),
 		header:        make(map[string]string),
@@ -71,29 +73,18 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		// 	// 如果不存在就创建一个 route
 
 	}
-	if gr.routeTree == nil {
-		gr.routeTree = make([]*Tree, 0)
-	}
 
-	gr.routeTree = append(gr.routeTree, &Tree{
-		Url:         url,
-		Modules:     newRoute.module.GetModules(),
-		PostModules: newRoute.postModule.GetModules(),
-		Method:      newRoute.methods,
-		Roles:       make([]string, 0),
-		Children:    make([]*Tree, 0),
-	})
 	return newRoute
 }
 
-func (gr *RouteGroup) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodPost)
 }
 
-func (gr *RouteGroup) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
@@ -103,63 +94,63 @@ func (gr *RouteGroup) Any(pattern string, handler func(http.ResponseWriter, *htt
 	)
 }
 
-func (gr *RouteGroup) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodGet)
 }
 
-func (gr *RouteGroup) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodConnect)
 }
 
-func (gr *RouteGroup) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
+func (gr *RouteGroup) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, methods...)
 }
 
-func (gr *RouteGroup) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodDelete)
 }
 
-func (gr *RouteGroup) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodHead)
 }
 
-func (gr *RouteGroup) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
-	if !gr.new {
-		panic("must be init by NewRouteGroup")
-	}
-	return gr.defindMethod(pattern, handler, http.MethodOptions)
-}
+// func (gr *RouteGroup) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
+// 	if !gr.new {
+// 		panic("must be init by NewRouteGroup")
+// 	}
+// 	return gr.defindMethod(pattern, handler, http.MethodOptions)
+// }
 
-func (gr *RouteGroup) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodPatch)
 }
 
-func (gr *RouteGroup) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}
 	return gr.defindMethod(pattern, handler, http.MethodTrace)
 }
 
-func (gr *RouteGroup) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (gr *RouteGroup) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	if !gr.new {
 		panic("must be init by NewRouteGroup")
 	}

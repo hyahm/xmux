@@ -3,7 +3,7 @@ package xmux
 import "net/http"
 
 // string 对应的是url
-type UrlRoute map[string]*Route
+type UrlRoute map[string]*route
 
 func (mr UrlRoute) SetHeader(key, value string) UrlRoute {
 	for _, route := range mr {
@@ -84,7 +84,7 @@ func (mr UrlRoute) DelHeader(key string) UrlRoute {
 }
 
 // get route by method. if not found will return nil
-func (mr UrlRoute) GetRoute(method string) *Route {
+func (mr UrlRoute) GetRoute(method string) *route {
 	if _, ok := mr[method]; ok {
 		return mr[method]
 	}

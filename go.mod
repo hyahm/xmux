@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/smartystreets/goconvey v1.8.1 // indirect

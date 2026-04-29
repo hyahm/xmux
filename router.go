@@ -72,6 +72,74 @@ type router struct {
 	SwaggerTitle       string
 	SwaggerDescription string
 	SwaggerVersion     string
+	menuTree           []*MenuTree // 记录添加路由的顺序， 方便组件路由树
+	uuid               string
+	nodes              []RouteItem
+}
+
+// 拿到所有路由
+func (r *router) Routes() []RouteItem {
+	routes := make([]RouteItem, 0)
+	for url, v := range r.urlRoute {
+		routes = append(routes, RouteItem{
+			URL:        url,
+			UUID:       v.uuid,
+			ParentUUID: v.parentUuid,
+			Method:     strings.Join(v.methods, ","),
+		})
+	}
+	for url, v := range r.urlTpl {
+		routes = append(routes, RouteItem{
+			URL:        url,
+			UUID:       v.uuid,
+			ParentUUID: v.parentUuid,
+			Method:     strings.Join(v.methods, ","),
+		})
+	}
+	for _, v := range routes {
+		fmt.Printf("%+v\n", v)
+	}
+	return routes
+}
+
+func (r *router) Menus() []RouteItem {
+	routes := make([]RouteItem, 0)
+	for url, v := range r.urlRoute {
+		ri := RouteItem{
+			URL:        url,
+			UUID:       v.uuid,
+			ParentUUID: v.parentUuid,
+			Method:     strings.Join(v.methods, ","),
+		}
+
+		if v.menuTree != nil {
+			ri.Name = v.menuTree.Name
+			ri.MenuType = v.menuTree.MenuType
+		}
+		routes = append(routes, ri)
+	}
+	for url, v := range r.urlTpl {
+		ri := RouteItem{
+			URL:        url,
+			UUID:       v.uuid,
+			ParentUUID: v.parentUuid,
+			Method:     strings.Join(v.methods, ","),
+		}
+
+		if v.menuTree != nil {
+			ri.Name = v.menuTree.Name
+			ri.MenuType = v.menuTree.MenuType
+		}
+		routes = append(routes, ri)
+	}
+	for _, v := range r.nodes {
+		routes = append(routes, RouteItem{
+			UUID:       v.UUID,
+			ParentUUID: v.ParentUUID,
+			Name:       v.Name,
+		})
+	}
+	return routes
 }
 
 // 设置超时的时候注意   只有 module和 postmodule 的函数块才会中断， enter, exit , handle 不受影响， 如果有耗时代码， 请放到 handle，
@@ -318,7 +386,7 @@ func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (r *router) setHeader(route *Route) map[string]string {
+func (r *router) setHeader(route *route) map[string]string {
 	// 设置请求头
 	headers := make(map[string]string)
 	for k, v := range r.header {
@@ -337,7 +405,7 @@ func (r *router) setHeader(route *Route) map[string]string {
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
 func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
-	var thisRoute *Route
+	var thisRoute *route
 	matchMethod := false
 	for k, v := range r.header {
 		w.Header().Set(k, v)
@@ -533,7 +601,7 @@ func NewRouter(cacheSize ...int) *router {
 		c = cacheSize[0]
 	}
 	initUrlCache(c)
-	return &router{
+	r := &router{
 		addr:           ":8080",
 		MaxPrintLength: 2 << 10, // 默认的form最大2k
 		prefix:         []string{"/"},
@@ -556,7 +624,10 @@ func NewRouter(cacheSize ...int) *router {
 		HandleRecover:  func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500); w.Write([]byte("server panic")) },
 		// NotFoundRequireField: notFoundRequireField,
 		UnmarshalError: unmarshalError,
+		menuTree:       make([]*MenuTree, 0),
+		uuid:           "root",
 	}
+	return r
 }
 
 func (r *router) cloneHeader() mstringstring {
@@ -577,7 +648,7 @@ func (r *router) Prefix(prefixs ...string) *router {
 }
 
 // 组路由合并到每个单路由里面
-func (r *router) merge(group *RouteGroup, route *Route) *Route {
+func (r *router) merge(group *RouteGroup, route *route) *route {
 	// 合并head
 	tempHeader := r.cloneHeader()
 	// 组的删除是为了删全局
@@ -652,6 +723,7 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 	if group.urlTpl == nil && group.urlRoute == nil {
 		return nil
 	}
+
 	// 将前缀删除
 	// prefixs := SubtractSliceMap(r.prefix, group.delprefix)
 	// prefix := append(prefixs, group.prefix...)
@@ -665,23 +737,17 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		}
 		newRoute := r.merge(group, route)
 		if !route.denyPrefix && len(r.prefix) > 0 {
-
 			url = r.mergePrefix(route, url)
 		}
-		if !r.DisableOption {
-			var exsitOption bool
-			for _, v := range newRoute.methods {
-				if v == http.MethodOptions {
-					exsitOption = true
-					break
-				}
-			}
-			if !exsitOption {
-				newRoute.methods = append(newRoute.methods, http.MethodOptions)
-			}
+
+		if group.parentUuid == "" {
+			group.nodes[0].ParentUUID = "root"
 		}
-		// 最终的prefix合并
+		if newRoute.parentUuid == "" {
+			newRoute.parentUuid = group.uuid
+		}
 		r.urlRoute[url] = newRoute
+
 	}
 	// 正则匹配的合并
 
@@ -696,14 +762,21 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		if len(r.prefix) > 0 {
 			url = r.mergePrefix(tpl, url)
 		}
+		if group.parentUuid == "" {
+			group.nodes[0].ParentUUID = "root"
+		}
+		if newRoute.parentUuid == "" {
+			newRoute.parentUuid = group.uuid
+		}
 		r.urlTpl[url] = newRoute
 
 	}
-	addGroupRouteTree(routeTree, group.routeTree)
+
+	r.nodes = append(r.nodes, group.nodes...)
 	return r
 }
 
-func (r *router) mergePrefix(newRoute *Route, url string) string {
+func (r *router) mergePrefix(newRoute *route, url string) string {
 	newAddPrefix := append(r.prefix, newRoute.prefixs...)
 	prefixs := make([]string, 0)
 	if len(newRoute.delprefix) > 0 {
@@ -730,7 +803,7 @@ func (r *router) mergePrefix(newRoute *Route, url string) string {
 
 // 将路由组的信息合并到路由
 
-func debugPrint(url string, route *Route) {
+func debugPrint(url string, route *route) {
 	names := make([]string, 0, len(route.module.funcOrder))
 	for _, v := range route.module.funcOrder {
 		names = append(names, helper.GetFuncName(v))

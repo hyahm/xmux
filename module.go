@@ -54,6 +54,16 @@ func (m *module) GetModules() []func(w http.ResponseWriter, r *http.Request) (ex
 	return m.funcOrder
 }
 
+func (m *module) GetModuleNames() []string {
+	// m.mu.RLock()
+	// defer m.mu.RUnlock()
+	names := make([]string, 0, len(m.funcOrder))
+	for _, v := range m.funcOrder {
+		names = append(names, helper.GetFuncName(v))
+	}
+	return names
+}
+
 // 添加模块
 func (m *module) add(mds ...func(w http.ResponseWriter, r *http.Request) (exit bool)) {
 	// m.mu.Lock()

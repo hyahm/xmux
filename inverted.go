@@ -221,7 +221,6 @@ func (ii *InvertedIndex[T, C]) mergeUniqueDesc(arrays [][]int64, pageSize int) [
 	for range pageSize {
 		// newOrderNode 的下标
 		max := 0
-		// fmt.Println(len(newOrderNode))
 		for i := range newOrderNode {
 			if newOrderNode[i].val > newOrderNode[max].val {
 				max = i

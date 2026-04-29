@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/hyahm/xmux/helper"
 )
 
@@ -27,11 +28,14 @@ type RouteGroup struct {
 	delprefix        map[string]struct{}
 	delPageKeys      map[string]struct{}
 	denyPrefix       bool
-	routeTree        []*Tree
+	menuTree         *MenuTree
+	uuid             string
+	parentUuid       string
+	nodes            []RouteItem
 }
 
 func NewRouteGroup() *RouteGroup {
-	return &RouteGroup{
+	g := &RouteGroup{
 		header: make(map[string]string),
 		module: &module{
 			filter:    make(map[string]struct{}),
@@ -46,12 +50,12 @@ func NewRouteGroup() *RouteGroup {
 		new:           true,
 		delmodule:     make(map[string]struct{}),
 		delPostModule: make(map[string]struct{}),
-		// params:    make(map[string][]string),
-		urlRoute:  make(UrlRoute),
-		urlTpl:    make(UrlRoute),
-		routeTree: make([]*Tree, 0),
-		// routes:    make([]*Route, 0),
+		urlRoute:      make(UrlRoute),
+		urlTpl:        make(UrlRoute),
+		uuid:          uuid.New().String(),
 	}
+	g.nodes = append(g.nodes, RouteItem{UUID: g.uuid})
+	return g
 }
 
 func (g *RouteGroup) BindResponse(response interface{}) *RouteGroup {
@@ -60,6 +64,15 @@ func (g *RouteGroup) BindResponse(response interface{}) *RouteGroup {
 	}
 	g.responseData = response
 	g.bindResponseData = true
+	return g
+}
+
+func (g *RouteGroup) SetMenu(mt *MenuTree) *RouteGroup {
+	if !g.new {
+		panic("must be init by NewRouteGroup()")
+	}
+	g.nodes[0].Name = mt.Name
+	g.menuTree = mt
 	return g
 }
 
@@ -203,7 +216,7 @@ func makeRoute(pattern string) (string, []string, bool) {
 	}
 }
 
-func (g *RouteGroup) merge(group *RouteGroup, route *Route) *Route {
+func (g *RouteGroup) merge(group *RouteGroup, route *route) *route {
 
 	// 合并head
 	tempHeader := g.header.clone()
@@ -312,7 +325,14 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		for key := range g.delprefix {
 			newRoute.delprefix[key] = struct{}{}
 		}
+		if newRoute.parentUuid == "" {
+			newRoute.parentUuid = group.uuid
+		}
+		if group.nodes[0].ParentUUID == "" {
+			group.nodes[0].ParentUUID = g.uuid
+		}
 		g.urlRoute[url] = newRoute
+		// 如果是末尾的 路由组 group.children == nil， 需要把他的树枝给挂上
 	}
 
 	for url, route := range group.urlTpl {
@@ -325,8 +345,18 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		for key := range g.delprefix {
 			newRoute.delprefix[key] = struct{}{}
 		}
+		if newRoute.parentUuid == "" {
+			newRoute.parentUuid = group.uuid
+		}
+		if group.nodes[0].ParentUUID == "" {
+			group.nodes[0].ParentUUID = g.uuid
+		}
 		g.urlTpl[url] = newRoute
+		// 如果是末尾的 路由组 group.children == nil， 需要把他的树枝给挂上
 	}
-	addGroupRouteTree(g.routeTree, group.routeTree)
+
+	g.nodes = append(g.nodes, group.nodes...)
+
+	// 如果是末尾的 路由组 group.children == nil， 需要把他的树枝给挂上
 	return g
 }

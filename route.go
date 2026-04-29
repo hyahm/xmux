@@ -8,15 +8,14 @@ import (
 )
 
 // 初始化临时使用， 最后会合并到 router
-type Route struct {
+type route struct {
 	// 组里面也包括路由 后面的其实还是patter和handle, 还没到handle， 这里的key是个method
-	new           bool
-	handle        http.Handler        // handle
-	module        *module             // 增加的 modules
-	postModule    *module             // 增加的 modules
-	delmodule     map[string]struct{} // 删除的modules
-	delPostModule map[string]struct{} // 删除的modules
-	// url              string              // 路由的path
+	handle           http.Handler        // handle
+	module           *module             // 增加的 modules
+	postModule       *module             // 增加的 modules
+	delmodule        map[string]struct{} // 删除的modules
+	delPostModule    map[string]struct{} // 删除的modules
+	uuid             string              // 路由的path
 	params           []string            // path正则名
 	pagekeys         map[string]struct{} // 页面权限
 	delPageKeys      map[string]struct{} // 删除的权限
@@ -34,24 +33,26 @@ type Route struct {
 	denyPrefix       bool
 	middleware       onion
 	regex            *regexp.Regexp // 预编译的正则表达式
+	menuTree         *MenuTree
+	parentUuid       string
 }
 
-func (rt *Route) Use(m ...Middleware) {
+func (rt *route) Use(m ...Middleware) {
 	rt.middleware.Use(m...)
 }
 
-func (rt *Route) Prefix(prefix string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) SetMenu(mt *MenuTree) *route {
+	mt.Uuid = rt.uuid
+	rt.menuTree = mt
+	return rt
+}
+
+func (rt *route) Prefix(prefix string) *route {
 	rt.prefixs = append(rt.prefixs, prefix)
 	return rt
 }
 
-func (rt *Route) DelPrefix(prefixs ...string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) DelPrefix(prefixs ...string) *route {
 	for _, prefix := range prefixs {
 		rt.delprefix[prefix] = struct{}{}
 	}
@@ -59,30 +60,21 @@ func (rt *Route) DelPrefix(prefixs ...string) *Route {
 	return rt
 }
 
-func (rt *Route) GetHeader() map[string]string {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) GetHeader() map[string]string {
 	return rt.header
 }
 
-func (rt *Route) DenyPrefix() {
+func (rt *route) DenyPrefix() {
 	rt.denyPrefix = true
 }
 
 // 这个路由的注释, 使用swagger加上这个字段才能显示执行的窗口
-func (rt *Route) SwaggerSummary(summary string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) SwaggerSummary(summary string) *route {
 	rt.summary = summary
 	return rt
 }
 
-func (rt *Route) BindResponse(response interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) BindResponse(response interface{}) *route {
 	rt.bindResponseData = true
 	rt.responseData = response
 	// if response == nil {
@@ -93,10 +85,7 @@ func (rt *Route) BindResponse(response interface{}) *Route {
 	return rt
 }
 
-func (rt *Route) AddPageKeys(pagekeys ...string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) AddPageKeys(pagekeys ...string) *route {
 	// 退出文档的组
 	for _, v := range pagekeys {
 		if rt.pagekeys == nil {
@@ -107,10 +96,7 @@ func (rt *Route) AddPageKeys(pagekeys ...string) *Route {
 	return rt
 }
 
-func (rt *Route) DelPageKeys(pagekeys ...string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) DelPageKeys(pagekeys ...string) *route {
 	if rt.delPageKeys == nil {
 		rt.delPageKeys = make(map[string]struct{})
 	}
@@ -125,39 +111,27 @@ func (rt *Route) DelPageKeys(pagekeys ...string) *Route {
 }
 
 // 数据绑定
-func (rt *Route) Bind(s interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) Bind(s interface{}) *route {
 	rt.dataSource = s
 	return rt
 }
 
 // json数据绑定
-func (rt *Route) BindJson(s interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) BindJson(s interface{}) *route {
 	// 接口补充说明
 	rt.dataSource = s
 	rt.bindType = jsonT
 	return rt
 }
 
-func (rt *Route) BindByContentType(s interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) BindByContentType(s interface{}) *route {
 	// 接口补充说明
 	rt.dataSource = s
 	rt.bindType = headT
 	return rt
 }
 
-func (rt *Route) BindForm(s interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) BindForm(s interface{}) *route {
 	// 接口补充说明
 	rt.dataSource = s
 	rt.bindType = formT
@@ -165,10 +139,7 @@ func (rt *Route) BindForm(s interface{}) *Route {
 }
 
 // yaml数据绑定
-func (rt *Route) BindYaml(s interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) BindYaml(s interface{}) *route {
 	// 接口补充说明
 	rt.dataSource = s
 	rt.bindType = yamlT
@@ -176,10 +147,7 @@ func (rt *Route) BindYaml(s interface{}) *Route {
 }
 
 // xml数据绑定
-func (rt *Route) BindXml(s interface{}) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) BindXml(s interface{}) *route {
 	// 接口补充说明
 
 	rt.dataSource = s
@@ -189,10 +157,7 @@ func (rt *Route) BindXml(s interface{}) *Route {
 
 // 组里面也包括路由 后面的其实还是patter和handle
 
-func (rt *Route) SetHeader(k, v string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) SetHeader(k, v string) *route {
 	if rt.header == nil {
 		rt.header = map[string]string{}
 	}
@@ -200,10 +165,7 @@ func (rt *Route) SetHeader(k, v string) *Route {
 	return rt
 }
 
-func (rt *Route) DelHeader(dh ...string) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) DelHeader(dh ...string) *route {
 	if rt.delheader == nil {
 		rt.delheader = make(map[string]struct{})
 	}
@@ -213,10 +175,7 @@ func (rt *Route) DelHeader(dh ...string) *Route {
 	return rt
 }
 
-func (rt *Route) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) AddModule(handles ...func(http.ResponseWriter, *http.Request) bool) *route {
 	if rt.module == nil {
 		rt.module = &module{
 			filter:    make(map[string]struct{}),
@@ -227,10 +186,7 @@ func (rt *Route) AddModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return rt
 }
 
-func (rt *Route) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) AddPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *route {
 	if rt.postModule == nil {
 		rt.postModule = &module{
 			filter:    make(map[string]struct{}),
@@ -241,10 +197,7 @@ func (rt *Route) AddPostModule(handles ...func(http.ResponseWriter, *http.Reques
 	return rt
 }
 
-func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) DelModule(handles ...func(http.ResponseWriter, *http.Request) bool) *route {
 	if rt.delmodule == nil {
 		rt.delmodule = make(map[string]struct{})
 	}
@@ -255,10 +208,7 @@ func (rt *Route) DelModule(handles ...func(http.ResponseWriter, *http.Request) b
 	return rt
 }
 
-func (rt *Route) DelPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) DelPostModule(handles ...func(http.ResponseWriter, *http.Request) bool) *route {
 	if rt.delPostModule == nil {
 		rt.delPostModule = make(map[string]struct{})
 	}
@@ -269,10 +219,7 @@ func (rt *Route) DelPostModule(handles ...func(http.ResponseWriter, *http.Reques
 	return rt
 }
 
-func (rt *Route) SwaggerAddParameter(pt Parameter) *Route {
-	if !rt.new {
-		panic("can not support init")
-	}
+func (rt *route) SwaggerAddParameter(pt Parameter) *route {
 	rt.query = append(rt.query, pt)
 
 	return rt

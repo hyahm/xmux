@@ -42,20 +42,42 @@ func adminhandle(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("mmmmmmmm admin")
 }
 
+func DictMe() *RouteGroup {
+	dict := NewRouteGroup().SetMenu(&MenuTree{
+		Name:     "我是菜单",
+		MenuType: "f",
+	})
+	dict.AddGroup(adminGroup())
+	return dict
+}
+
 func adminGroup() *RouteGroup {
-	admin := NewRouteGroup().Prefix("test")
-	admin.Get("/admin/{b}", home)
+	admin := NewRouteGroup().Prefix("test").SetMenu(&MenuTree{
+		Name:     "后台",
+		MenuType: "c",
+	})
+	admin.Get("/admin/b", home).SetMenu(&MenuTree{
+		Name:     "admin",
+		MenuType: "b",
+	})
+
 	admin.Get("/admin", adminhandle).DelPageKeys("editor")
 	admin.Get("/aaa/adf{re:([a-z]{1,4})sf([0-9]{0,10})sd: name, age}", grouphome)
 	return admin
 }
 
 func userGroup() *RouteGroup {
-	user := NewRouteGroup()
+	user := NewRouteGroup().SetMenu(&MenuTree{
+		Name:     "用户管理",
+		MenuType: "c",
+	})
 	// user.Get("/group", home).Use(CombineHandlers())
-	user.Get("/user/{asdfsdf}/{int:gg}", home)
-	user.AddGroup(adminGroup()).DelPostModule(postModule)
-	// GetInstance(r).GetConnectId()
+	user.Get("/user/{asdfsdf}/{int:gg}", home).SetMenu(&MenuTree{
+		Name:     "用户查看",
+		MenuType: "b",
+	})
+
+	user.AddGroup(DictMe()).DelPostModule(postModule)
 	return user
 }
 
@@ -65,8 +87,6 @@ func Post(w http.ResponseWriter, r *http.Request) (exit bool) {
 }
 
 func setkey(w http.ResponseWriter, r *http.Request) (exit bool) {
-	fmt.Println(r.URL.Path)
-	fmt.Println(GetInstance(r))
 	GetInstance(r).SetCacheKey(r.URL.Path)
 	return
 }
@@ -107,7 +127,6 @@ func TestMain(t *testing.T) {
 	// cth := gocache.NewCache[string, []byte](100, gocache.LFU)
 	// InitResponseCache(cth)
 	router.AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse).AddModule(Post)
-	initRouteTree()
 	router.AddModule(Cors).AddPageKeys("admin", "editor")
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
@@ -123,8 +142,8 @@ func TestMain(t *testing.T) {
 	// fmt.Println(pf)
 	// router.SetAddr(":8080")
 	router.AddGroup(userGroup())
-	// router.DebugIncludeTpl("/bar")
-	GetRouteTreeJson()
+	b, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
+	fmt.Println(string(b))
 	log.Fatal(router.SetAddr(":19999").Run())
 }
 

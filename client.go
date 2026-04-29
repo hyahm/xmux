@@ -2,13 +2,14 @@ package xmux
 
 import (
 	"crypto/tls"
+	"io"
 	"net/http"
 
 	"github.com/quic-go/quic-go/http3"
 )
 
 // 只是参考， 没有做什么特别的
-func QuicGetClient(url string) {
+func QuicGetClient(url string) ([]byte, error) {
 	client := http.Client{
 		Transport: &http3.Transport{
 			TLSClientConfig: &tls.Config{
@@ -23,6 +24,5 @@ func QuicGetClient(url string) {
 	}
 	defer resp.Body.Close()
 
-	// body, _ := io.ReadAll(resp.Body)
-	// fmt.Println(string(body))
+	return io.ReadAll(resp.Body)
 }

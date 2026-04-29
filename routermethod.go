@@ -1,28 +1,28 @@
 package xmux
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"path"
 	"regexp"
+
+	"github.com/google/uuid"
 )
 
 // get this route
-func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method ...string) *Route {
-	if !r.DisableOption {
-		var exsitOption bool
-		for _, v := range method {
-			if v == http.MethodOptions {
-				exsitOption = true
-				break
-			}
-		}
-		if !exsitOption {
-			method = append(method, http.MethodOptions)
-		}
-	}
+func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method ...string) *route {
+	// if !r.DisableOption {
+	// 	var exsitOption bool
+	// 	for _, v := range method {
+	// 		if v == http.MethodOptions {
+	// 			exsitOption = true
+	// 			break
+	// 		}
+	// 	}
+	// 	if !exsitOption {
+	// 		method = append(method, http.MethodOptions)
+	// 	}
+	// }
 	temphead := make(map[string]string)
 	for k, v := range r.header {
 		temphead[k] = v
@@ -37,21 +37,22 @@ func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	// allurl := path.Join(subprefix...)
 	// allurl = PrettySlash(allurl + route.url)
 	// url, vars, ok := makeRoute(allurl)
-	newRoute := &Route{
+	newRoute := &route{
 		handle:        http.HandlerFunc(handler),
 		pagekeys:      tempPages,
 		module:        r.module.cloneMudule(),
 		postModule:    r.postModule.cloneMudule(),
-		new:           true,
 		responseData:  r.responseData,
 		methods:       append(make([]string, 0), method...),
 		header:        temphead,
+		uuid:          uuid.New().String(),
 		delheader:     make(map[string]struct{}),
 		delmodule:     make(map[string]struct{}),
 		delPostModule: make(map[string]struct{}),
 		delPageKeys:   make(map[string]struct{}),
 		prefixs:       make([]string, 0),
 		delprefix:     map[string]struct{}{},
+		parentUuid:    "root",
 		middleware: onion{
 			mws: make([]Middleware, 0),
 		},
@@ -96,68 +97,54 @@ func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 		r.urlRoute[url] = newRoute
 
 	}
-	fmt.Println(url)
-	routeTree = append(routeTree, &Tree{
-		Url:         url,
-		Modules:     newRoute.module.GetModules(),
-		PostModules: newRoute.postModule.GetModules(),
-		Method:      newRoute.methods,
-		Roles:       make([]string, 0),
-		Children:    make([]*Tree, 0),
-	})
-	b, err := json.MarshalIndent(routeTree, "", "  ")
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(string(b))
 	return newRoute
 }
 
-func (r *router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Post(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodPost)
 }
 
-func (r *router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Any(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler,
 		http.MethodDelete, http.MethodGet, http.MethodHead,
 		http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace,
 	)
 }
 
-func (r *router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Get(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 
 	return r.defindMethod(pattern, handler, http.MethodGet)
 }
 
-func (r *router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Connect(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 
 	return r.defindMethod(pattern, handler, http.MethodConnect)
 }
 
-func (r *router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *Route {
+func (r *router) Request(pattern string, handler func(http.ResponseWriter, *http.Request), methods ...string) *route {
 	return r.defindMethod(pattern, handler, methods...)
 }
 
-func (r *router) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Delete(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodDelete)
 }
 
-func (r *router) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Head(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodHead)
 }
 
-func (r *router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Options(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodOptions)
 }
 
-func (r *router) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Patch(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodPatch)
 }
 
-func (r *router) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Trace(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodTrace)
 }
 
-func (r *router) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *Route {
+func (r *router) Put(pattern string, handler func(http.ResponseWriter, *http.Request)) *route {
 	return r.defindMethod(pattern, handler, http.MethodPut)
 }
