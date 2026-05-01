@@ -125,7 +125,7 @@ func testPattern(t *testing.T, test routerTest) {
 	// r.makeRoute(test.pattern)
 	patternMatched := false
 
-	url, _, ok := makeRoute(test.pattern)
+	url, _, ok := parsePath(test.pattern)
 	if !ok {
 		patternMatched = url == test.url
 	} else {

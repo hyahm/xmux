@@ -41,6 +41,8 @@ type rt struct {
 	responseData interface{}
 	middleware   onion
 	funcName     string
+	url          string
+	methods      []string
 	// instance   map[*http.Request]interface{} // 解析到这里
 }
 
@@ -74,24 +76,24 @@ type router struct {
 	SwaggerVersion     string
 	menuTree           []*MenuTree // 记录添加路由的顺序， 方便组件路由树
 	uuid               string
-	nodes              []RouteItem
+	nodes              []MenuTree
 }
 
 // 拿到所有路由
-func (r *router) Routes() []RouteItem {
-	routes := make([]RouteItem, 0)
+func (r *router) Routes() []MenuTree {
+	routes := make([]MenuTree, 0)
 	for url, v := range r.urlRoute {
-		routes = append(routes, RouteItem{
+		routes = append(routes, MenuTree{
 			URL:        url,
-			UUID:       v.uuid,
+			Uuid:       v.uuid,
 			ParentUUID: v.parentUuid,
 			Method:     strings.Join(v.methods, ","),
 		})
 	}
 	for url, v := range r.urlTpl {
-		routes = append(routes, RouteItem{
+		routes = append(routes, MenuTree{
 			URL:        url,
-			UUID:       v.uuid,
+			Uuid:       v.uuid,
 			ParentUUID: v.parentUuid,
 			Method:     strings.Join(v.methods, ","),
 		})
@@ -102,41 +104,49 @@ func (r *router) Routes() []RouteItem {
 	return routes
 }
 
-func (r *router) Menus() []RouteItem {
-	routes := make([]RouteItem, 0)
+func (r *router) Menus() []MenuTree {
+	routes := make([]MenuTree, 0)
 	for url, v := range r.urlRoute {
-		ri := RouteItem{
+		roles := make([]string, 0, len(v.pagekeys))
+		for k := range v.pagekeys {
+			roles = append(roles, k)
+		}
+		ri := MenuTree{
 			URL:        url,
-			UUID:       v.uuid,
+			Uuid:       v.uuid,
 			ParentUUID: v.parentUuid,
 			Method:     strings.Join(v.methods, ","),
+			Roles:      roles,
 		}
 
 		if v.menuTree != nil {
-			ri.Name = v.menuTree.Name
-			ri.MenuType = v.menuTree.MenuType
+			ri.Meta = v.menuTree.Meta
 		}
 		routes = append(routes, ri)
 	}
 	for url, v := range r.urlTpl {
-		ri := RouteItem{
+		roles := make([]string, 0, len(v.pagekeys))
+		for k := range v.pagekeys {
+			roles = append(roles, k)
+		}
+		ri := MenuTree{
 			URL:        url,
-			UUID:       v.uuid,
+			Uuid:       v.uuid,
 			ParentUUID: v.parentUuid,
 			Method:     strings.Join(v.methods, ","),
+			Roles:      roles,
 		}
 
 		if v.menuTree != nil {
-			ri.Name = v.menuTree.Name
-			ri.MenuType = v.menuTree.MenuType
+			ri.Meta = v.menuTree.Meta
 		}
 		routes = append(routes, ri)
 	}
 	for _, v := range r.nodes {
-		routes = append(routes, RouteItem{
-			UUID:       v.UUID,
+		routes = append(routes, MenuTree{
+			Uuid:       v.Uuid,
 			ParentUUID: v.ParentUUID,
-			Name:       v.Name,
+			Meta:       v.Meta,
 		})
 	}
 	return routes
@@ -183,10 +193,7 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
-	if !r.DisableOption && req.Method == http.MethodOptions && r.HandleOptions != nil {
-		r.HandleOptions(w, req)
-		return
-	}
+
 	// 进入前的钩子函数
 	if r.Enter != nil {
 		if r.ModuleContinue {
@@ -200,7 +207,6 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		}
 
 	}
-
 	ci := time.Now().UnixNano()
 	fd := &FlowData{
 		ctx: make(map[string]interface{}),
@@ -209,6 +215,7 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		StatusCode: 200,
 		module:     route.module,
 		funcName:   route.funcName,
+		url:        route.url,
 	}
 	// add ctx data
 	ctx := context.WithValue(req.Context(), xmux_context, fd)
@@ -304,6 +311,7 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		}
 		return
 	}
+
 	// 请求模块
 	for _, module := range route.module {
 		if r.ModuleContinue {
@@ -381,7 +389,7 @@ func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 		r.readFromCache(route, w, req)
 	} else {
 		// 寻址
-		r.serveHTTP(w, req)
+		r.findRoute(w, req)
 	}
 
 }
@@ -404,13 +412,14 @@ func (r *router) setHeader(route *route) map[string]string {
 // var re = regexp.MustCompile(`https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]`)
 
 // url 是匹配的路径， 可能不是规则的路径, 寻址的时候还是要加锁
-func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 	var thisRoute *route
 	matchMethod := false
 	for k, v := range r.header {
 		w.Header().Set(k, v)
 	}
-	if route, ok := r.urlRoute[req.URL.Path]; ok {
+	url := req.URL.Path
+	if route, ok := r.urlRoute[url]; ok {
 
 		for _, v := range route.methods {
 			if v == req.Method {
@@ -425,8 +434,10 @@ func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 		thisRoute = route
 	} else {
-		for _, route := range r.urlTpl {
-			if route.regex != nil && route.regex.MatchString(req.URL.Path) {
+		for subUrl, route := range r.urlTpl {
+
+			if route.regex != nil && route.regex.MatchString(url) {
+
 				// 匹配请求
 				for _, v := range route.methods {
 					if v == req.Method {
@@ -439,12 +450,13 @@ func (r *router) serveHTTP(w http.ResponseWriter, req *http.Request) {
 					return
 				}
 				ap := make(map[string]string)
-				vl := route.regex.FindStringSubmatch(req.URL.Path)
+				vl := route.regex.FindStringSubmatch(url)
 				for i, v := range route.params {
 					ap[v] = vl[i+1]
 				}
 				thisRoute = route
-				setParams(req.URL.Path, ap)
+				url = subUrl
+				setParams(url, ap)
 				goto endloop
 			}
 		}
@@ -471,6 +483,8 @@ endloop:
 		responseData: thisRoute.responseData,
 		middleware:   thisRoute.middleware,
 		funcName:     name[n+1:],
+		url:          url,
+		methods:      thisRoute.methods,
 	}
 	// 设置缓存
 	setUrlCache(req.URL.Path+req.Method, thisRouteCache)

@@ -35,6 +35,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		prefixs:       gr.prefix,
 		delprefix:     gr.delprefix,
 		denyPrefix:    gr.denyPrefix,
+		menuTree:      &MenuTree{},
 	}
 	if gr.module != nil {
 		newRoute.module = gr.module.cloneMudule()
@@ -44,7 +45,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
 		}
 	}
-	url, vars, ok := makeRoute(pattern)
+	url, vars, ok := parsePath(pattern)
 	if ok {
 		newRoute.regex = regexp.MustCompile(url)
 		if _, ok := gr.urlTpl[url]; ok {

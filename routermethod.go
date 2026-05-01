@@ -11,10 +11,6 @@ import (
 
 // get this route
 func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, *http.Request), method ...string) *route {
-	// if !r.DisableOption {
-	// 	var exsitOption bool
-	// 	for _, v := range method {
-	// 		if v == http.MethodOptions {
 	// 			exsitOption = true
 	// 			break
 	// 		}
@@ -60,7 +56,7 @@ func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	// prefix := path.Join(r.prefix...)
 	// prefix = path.Join(prefix, pattern)
 	// 判断是否是正则
-	url, vars, ok := makeRoute(pattern)
+	url, vars, ok := parsePath(pattern)
 	newRoute.params = vars
 	if ok {
 		// 预编译正则

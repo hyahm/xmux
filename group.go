@@ -31,7 +31,7 @@ type RouteGroup struct {
 	menuTree         *MenuTree
 	uuid             string
 	parentUuid       string
-	nodes            []RouteItem
+	nodes            []MenuTree
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -53,8 +53,9 @@ func NewRouteGroup() *RouteGroup {
 		urlRoute:      make(UrlRoute),
 		urlTpl:        make(UrlRoute),
 		uuid:          uuid.New().String(),
+		menuTree:      &MenuTree{},
 	}
-	g.nodes = append(g.nodes, RouteItem{UUID: g.uuid})
+	g.nodes = append(g.nodes, MenuTree{Uuid: g.uuid})
 	return g
 }
 
@@ -67,12 +68,11 @@ func (g *RouteGroup) BindResponse(response interface{}) *RouteGroup {
 	return g
 }
 
-func (g *RouteGroup) SetMenu(mt *MenuTree) *RouteGroup {
+func (g *RouteGroup) SetMeta(mt Meta) *RouteGroup {
 	if !g.new {
 		panic("must be init by NewRouteGroup()")
 	}
-	g.nodes[0].Name = mt.Name
-	g.menuTree = mt
+	g.menuTree.Meta = mt
 	return g
 }
 
@@ -206,7 +206,7 @@ func (g *RouteGroup) DelPrefix(prefixs ...string) *RouteGroup {
 }
 
 // 第三个参数返回的true 就是正则
-func makeRoute(pattern string) (string, []string, bool) {
+func parsePath(pattern string) (string, []string, bool) {
 	// 格式路径
 	if v, listvar := match(pattern); len(listvar) > 0 {
 		return v, listvar, true

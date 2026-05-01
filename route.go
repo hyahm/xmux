@@ -35,15 +35,15 @@ type route struct {
 	regex            *regexp.Regexp // 预编译的正则表达式
 	menuTree         *MenuTree
 	parentUuid       string
+	url              string
 }
 
 func (rt *route) Use(m ...Middleware) {
 	rt.middleware.Use(m...)
 }
 
-func (rt *route) SetMenu(mt *MenuTree) *route {
-	mt.Uuid = rt.uuid
-	rt.menuTree = mt
+func (rt *route) SetMeta(mt Meta) *route {
+	rt.menuTree.Meta = mt
 	return rt
 }
 

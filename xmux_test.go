@@ -10,14 +10,15 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	name := Var(r)["asdfsdf"]
+	fmt.Println("66666666")
+	name := Var(r)["aaa"]
 	// time.Sleep(time.Millisecond * 30)
 	m1 := map[string]string{
 		"message": name,
 	}
 	b, _ := json.Marshal(m1)
 	GetInstance(r).GetFuncName()
-	SetCache(GetInstance(r).GetCacheKey(), b)
+	fmt.Println(GetInstance(r).GetUrl())
 	w.Write(b)
 	// GetInstance(r).Response.(*Response).Msg = time.Now().String()
 
@@ -43,7 +44,7 @@ func adminhandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func DictMe() *RouteGroup {
-	dict := NewRouteGroup().SetMenu(&MenuTree{
+	dict := NewRouteGroup().SetMeta(Meta{
 		Name:     "我是菜单",
 		MenuType: "f",
 	})
@@ -52,11 +53,11 @@ func DictMe() *RouteGroup {
 }
 
 func adminGroup() *RouteGroup {
-	admin := NewRouteGroup().Prefix("test").SetMenu(&MenuTree{
+	admin := NewRouteGroup().Prefix("test").SetMeta(Meta{
 		Name:     "后台",
 		MenuType: "c",
 	})
-	admin.Get("/admin/b", home).SetMenu(&MenuTree{
+	admin.Get("/admin/b", home).SetMeta(Meta{
 		Name:     "admin",
 		MenuType: "b",
 	})
@@ -67,12 +68,12 @@ func adminGroup() *RouteGroup {
 }
 
 func userGroup() *RouteGroup {
-	user := NewRouteGroup().SetMenu(&MenuTree{
+	user := NewRouteGroup().SetMeta(Meta{
 		Name:     "用户管理",
 		MenuType: "c",
 	})
 	// user.Get("/group", home).Use(CombineHandlers())
-	user.Get("/user/{asdfsdf}/{int:gg}", home).SetMenu(&MenuTree{
+	user.Get("/user/{asdfsdf}/{int:gg}", home).SetMeta(Meta{
 		Name:     "用户查看",
 		MenuType: "b",
 	})
@@ -84,11 +85,6 @@ func userGroup() *RouteGroup {
 func Post(w http.ResponseWriter, r *http.Request) (exit bool) {
 	fmt.Println("post")
 	return false
-}
-
-func setkey(w http.ResponseWriter, r *http.Request) (exit bool) {
-	GetInstance(r).SetCacheKey(r.URL.Path)
-	return
 }
 
 type Response struct {
@@ -126,24 +122,24 @@ func TestMain(t *testing.T) {
 	// }
 	// cth := gocache.NewCache[string, []byte](100, gocache.LFU)
 	// InitResponseCache(cth)
-	router.AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse).AddModule(Post)
-	router.AddModule(Cors).AddPageKeys("admin", "editor")
+	// router.AddModule(setkey, DefaultCacheTemplateCacheWithoutResponse).AddModule(Post)
+	router.AddPageKeys("admin", "editor")
 	// router.SetHeader("Access-Control-Allow-Origin", "*").
 	// 	SetHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 	// router.AddGroup(Pprof())
 	// router.Enter = enter
-	router.ModuleContinue = true
+	// router.ModuleContinue = true
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test", home).DelPageKeys("editor")
+	router.Get("/test/{aaaa}", home)
 	// router.Get("/bar", home2).AddPageKeys("admin")
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	// pf := router.PageKeyFuncMap()
 	// fmt.Println(pf)
 	// router.SetAddr(":8080")
 	router.AddGroup(userGroup())
-	b, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
-	fmt.Println(string(b))
+	// b, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
+	// fmt.Println(string(b))
 	log.Fatal(router.SetAddr(":19999").Run())
 }
 

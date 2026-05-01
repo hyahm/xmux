@@ -19,6 +19,7 @@ type FlowData struct {
 	Body       []byte
 	cacheKey   string
 	module     []func(w http.ResponseWriter, r *http.Request) bool
+	url        string
 }
 
 func GetInstance(r *http.Request) *FlowData {
@@ -44,6 +45,10 @@ func (data *FlowData) GetConnectId() int64 {
 
 func (data *FlowData) GetFuncName() string {
 	return data.funcName
+}
+
+func (data *FlowData) GetUrl() string {
+	return data.url
 }
 
 func (data *FlowData) GetModules() []func(http.ResponseWriter, *http.Request) bool {
