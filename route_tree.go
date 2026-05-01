@@ -2,7 +2,6 @@ package xmux
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/hyahm/xmux/auth"
 )
@@ -14,11 +13,11 @@ type Meta struct {
 	// Method   string `json:"method"`
 	// UUID       string `json:"uuid"`
 	// ParentUUID string `json:"parent_uuid"`
-	Icon string `json:"icon"`
+	// Icon string `json:"icon"`
 }
 
 type MenuTree struct {
-	// 节点id，唯一标识， 根据 url. method, role, name 生成
+	// 节点id，唯一标识， 根据 url. method, MenuType, name 生成
 	MenuId     string      `json:"menu_id"`
 	Uuid       string      `json:"uuid"`
 	URL        string      `json:"url"`
@@ -29,10 +28,38 @@ type MenuTree struct {
 	Children   []*MenuTree `json:"children"`
 }
 
-func (m *MenuTree) MakeMenuId() {
-	m.MenuId = auth.Md5([]byte(fmt.Sprintf("%s-%s-%s-%s", m.URL, m.Method, strings.Join(m.Roles, ","), m.Meta.Name)))
+func (m *MenuTree) makeMenuId() {
+	m.MenuId = auth.Md5([]byte(fmt.Sprintf("%s-%s-%s-%s", m.URL, m.Method, m.Meta.MenuType, m.Meta.Name)))
 }
 
+// 扁平化菜单树， 方便权限校验， 方便插入数据库
+func FlattenMenuTree(tree []*MenuTree) []*MenuTree {
+	var list []*MenuTree
+
+	var dfs func(items []*MenuTree)
+	dfs = func(items []*MenuTree) {
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+
+			// 重点：创建一个副本，清空 children！！
+			flatItem := *item
+			flatItem.Children = nil // 清空嵌套
+
+			// 加入一维切片
+			list = append(list, &flatItem)
+
+			// 继续递归子节点
+			dfs(item.Children)
+		}
+	}
+
+	dfs(tree)
+	return list
+}
+
+// BuildRouteTree 构建路由树
 func BuildRouteTree(list []MenuTree) []*MenuTree {
 	// 1. 初始化 Map，预分配空间以提高性能
 	nodeMap := make(map[string]*MenuTree, len(list))
@@ -46,7 +73,10 @@ func BuildRouteTree(list []MenuTree) []*MenuTree {
 			ParentUUID: item.ParentUUID,
 			Children:   make([]*MenuTree, 0), // 初始化切片，避免前端收到 null
 		}
-		mt.MakeMenuId()
+		if mt.Meta.MenuType == "" || mt.Meta.Name == "" {
+			continue // 跳过无效节点
+		}
+		mt.makeMenuId()
 		nodeMap[item.Uuid] = mt
 	}
 
@@ -58,8 +88,7 @@ func BuildRouteTree(list []MenuTree) []*MenuTree {
 		node := nodeMap[item.Uuid]
 
 		// 判断是否为顶级节点
-		// 建议增加判断：如果父 ID 为空字符串，也视作顶级节点（视你的业务逻辑而定）
-		if item.ParentUUID == "root" || item.ParentUUID == "" {
+		if item.ParentUUID == "root" {
 			rootNodes = append(rootNodes, node)
 			continue
 		}

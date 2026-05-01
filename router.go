@@ -75,8 +75,6 @@ type router struct {
 	SwaggerDescription string
 	SwaggerVersion     string
 	menuTree           []*MenuTree // 记录添加路由的顺序， 方便组件路由树
-	uuid               string
-	nodes              []MenuTree
 }
 
 // 拿到所有路由
@@ -85,21 +83,18 @@ func (r *router) Routes() []MenuTree {
 	for url, v := range r.urlRoute {
 		routes = append(routes, MenuTree{
 			URL:        url,
-			Uuid:       v.uuid,
-			ParentUUID: v.parentUuid,
+			Uuid:       v.menuTree.Uuid,
+			ParentUUID: v.menuTree.ParentUUID,
 			Method:     strings.Join(v.methods, ","),
 		})
 	}
 	for url, v := range r.urlTpl {
 		routes = append(routes, MenuTree{
 			URL:        url,
-			Uuid:       v.uuid,
-			ParentUUID: v.parentUuid,
+			Uuid:       v.menuTree.Uuid,
+			ParentUUID: v.menuTree.ParentUUID,
 			Method:     strings.Join(v.methods, ","),
 		})
-	}
-	for _, v := range routes {
-		fmt.Printf("%+v\n", v)
 	}
 	return routes
 }
@@ -113,15 +108,13 @@ func (r *router) Menus() []MenuTree {
 		}
 		ri := MenuTree{
 			URL:        url,
-			Uuid:       v.uuid,
-			ParentUUID: v.parentUuid,
+			Uuid:       v.menuTree.Uuid,
+			ParentUUID: v.menuTree.ParentUUID,
 			Method:     strings.Join(v.methods, ","),
 			Roles:      roles,
+			Meta:       v.menuTree.Meta,
 		}
-
-		if v.menuTree != nil {
-			ri.Meta = v.menuTree.Meta
-		}
+		ri.makeMenuId()
 		routes = append(routes, ri)
 	}
 	for url, v := range r.urlTpl {
@@ -131,23 +124,18 @@ func (r *router) Menus() []MenuTree {
 		}
 		ri := MenuTree{
 			URL:        url,
-			Uuid:       v.uuid,
-			ParentUUID: v.parentUuid,
+			Uuid:       v.menuTree.Uuid,
+			ParentUUID: v.menuTree.ParentUUID,
 			Method:     strings.Join(v.methods, ","),
 			Roles:      roles,
+			Meta:       v.menuTree.Meta,
 		}
-
-		if v.menuTree != nil {
-			ri.Meta = v.menuTree.Meta
-		}
+		ri.makeMenuId()
 		routes = append(routes, ri)
 	}
-	for _, v := range r.nodes {
-		routes = append(routes, MenuTree{
-			Uuid:       v.Uuid,
-			ParentUUID: v.ParentUUID,
-			Meta:       v.Meta,
-		})
+	for _, v := range FlattenMenuTree(r.menuTree) {
+		v.makeMenuId()
+		routes = append(routes, *v)
 	}
 	return routes
 }
@@ -639,7 +627,6 @@ func NewRouter(cacheSize ...int) *router {
 		// NotFoundRequireField: notFoundRequireField,
 		UnmarshalError: unmarshalError,
 		menuTree:       make([]*MenuTree, 0),
-		uuid:           "root",
 	}
 	return r
 }
@@ -737,7 +724,8 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 	if group.urlTpl == nil && group.urlRoute == nil {
 		return nil
 	}
-
+	group.menuTree.ParentUUID = "root"
+	r.menuTree = append(r.menuTree, group.menuTree)
 	// 将前缀删除
 	// prefixs := SubtractSliceMap(r.prefix, group.delprefix)
 	// prefix := append(prefixs, group.prefix...)
@@ -754,12 +742,7 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 			url = r.mergePrefix(route, url)
 		}
 
-		if group.parentUuid == "" {
-			group.nodes[0].ParentUUID = "root"
-		}
-		if newRoute.parentUuid == "" {
-			newRoute.parentUuid = group.uuid
-		}
+		// 设置父级uuid为组的uuid， 方便组件路由树的生成
 		r.urlRoute[url] = newRoute
 
 	}
@@ -776,17 +759,9 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		if len(r.prefix) > 0 {
 			url = r.mergePrefix(tpl, url)
 		}
-		if group.parentUuid == "" {
-			group.nodes[0].ParentUUID = "root"
-		}
-		if newRoute.parentUuid == "" {
-			newRoute.parentUuid = group.uuid
-		}
 		r.urlTpl[url] = newRoute
 
 	}
-
-	r.nodes = append(r.nodes, group.nodes...)
 	return r
 }
 

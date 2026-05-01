@@ -34,24 +34,24 @@ func (r *router) defindMethod(pattern string, handler func(http.ResponseWriter, 
 	// allurl = PrettySlash(allurl + route.url)
 	// url, vars, ok := makeRoute(allurl)
 	newRoute := &route{
-		handle:        http.HandlerFunc(handler),
-		pagekeys:      tempPages,
-		module:        r.module.cloneMudule(),
-		postModule:    r.postModule.cloneMudule(),
-		responseData:  r.responseData,
-		methods:       append(make([]string, 0), method...),
-		header:        temphead,
-		uuid:          uuid.New().String(),
+		handle:       http.HandlerFunc(handler),
+		pagekeys:     tempPages,
+		module:       r.module.cloneMudule(),
+		postModule:   r.postModule.cloneMudule(),
+		responseData: r.responseData,
+		methods:      append(make([]string, 0), method...),
+		header:       temphead,
+
 		delheader:     make(map[string]struct{}),
 		delmodule:     make(map[string]struct{}),
 		delPostModule: make(map[string]struct{}),
 		delPageKeys:   make(map[string]struct{}),
 		prefixs:       make([]string, 0),
 		delprefix:     map[string]struct{}{},
-		parentUuid:    "root",
 		middleware: onion{
 			mws: make([]Middleware, 0),
 		},
+		menuTree: &MenuTree{Uuid: uuid.New().String(), ParentUUID: "root"},
 	}
 	// prefix := path.Join(r.prefix...)
 	// prefix = path.Join(prefix, pattern)

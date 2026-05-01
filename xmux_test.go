@@ -7,6 +7,11 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +74,7 @@ func adminGroup() *RouteGroup {
 
 func userGroup() *RouteGroup {
 	user := NewRouteGroup().SetMeta(Meta{
-		Name:     "用户管理",
+		Name:     "用户管理菜单",
 		MenuType: "c",
 	})
 	// user.Get("/group", home).Use(CombineHandlers())
@@ -113,6 +118,43 @@ func PermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
 	return true
 }
 
+var db *gorm.DB
+
+func InitMySQL() {
+	// ====================== 这里改成你的数据库信息 ======================
+	username := "testuser"   // 用户名
+	password := "123456"     // 密码
+	host := "172.21.174.119" // 地址
+	port := "3306"           // 端口
+	dbName := "test_db"      // 数据库名
+	// ==================================================================
+
+	// 拼接 DSN 连接串
+	dsn := username + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
+
+	// 连接数据库
+	var err error
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		// 打印 SQL 语句（开发用，上线可关闭）
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+
+	if err != nil {
+		log.Fatalf("数据库连接失败：%v", err)
+	}
+
+	// 设置连接池
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("获取 DB 实例失败：%v", err)
+	}
+	sqlDB.SetMaxOpenConns(100)                 // 最大连接数
+	sqlDB.SetMaxIdleConns(20)                  // 最大空闲连接
+	sqlDB.SetConnMaxLifetime(10 * time.Minute) // 连接最长存活时间
+
+	log.Println("✅ 数据库连接成功")
+}
+
 func TestMain(t *testing.T) {
 	// pool := NewPool()
 	router := NewRouter().AddModule(PermissionTemplate)
@@ -131,15 +173,20 @@ func TestMain(t *testing.T) {
 	// router.ModuleContinue = true
 	// router.Prefix("/api")
 	// router.EnableConnect = true
-	router.Get("/test/{aaaa}", home)
+	router.Get("/test/{aaaa}", home).SetMeta(Meta{
+		Name:     "测试接口",
+		MenuType: "b",
+	})
 	// router.Get("/bar", home2).AddPageKeys("admin")
 	// router.Get("/post", pp).Use(pool.Middleware(heavyHandler))
 	// pf := router.PageKeyFuncMap()
 	// fmt.Println(pf)
 	// router.SetAddr(":8080")
 	router.AddGroup(userGroup())
-	// b, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
-	// fmt.Println(string(b))
+	// b, _ := json.MarshalIndent(router.menuTree, "", "  ")
+	fmt.Println(len(router.Routes()))
+	b, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
+	fmt.Println(string(b))
 	log.Fatal(router.SetAddr(":19999").Run())
 }
 

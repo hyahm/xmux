@@ -29,9 +29,7 @@ type RouteGroup struct {
 	delPageKeys      map[string]struct{}
 	denyPrefix       bool
 	menuTree         *MenuTree
-	uuid             string
 	parentUuid       string
-	nodes            []MenuTree
 }
 
 func NewRouteGroup() *RouteGroup {
@@ -52,10 +50,8 @@ func NewRouteGroup() *RouteGroup {
 		delPostModule: make(map[string]struct{}),
 		urlRoute:      make(UrlRoute),
 		urlTpl:        make(UrlRoute),
-		uuid:          uuid.New().String(),
-		menuTree:      &MenuTree{},
+		menuTree:      &MenuTree{Uuid: uuid.New().String()},
 	}
-	g.nodes = append(g.nodes, MenuTree{Uuid: g.uuid})
 	return g
 }
 
@@ -313,7 +309,9 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 	if group == nil || (group.urlTpl == nil && group.urlRoute == nil) {
 		return g
 	}
-
+	group.menuTree.ParentUUID = g.menuTree.Uuid
+	g.menuTree.Children = append(g.menuTree.Children, group.menuTree)
+	// 先将本身路由的的menu 添加上
 	// 缺少 请求头， 前缀， 模块， 响应数据 的合并
 	for url, route := range group.urlRoute {
 		if _, ok := g.urlRoute[url]; ok {
@@ -325,14 +323,7 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		for key := range g.delprefix {
 			newRoute.delprefix[key] = struct{}{}
 		}
-		if newRoute.parentUuid == "" {
-			newRoute.parentUuid = group.uuid
-		}
-		if group.nodes[0].ParentUUID == "" {
-			group.nodes[0].ParentUUID = g.uuid
-		}
 		g.urlRoute[url] = newRoute
-		// 如果是末尾的 路由组 group.children == nil， 需要把他的树枝给挂上
 	}
 
 	for url, route := range group.urlTpl {
@@ -345,18 +336,7 @@ func (g *RouteGroup) AddGroup(group *RouteGroup) *RouteGroup {
 		for key := range g.delprefix {
 			newRoute.delprefix[key] = struct{}{}
 		}
-		if newRoute.parentUuid == "" {
-			newRoute.parentUuid = group.uuid
-		}
-		if group.nodes[0].ParentUUID == "" {
-			group.nodes[0].ParentUUID = g.uuid
-		}
 		g.urlTpl[url] = newRoute
-		// 如果是末尾的 路由组 group.children == nil， 需要把他的树枝给挂上
 	}
-
-	g.nodes = append(g.nodes, group.nodes...)
-
-	// 如果是末尾的 路由组 group.children == nil， 需要把他的树枝给挂上
 	return g
 }

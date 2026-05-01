@@ -12,7 +12,11 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/smartystreets/goconvey v1.8.1 // indirect
@@ -25,4 +29,6 @@ require (
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gorm.io/driver/mysql v1.6.0 // indirect
+	gorm.io/gorm v1.31.1 // indirect
 )

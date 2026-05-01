@@ -15,7 +15,6 @@ type route struct {
 	postModule       *module             // 增加的 modules
 	delmodule        map[string]struct{} // 删除的modules
 	delPostModule    map[string]struct{} // 删除的modules
-	uuid             string              // 路由的path
 	params           []string            // path正则名
 	pagekeys         map[string]struct{} // 页面权限
 	delPageKeys      map[string]struct{} // 删除的权限
@@ -34,8 +33,8 @@ type route struct {
 	middleware       onion
 	regex            *regexp.Regexp // 预编译的正则表达式
 	menuTree         *MenuTree
-	parentUuid       string
 	url              string
+	ignoreMenu       bool
 }
 
 func (rt *route) Use(m ...Middleware) {
