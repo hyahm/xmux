@@ -21,7 +21,7 @@ type MenuTree struct {
 	MenuId     string      `json:"menu_id"`
 	Uuid       string      `json:"uuid"`
 	URL        string      `json:"url"`
-	Method     string      `json:"method"`
+	Method     []string    `json:"method"`
 	ParentUUID string      `json:"parent_uuid"`
 	Meta       Meta        `json:"meta"`
 	Roles      []string    `json:"-"`
@@ -59,7 +59,60 @@ func FlattenMenuTree(tree []*MenuTree) []*MenuTree {
 	return list
 }
 
-// BuildRouteTree 构建路由树
+// BuildMenuTree 构建路由树, 拿到菜单树
+func BuildMenuTree(list []MenuTree) []*MenuTree {
+	// 1. 初始化 Map，预分配空间以提高性能
+	nodeMap := make(map[string]*MenuTree, len(list))
+	for i := range list {
+		item := list[i]
+		if item.Uuid == "" {
+			continue
+		}
+		mt := &MenuTree{
+			Uuid:       item.Uuid,
+			Meta:       item.Meta,
+			URL:        item.URL,
+			Method:     item.Method,
+			ParentUUID: item.ParentUUID,
+			Children:   make([]*MenuTree, 0), // 初始化切片，避免前端收到 null
+		}
+		if mt.Meta.MenuType == "" || mt.Meta.Name == "" {
+			continue // 跳过无效节点
+		}
+		mt.makeMenuId()
+		nodeMap[item.Uuid] = mt
+	}
+
+	rootNodes := make([]*MenuTree, 0)
+
+	// 2. 构建父子关系
+	for i := range list {
+		item := list[i]
+		node, ok := nodeMap[item.Uuid]
+		if !ok || node == nil { // 关键：过滤 nil
+			continue
+		}
+		// 判断是否为顶级节点
+		if item.ParentUUID == "root" {
+			rootNodes = append(rootNodes, node)
+			continue
+		}
+
+		// 找到父节点并挂载
+		if parent, ok := nodeMap[item.ParentUUID]; ok {
+			parent.Children = append(parent.Children, node)
+		} else {
+			// 【关键修复】：如果找不到父节点，说明它是孤儿节点
+			// 做法 A：视作顶级节点（防止数据丢失）
+			// 做法 B：直接忽略（取决于你的业务需求）
+			rootNodes = append(rootNodes, node)
+		}
+	}
+
+	return rootNodes
+}
+
+// BuildRouteTree 构建路由树, 拿到菜单树
 func BuildRouteTree(list []MenuTree) []*MenuTree {
 	// 1. 初始化 Map，预分配空间以提高性能
 	nodeMap := make(map[string]*MenuTree, len(list))
@@ -72,9 +125,6 @@ func BuildRouteTree(list []MenuTree) []*MenuTree {
 			Method:     item.Method,
 			ParentUUID: item.ParentUUID,
 			Children:   make([]*MenuTree, 0), // 初始化切片，避免前端收到 null
-		}
-		if mt.Meta.MenuType == "" || mt.Meta.Name == "" {
-			continue // 跳过无效节点
 		}
 		mt.makeMenuId()
 		nodeMap[item.Uuid] = mt
@@ -105,4 +155,40 @@ func BuildRouteTree(list []MenuTree) []*MenuTree {
 	}
 
 	return rootNodes
+}
+
+// FilterMenuTree 根据 menu_id 列表过滤菜单树
+// 规则：
+// 1. 存在于 menuIdSet 中的节点，其父节点 menu_type != a 才保留
+// 2. 下级节点 menu_type == a 且 name == "" 保留
+func FilterMenuTree(tree []*MenuTree, menuIdSet map[string]bool, filterType string) []*MenuTree {
+	var result []*MenuTree
+
+	for _, node := range tree {
+		if node == nil {
+			continue
+		}
+
+		// 递归处理子节点
+		filteredChildren := FilterMenuTree(node.Children, menuIdSet, filterType)
+
+		// ===================== 规则3：强制保留条件 =====================
+		// menu_type == filterType 并且 name == "" → 必须保留
+		forceKeep := node.Meta.MenuType == filterType && node.Meta.Name == ""
+
+		// ===================== 规则1：在白名单里 =====================
+		inWhiteList := menuIdSet[node.MenuId]
+
+		// ===================== 规则2：子节点有保留，父节点必须保留 =====================
+		hasValidChild := len(filteredChildren) > 0
+
+		// ===================== 最终判断：满足任意一个就保留 =====================
+		if forceKeep || inWhiteList || hasValidChild {
+			newNode := *node
+			newNode.Children = filteredChildren
+			result = append(result, &newNode)
+		}
+	}
+
+	return result
 }

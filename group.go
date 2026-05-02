@@ -50,7 +50,7 @@ func NewRouteGroup() *RouteGroup {
 		delPostModule: make(map[string]struct{}),
 		urlRoute:      make(UrlRoute),
 		urlTpl:        make(UrlRoute),
-		menuTree:      &MenuTree{Uuid: uuid.New().String()},
+		menuTree:      &MenuTree{Uuid: uuid.New().String(), Children: make([]*MenuTree, 0)},
 	}
 	return g
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	mysqlerr "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -155,8 +156,58 @@ func InitMySQL() {
 	log.Println("✅ 数据库连接成功")
 }
 
+type MenuApi struct {
+	MenuId   string `json:"menu_id" gorm:"primaryKey;size:50"` // 主键
+	Url      string `json:"url" gorm:"size:255"`
+	Method   string `json:"method" gorm:"size:255"`
+	Name     string `json:"name" gorm:"size:255"`
+	MenuType string `json:"menu_type" gorm:"size:2"`
+}
+
+func insert(menu MenuApi) {
+	err := db.Table("menu_tree").Create(&menu).Error
+	if err != nil {
+		if err.(*mysqlerr.MySQLError).Number == 1062 {
+			log.Printf("插入失败: %v", err)
+		}
+		err = db.Table("menu_tree").Where("menu_id = ?", menu.MenuId).Updates(&menu).Error
+		if err != nil {
+			log.Printf("更新失败: %v", err)
+		}
+	}
+}
+
+func Insert(tree []MenuTree) {
+	for _, menu := range tree {
+		if len(menu.Method) == 0 {
+			ma := MenuApi{
+				MenuId:   menu.MenuId,
+				Url:      menu.URL,
+				Method:   "",
+				Name:     menu.Meta.Name,
+				MenuType: menu.Meta.MenuType,
+			}
+			insert(ma)
+
+			continue
+		}
+		for _, v := range menu.Method {
+			ma := MenuApi{
+				MenuId:   menu.MenuId,
+				Url:      menu.URL,
+				Method:   v,
+				Name:     menu.Meta.Name,
+				MenuType: menu.Meta.MenuType,
+			}
+			insert(ma)
+		}
+
+	}
+}
+
 func TestMain(t *testing.T) {
 	// pool := NewPool()
+	InitMySQL()
 	router := NewRouter().AddModule(PermissionTemplate)
 	// router.HandleAll = LimitFixedWindowCounterTemplate
 	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
@@ -184,8 +235,22 @@ func TestMain(t *testing.T) {
 	// router.SetAddr(":8080")
 	router.AddGroup(userGroup())
 	// b, _ := json.MarshalIndent(router.menuTree, "", "  ")
-	fmt.Println(len(router.Routes()))
-	b, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
+	// fmt.Println(len(router.Routes()))
+	// Insert(router.Menus())
+
+	// 这里拿到的就是有权限的节点， 可以直接遍历 ，  url 和 method 存在， 那就是有权限，
+	// router.Menus() 是在本地缓存里面的， 唯一保存的 角色权限， 可以大大简化 go-admin 的权限校验，
+	//  直接在本地就能拿到用户有权限的 url 和 method， 不需要每次请求都去数据库查权限了， 直接在内存里校验就行了
+	// BuildMenuTree(router.Menus())  这里是菜单树， 可以直接返回给前端
+	// 需要注意的是， setMeta 里面的 目录 和 菜单 节点的 MenuType 和 Name 不要有重复的， 不然权限校验会有问题， 因为权限是根据 menuId 来的， menuId 是根据 url method menuType name 生成的， 如果 menuType 和 name 重复了， 那就会有重复的 menuId， 权限校验就会有问题了
+	// BuildMenuTree(router.Menus())  如果需要对菜单进行更细致的配置
+
+	// b, _ := json.MarshalIndent(router.Menus(), "", "  ")
+	// a, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
+	a, _ := json.MarshalIndent(FilterMenuTree(BuildRouteTree(router.Menus()), map[string]bool{"d108a9bb73435e144ffabfd0e1aa0815": true}, ""), "", "  ")
+	b, _ := json.MarshalIndent(FlattenMenuTree(FilterMenuTree(BuildRouteTree(router.Menus()), map[string]bool{"d108a9bb73435e144ffabfd0e1aa0815": true}, "")), "", "  ")
+	// // b, _ := json.MarshalIndent(BuildMenuTree(router.Menus()), "", "  ")
+	fmt.Println(string(a))
 	fmt.Println(string(b))
 	log.Fatal(router.SetAddr(":19999").Run())
 }

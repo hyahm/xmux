@@ -85,7 +85,7 @@ func (r *router) Routes() []MenuTree {
 			URL:        url,
 			Uuid:       v.menuTree.Uuid,
 			ParentUUID: v.menuTree.ParentUUID,
-			Method:     strings.Join(v.methods, ","),
+			Method:     v.methods,
 		})
 	}
 	for url, v := range r.urlTpl {
@@ -93,7 +93,7 @@ func (r *router) Routes() []MenuTree {
 			URL:        url,
 			Uuid:       v.menuTree.Uuid,
 			ParentUUID: v.menuTree.ParentUUID,
-			Method:     strings.Join(v.methods, ","),
+			Method:     v.methods,
 		})
 	}
 	return routes
@@ -110,9 +110,10 @@ func (r *router) Menus() []MenuTree {
 			URL:        url,
 			Uuid:       v.menuTree.Uuid,
 			ParentUUID: v.menuTree.ParentUUID,
-			Method:     strings.Join(v.methods, ","),
+			Method:     v.methods,
 			Roles:      roles,
 			Meta:       v.menuTree.Meta,
+			Children:   make([]*MenuTree, 0),
 		}
 		ri.makeMenuId()
 		routes = append(routes, ri)
@@ -126,9 +127,10 @@ func (r *router) Menus() []MenuTree {
 			URL:        url,
 			Uuid:       v.menuTree.Uuid,
 			ParentUUID: v.menuTree.ParentUUID,
-			Method:     strings.Join(v.methods, ","),
+			Method:     v.methods,
 			Roles:      roles,
 			Meta:       v.menuTree.Meta,
+			Children:   make([]*MenuTree, 0),
 		}
 		ri.makeMenuId()
 		routes = append(routes, ri)
@@ -725,6 +727,7 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		return nil
 	}
 	group.menuTree.ParentUUID = "root"
+	fmt.Printf("%+v\n", *group.menuTree.Children[0])
 	r.menuTree = append(r.menuTree, group.menuTree)
 	// 将前缀删除
 	// prefixs := SubtractSliceMap(r.prefix, group.delprefix)

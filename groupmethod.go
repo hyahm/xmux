@@ -34,7 +34,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		prefixs:       gr.prefix,
 		delprefix:     gr.delprefix,
 		denyPrefix:    gr.denyPrefix,
-		menuTree:      &MenuTree{Uuid: uuid.New().String(), ParentUUID: gr.menuTree.Uuid},
+		menuTree:      &MenuTree{Uuid: uuid.New().String(), ParentUUID: gr.menuTree.Uuid, Children: make([]*MenuTree, 0)},
 	}
 	if gr.module != nil {
 		newRoute.module = gr.module.cloneMudule()
