@@ -247,8 +247,8 @@ func TestMain(t *testing.T) {
 
 	// b, _ := json.MarshalIndent(router.Menus(), "", "  ")
 	// a, _ := json.MarshalIndent(BuildRouteTree(router.Menus()), "", "  ")
-	a, _ := json.MarshalIndent(FilterMenuTree(BuildRouteTree(router.Menus()), map[string]bool{"d108a9bb73435e144ffabfd0e1aa0815": true}, ""), "", "  ")
-	b, _ := json.MarshalIndent(FlattenMenuTree(FilterMenuTree(BuildRouteTree(router.Menus()), map[string]bool{"d108a9bb73435e144ffabfd0e1aa0815": true}, "")), "", "  ")
+	a, _ := json.MarshalIndent(FilterMenuTree(BuildRouteTree(router.Menus()), map[string]bool{"0b81fb97a1b254927c3491550098c20b": true}, ""), "", "  ")
+	b, _ := json.MarshalIndent(FlattenMenuTree(FilterMenuTree(BuildRouteTree(router.Menus()), map[string]bool{"0b81fb97a1b254927c3491550098c20b": true}, "")), "", "  ")
 	// // b, _ := json.MarshalIndent(BuildMenuTree(router.Menus()), "", "  ")
 	fmt.Println(string(a))
 	fmt.Println(string(b))
