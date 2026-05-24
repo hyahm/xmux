@@ -732,7 +732,7 @@ func main() {
 
 ### 获取当前的连接数
 ```go
-xmux.GetConnents()
+xmux.GetConnections()
 ```
 
 ### 优雅的停止

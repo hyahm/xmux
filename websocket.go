@@ -34,9 +34,9 @@ type BaseWs struct {
 	IsExtras   bool
 }
 
-func (bw *BaseWs) Close() error {
-	return bw.Conn.Close()
-}
+// func (bw *BaseWs) Close() error {
+// 	return bw.Conn.Close()
+// }
 
 // 包结构如下
 

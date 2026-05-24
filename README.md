@@ -739,7 +739,7 @@ func main() {
 
 # Gets the current number of connections
 ```go
-xmux.GetConnents()
+xmux.GetConnections()
 ```
 
 # Graceful stop

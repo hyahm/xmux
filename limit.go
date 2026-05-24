@@ -65,7 +65,7 @@ func init() {
 }
 
 func LimitFixedWindowCounterTemplate(w http.ResponseWriter, r *http.Request) (exit bool) {
-	// GetConnents() 是全局连接数
+	// GetConnections() 是全局连接数
 	if !counter.Allow() {
 		w.WriteHeader(http.StatusTooManyRequests)
 		return true
@@ -74,8 +74,8 @@ func LimitFixedWindowCounterTemplate(w http.ResponseWriter, r *http.Request) (ex
 }
 
 func LimitFixedWindowCounterTemplate1(w http.ResponseWriter, r *http.Request) (exit bool) {
-	// GetConnents() 是全局连接数
-	if GetConnents() > 1000 {
+	// GetConnections() 是全局连接数
+	if GetConnections() > 1000 {
 		w.WriteHeader(http.StatusTooManyRequests)
 		return true
 	}

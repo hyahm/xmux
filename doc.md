@@ -1,7 +1,7 @@
 安装
-要安装 Gin 软件包，需要先安装 Go 并设置 Go 工作区。
+，需要先安装 Go 并设置 Go 工作区。
 
-1. 下载并安装 gin：
+1. 下载并安装 xmux
 
 ```
 go get -u github.com/hyahm/xmux

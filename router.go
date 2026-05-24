@@ -26,7 +26,7 @@ const PAGES = "XMUX_PAGES"
 
 // var stop bool
 
-func GetConnents() int32 {
+func GetConnections() int32 {
 	return connections
 }
 
@@ -693,7 +693,7 @@ func (r *router) merge(group *RouteGroup, route *route) *route {
 	route.pagekeys = tempPages
 
 	// 前置 模块合并
-	tempModules := r.module.cloneMudule()
+	tempModules := r.module.cloneModule()
 	// 组删除模块为了删全局
 	tempModules.delete(group.delmodule)
 	// 添加组模块
@@ -705,7 +705,7 @@ func (r *router) merge(group *RouteGroup, route *route) *route {
 	route.module = tempModules
 
 	// 后置模块合并
-	tempPostModules := r.postModule.cloneMudule()
+	tempPostModules := r.postModule.cloneModule()
 	// 组删除模块为了删全局
 	tempPostModules.delete(group.delPostModule)
 	// 添加组模块

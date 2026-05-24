@@ -18,7 +18,7 @@ type module struct {
 }
 
 // 获取module数组
-func (m *module) cloneMudule() *module {
+func (m *module) cloneModule() *module {
 	newModule := &module{
 		filter:    make(map[string]struct{}),
 		funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0, len(m.funcOrder)),

@@ -24,8 +24,8 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		handle:        http.HandlerFunc(handler),
 		pagekeys:      make(map[string]struct{}),
 		methods:       methods,
-		module:        gr.module.cloneMudule(),
-		postModule:    gr.postModule.cloneMudule(),
+		module:        gr.module.cloneModule(),
+		postModule:    gr.postModule.cloneModule(),
 		header:        make(map[string]string),
 		delmodule:     make(map[string]struct{}),
 		delPostModule: make(map[string]struct{}),
@@ -37,7 +37,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 		menuTree:      &MenuTree{Uuid: uuid.New().String(), ParentUUID: gr.menuTree.Uuid, Children: make([]*MenuTree, 0)},
 	}
 	if gr.module != nil {
-		newRoute.module = gr.module.cloneMudule()
+		newRoute.module = gr.module.cloneModule()
 	} else {
 		newRoute.module = &module{
 			filter:    make(map[string]struct{}),
@@ -74,6 +74,7 @@ func (gr *RouteGroup) defindMethod(pattern string, handler func(http.ResponseWri
 
 	}
 
+	gr.menuTree.Children = append(gr.menuTree.Children, newRoute.menuTree)
 	return newRoute
 }
 

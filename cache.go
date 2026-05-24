@@ -78,7 +78,7 @@ func GetCacheIfUpdating(key string) ([]byte, CacheStatus) {
 }
 
 // 是否存在缓存
-func ExsitsCache(key string) bool {
+func ExistsCache(key string) bool {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 	_, ok := rc.status[key]

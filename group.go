@@ -280,7 +280,7 @@ func (g *RouteGroup) merge(group *RouteGroup, route *route) *route {
 	route.pagekeys = tempPages
 
 	// 模块合并
-	tempModules := g.module.cloneMudule()
+	tempModules := g.module.cloneModule()
 
 	for k := range g.delmodule {
 		route.delmodule[k] = struct{}{}

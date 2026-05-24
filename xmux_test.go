@@ -7,12 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"testing"
-	"time"
-
-	mysqlerr "github.com/go-sql-driver/mysql"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -119,43 +113,6 @@ func PermissionTemplate(w http.ResponseWriter, r *http.Request) (post bool) {
 	return true
 }
 
-var db *gorm.DB
-
-func InitMySQL() {
-	// ====================== 这里改成你的数据库信息 ======================
-	username := "testuser"   // 用户名
-	password := "123456"     // 密码
-	host := "172.21.174.119" // 地址
-	port := "3306"           // 端口
-	dbName := "test_db"      // 数据库名
-	// ==================================================================
-
-	// 拼接 DSN 连接串
-	dsn := username + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbName + "?charset=utf8mb4&parseTime=True&loc=Local"
-
-	// 连接数据库
-	var err error
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-		// 打印 SQL 语句（开发用，上线可关闭）
-		Logger: logger.Default.LogMode(logger.Info),
-	})
-
-	if err != nil {
-		log.Fatalf("数据库连接失败：%v", err)
-	}
-
-	// 设置连接池
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatalf("获取 DB 实例失败：%v", err)
-	}
-	sqlDB.SetMaxOpenConns(100)                 // 最大连接数
-	sqlDB.SetMaxIdleConns(20)                  // 最大空闲连接
-	sqlDB.SetConnMaxLifetime(10 * time.Minute) // 连接最长存活时间
-
-	log.Println("✅ 数据库连接成功")
-}
-
 type MenuApi struct {
 	MenuId   string `json:"menu_id" gorm:"primaryKey;size:50"` // 主键
 	Url      string `json:"url" gorm:"size:255"`
@@ -164,50 +121,8 @@ type MenuApi struct {
 	MenuType string `json:"menu_type" gorm:"size:2"`
 }
 
-func insert(menu MenuApi) {
-	err := db.Table("menu_tree").Create(&menu).Error
-	if err != nil {
-		if err.(*mysqlerr.MySQLError).Number == 1062 {
-			log.Printf("插入失败: %v", err)
-		}
-		err = db.Table("menu_tree").Where("menu_id = ?", menu.MenuId).Updates(&menu).Error
-		if err != nil {
-			log.Printf("更新失败: %v", err)
-		}
-	}
-}
-
-func Insert(tree []MenuTree) {
-	for _, menu := range tree {
-		if len(menu.Method) == 0 {
-			ma := MenuApi{
-				MenuId:   menu.MenuId,
-				Url:      menu.URL,
-				Method:   "",
-				Name:     menu.Meta.Name,
-				MenuType: menu.Meta.MenuType,
-			}
-			insert(ma)
-
-			continue
-		}
-		for _, v := range menu.Method {
-			ma := MenuApi{
-				MenuId:   menu.MenuId,
-				Url:      menu.URL,
-				Method:   v,
-				Name:     menu.Meta.Name,
-				MenuType: menu.Meta.MenuType,
-			}
-			insert(ma)
-		}
-
-	}
-}
-
 func TestMain(t *testing.T) {
 	// pool := NewPool()
-	InitMySQL()
 	router := NewRouter().AddModule(PermissionTemplate)
 	// router.HandleAll = LimitFixedWindowCounterTemplate
 	// router.HandleRecover = func(w http.ResponseWriter, r *http.Request) {
