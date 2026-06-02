@@ -53,6 +53,7 @@ type router struct {
 	Exit           func(time.Time, http.ResponseWriter, *http.Request)
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
 	IdleTimeout    time.Duration
 	HandleFavicon  func(http.ResponseWriter, *http.Request)
 	DisableOption  bool                                     // 禁止全局option
@@ -492,10 +493,11 @@ func (r *router) Run(addr ...string) error {
 		r.addr = addr[0]
 	}
 	svc := &http.Server{
-		Addr:        r.addr,
-		ReadTimeout: r.ReadTimeout,
-		IdleTimeout: r.IdleTimeout,
-		Handler:     r,
+		Addr:         r.addr,
+		ReadTimeout:  r.ReadTimeout,
+		IdleTimeout:  r.IdleTimeout,
+		WriteTimeout: r.WriteTimeout,
+		Handler:      r,
 	}
 	fmt.Printf("listen on %s\n", r.addr)
 	return svc.ListenAndServe()
@@ -503,10 +505,11 @@ func (r *router) Run(addr ...string) error {
 
 func (r *router) Debug(ctx context.Context) {
 	svc := &http.Server{
-		Addr:        r.addr,
-		ReadTimeout: r.ReadTimeout,
-		IdleTimeout: r.IdleTimeout,
-		Handler:     r,
+		Addr:         r.addr,
+		ReadTimeout:  r.ReadTimeout,
+		WriteTimeout: r.WriteTimeout,
+		IdleTimeout:  r.IdleTimeout,
+		Handler:      r,
 	}
 	fmt.Printf("listen on %s\n", r.addr)
 	go svc.ListenAndServe()
@@ -522,10 +525,11 @@ func (r *router) RunUnsafeTLS(opt ...string) error {
 	}
 
 	svc := &http.Server{
-		Addr:        addr,
-		ReadTimeout: r.ReadTimeout,
-		IdleTimeout: r.IdleTimeout,
-		Handler:     r,
+		Addr:         addr,
+		ReadTimeout:  r.ReadTimeout,
+		IdleTimeout:  r.IdleTimeout,
+		WriteTimeout: r.WriteTimeout,
+		Handler:      r,
 	}
 	keyfile := "keys/server.key"
 	pemfile := "keys/server.pem"
@@ -588,10 +592,11 @@ func (r *router) RunTLS(certFile, keyFile string) error {
 	}
 
 	svc := &http.Server{
-		Addr:        r.addr,
-		ReadTimeout: r.ReadTimeout,
-		IdleTimeout: r.IdleTimeout,
-		Handler:     r,
+		Addr:         r.addr,
+		ReadTimeout:  r.ReadTimeout,
+		IdleTimeout:  r.IdleTimeout,
+		WriteTimeout: r.WriteTimeout,
+		Handler:      r,
 	}
 
 	// 如果key文件不存在那么就自动生成
