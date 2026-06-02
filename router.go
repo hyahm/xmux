@@ -737,7 +737,6 @@ func (r *router) AddGroup(group *RouteGroup) *router {
 		return nil
 	}
 	group.menuTree.ParentUUID = "root"
-	fmt.Printf("%+v\n", *group.menuTree.Children[0])
 	r.menuTree = append(r.menuTree, group.menuTree)
 	// 将前缀删除
 	// prefixs := SubtractSliceMap(r.prefix, group.delprefix)
