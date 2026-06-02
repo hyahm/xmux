@@ -53,6 +53,7 @@ type router struct {
 	Exit           func(time.Time, http.ResponseWriter, *http.Request)
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
+	IdleTimeout    time.Duration
 	HandleFavicon  func(http.ResponseWriter, *http.Request)
 	DisableOption  bool                                     // 禁止全局option
 	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
@@ -493,6 +494,7 @@ func (r *router) Run(addr ...string) error {
 	svc := &http.Server{
 		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
+		IdleTimeout: r.IdleTimeout,
 		Handler:     r,
 	}
 	fmt.Printf("listen on %s\n", r.addr)
@@ -503,6 +505,7 @@ func (r *router) Debug(ctx context.Context) {
 	svc := &http.Server{
 		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
+		IdleTimeout: r.IdleTimeout,
 		Handler:     r,
 	}
 	fmt.Printf("listen on %s\n", r.addr)
@@ -521,6 +524,7 @@ func (r *router) RunUnsafeTLS(opt ...string) error {
 	svc := &http.Server{
 		Addr:        addr,
 		ReadTimeout: r.ReadTimeout,
+		IdleTimeout: r.IdleTimeout,
 		Handler:     r,
 	}
 	keyfile := "keys/server.key"
@@ -586,6 +590,7 @@ func (r *router) RunTLS(certFile, keyFile string) error {
 	svc := &http.Server{
 		Addr:        r.addr,
 		ReadTimeout: r.ReadTimeout,
+		IdleTimeout: r.IdleTimeout,
 		Handler:     r,
 	}
 
