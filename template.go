@@ -8,59 +8,58 @@ import (
 	"time"
 )
 
-func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Request) (exit bool) {
+func DefaultCacheTemplateCacheWithResponse(w http.ResponseWriter, r *http.Request) bool {
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
 	cacheKey := GetInstance(r).GetCacheKey()
 	if cacheKey == "" {
-		return
+		return true
 	}
 	_, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
 	case CacheHit:
 
-		return true
+		return false
 	case CacheIsUpdateing:
 		for {
 			select {
 			case <-time.After(time.Second):
-				return
+				return true
 			default:
 				time.Sleep(time.Millisecond * 10)
 				if !IsUpdate(cacheKey) {
 					SetUpdate(cacheKey)
-					return true
+					return false
 				}
 			}
 
 		}
 	case CacheNeedUpdate:
 		SetUpdate(cacheKey)
-		return
 	case NotFoundCache:
 		SetUpdate(cacheKey)
-		return
 	default:
-		return
+
 	}
+	return true
 }
 
-func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Request) (exit bool) {
+func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Request) bool {
 	// 获取唯一id
 	// 建议 url + uid 或者 MD5(url + uid), 如果跟uid无关， 可以只用url
 	// 先要判断一下是否存在缓存
 	cacheKey := GetInstance(r).GetCacheKey()
 	if cacheKey == "" {
 		// 没有启用缓存
-		return
+		return true
 	}
 
 	cb, cacheStatus := GetCacheIfUpdating(cacheKey)
 	switch cacheStatus {
 	case CacheHit:
 		w.Write(cb)
-		return true
+		return false
 	case CacheIsUpdateing:
 		// 如果在更新中，那么等待更新完毕再返回缓存， 如果等待1秒了还没返回就不等待缓存
 		timer := time.NewTimer(time.Second)
@@ -69,28 +68,26 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 
 			select {
 			case <-timer.C:
-				return
+				return true
 			default:
 				time.Sleep(time.Millisecond * 10)
 				if !IsUpdate(cacheKey) {
 					w.Write(GetCache(cacheKey))
-					return true
+					return false
 				}
 			}
 		}
 	case CacheNeedUpdate:
 		SetUpdate(cacheKey)
-		return
 	case NotFoundCache:
 		SetUpdate(cacheKey)
-		return
 	default:
-		return
 	}
-
+	return true
 }
 
-func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+// 只有使用了 router.BindResponse()  当前路由没有设置 BindResponse(nil) 并且 statuscode = 200 才会使用 默认返回
+func PostCacheModule(w http.ResponseWriter, r *http.Request) {
 	// r.Body.Close()
 	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
 		cacheKey := GetInstance(r).GetCacheKey()
@@ -122,7 +119,39 @@ func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
 	// 	string(send))
 }
 
-func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (exit bool) {
+// func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
+// 	// r.Body.Close()
+// 	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
+// 		cacheKey := GetInstance(r).GetCacheKey()
+// 		// 缓存
+// 		if cacheKey != "" && !IsUpdate(cacheKey) {
+// 			// 如果是缓存的值，并且不在更新中就直接取缓存的值
+// 			send := GetCache(cacheKey)
+// 			w.Write(send)
+// 			return
+// 		}
+// 		// 如果没有设置缓存，还是以前的处理方法
+// 		send, err := json.Marshal(GetInstance(r).Response)
+// 		if err != nil {
+// 			log.Println(err)
+// 		}
+// 		if cacheKey != "" {
+// 			SetCache(cacheKey, send)
+// 		}
+// 		// 如果之前是更新的状态，那么就修改
+
+// 		w.Write(send)
+
+// 	}
+// 	// log.Printf("connect_id: %d,method: %s\turl: %s\ttime: %f\t status_code: %v, response: %v\n",
+// 	// 	GetInstance(r).GetConnectId(),
+// 	// 	r.Method,
+// 	// 	r.URL.Path, time.Since(start).Seconds(),
+// 	// 	GetInstance(r).StatusCode,
+// 	// 	string(send))
+// }
+
+func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) bool {
 	// 如果是管理员的，直接就过
 	// if uid == <adminId> {
 	// 	retrun false
@@ -131,12 +160,12 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (exit boo
 	pages := GetInstance(r).GetPageKeys()
 	// 如果长度为0的话，说明任何人都可以访问
 	if len(pages) == 0 {
-		return
+		return true
 	}
 	// todo: get user.role
 	role := ""
 	if _, ok := pages[role]; !ok {
-		return true
+		return false
 	}
 
 	// roles := []string{"env", "important"}
@@ -154,11 +183,11 @@ func DefaultPermissionTemplate(w http.ResponseWriter, r *http.Request) (exit boo
 	for index, ok := range result {
 		currFuncName := GetInstance(r).GetFuncName()
 		if ok && strings.Contains(currFuncName, pl[index]) {
-			return
+			return true
 		}
 	}
 	// no permission
-	return true
+	return false
 	// 假如权限拿到二进制对应的10进制数据是下面
 	// perm = 14       // 00001110   {"Delete", "Create", "Update"}
 	// perm = 10       // 00001010   {"Create", "Delete"}

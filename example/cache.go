@@ -29,7 +29,7 @@ func noCache1(w http.ResponseWriter, r *http.Request) {
 func setKey(w http.ResponseWriter, r *http.Request) bool {
 	xmux.GetInstance(r).SetCacheKey(r.URL.Path)
 	fmt.Println(r.URL.Path + "    is cachedaaa")
-	return false
+	return true
 }
 
 type Response struct {

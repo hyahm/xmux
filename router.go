@@ -67,11 +67,11 @@ type router struct {
 	urlRoute       UrlRoute // 单实例路由， 组路由最后也会合并过来
 	urlTpl         UrlRoute // 正则路由， 组路由最后也会合并过来
 	// params               map[string][]string // 记录所有路由， map[string]string 是正则匹配的参数
-	header             map[string]string // 全局路由头
-	module             *module           // 全局模块
-	postModule         *module           // 全局后置模块
-	responseData       interface{}
-	ModuleContinue     bool // 模块是否继续执行， 默认false， 只要有一个模块返回true就继续执行了， 取反之意
+	header       map[string]string // 全局路由头
+	module       *module           // 全局模块
+	postModule   *module           // 全局后置模块
+	responseData interface{}
+	// ModuleContinue     bool // 模块是否继续执行， 默认false， 只要有一个模块返回true就继续执行了， 取反之意
 	pagekeys           mstringstruct
 	SwaggerTitle       string
 	SwaggerDescription string
@@ -188,15 +188,15 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 	// 进入前的钩子函数
 	if r.Enter != nil {
-		if r.ModuleContinue {
-			if !r.Enter(w, req) {
-				return
-			}
-		} else {
-			if r.Enter(w, req) {
-				return
-			}
+		// if r.ModuleContinue {
+		if !r.Enter(w, req) {
+			return
 		}
+		// } else {
+		// 	if r.Enter(w, req) {
+		// 		return
+		// 	}
+		// }
 
 	}
 	ci := time.Now().UnixNano()
@@ -234,15 +234,15 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		}
 
 		if route.bindType != 0 {
-			if r.ModuleContinue {
-				if !r.bind(route, w, req, fd) {
-					return
-				}
-			} else {
-				if r.bind(route, w, req, fd) {
-					return
-				}
+			// if r.ModuleContinue {
+			if !r.bind(route, w, req, fd) {
+				return
 			}
+			// } else {
+			// 	if r.bind(route, w, req, fd) {
+			// 		return
+			// 	}
+			// }
 
 		} else {
 			GetInstance(req).Body = []byte("")
@@ -263,15 +263,15 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 				w.WriteHeader(http.StatusGatewayTimeout)
 				return
 			default:
-				if r.ModuleContinue {
-					if !module(w, req) {
-						return
-					}
-				} else {
-					if module(w, req) {
-						return
-					}
+				// if r.ModuleContinue {
+				if !module(w, req) {
+					return
 				}
+				// } else {
+				// 	if module(w, req) {
+				// 		return
+				// 	}
+				// }
 			}
 
 		}
@@ -290,15 +290,15 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 				w.WriteHeader(http.StatusGatewayTimeout)
 				return
 			default:
-				if r.ModuleContinue {
-					if !module(w, req) {
-						return
-					}
-				} else {
-					if module(w, req) {
-						return
-					}
+				// if r.ModuleContinue {
+				if !module(w, req) {
+					return
 				}
+				// } else {
+				// 	if module(w, req) {
+				// 		return
+				// 	}
+				// }
 			}
 		}
 		return
@@ -306,15 +306,15 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 	// 请求模块
 	for _, module := range route.module {
-		if r.ModuleContinue {
-			if !module(w, req) {
-				return
-			}
-		} else {
-			if module(w, req) {
-				return
-			}
+		// if r.ModuleContinue {
+		if !module(w, req) {
+			return
 		}
+		// } else {
+		// 	if module(w, req) {
+		// 		return
+		// 	}
+		// }
 
 	}
 	// 中间件
@@ -327,15 +327,15 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 	// 处理后置模块
 	for _, module := range route.postModule {
-		if r.ModuleContinue {
-			if !module(w, req) {
-				return
-			}
-		} else {
-			if module(w, req) {
-				return
-			}
+		// if r.ModuleContinue {
+		if !module(w, req) {
+			return
 		}
+		// } else {
+		// 	if module(w, req) {
+		// 		return
+		// 	}
+		// }
 	}
 }
 
@@ -355,15 +355,15 @@ func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 	if r.HandleAll != nil {
-		if r.ModuleContinue {
-			if !r.HandleAll(w, req) {
-				return
-			}
-		} else {
-			if r.HandleAll(w, req) {
-				return
-			}
+		// if r.ModuleContinue {
+		if !r.HandleAll(w, req) {
+			return
 		}
+		// } else {
+		// 	if r.HandleAll(w, req) {
+		// 		return
+		// 	}
+		// }
 
 	}
 	atomic.AddInt32(&connections, 1)
@@ -623,7 +623,7 @@ func NewRouter(cacheSize ...int) *router {
 		urlTpl:         make(UrlRoute),
 		header:         map[string]string{},
 		// params:         make(map[string][]string),
-		Exit: exit,
+		// Exit: exit,
 		module: &module{
 			filter:    make(map[string]struct{}),
 			funcOrder: make([]func(w http.ResponseWriter, r *http.Request) bool, 0),
