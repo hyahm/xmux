@@ -1,7 +1,7 @@
 # xmux
 基于原生net.http 极简高灵活性可拔插模块的路由 
 
-
+### 如果有任何需需要加的功能可以 fork, 也可以提交合并请求
 [视频教程](https://www.bilibili.com/video/BV1Ji4y1D7o3/)
 
 简体中文 | [English](./README.md) | [简体中文](./README_zh.md) 
@@ -37,6 +37,10 @@ go >= 1.23
 - [超时取消](#timeout)
 
 > 注意， 末尾带了 Template 的模块可能并不满足自己的要求， 建议看看源码 是否满足自己的需求做一些修改（代码量基本都小于20行）  
+
+### 2.0修改
+1. 模块返回默认true 为继续， false 立即返回
+2. 取消默认绑定 Exit
 
 ### 安装<a id="install"></a>  
 ```
@@ -480,11 +484,12 @@ func main() {
 
 - 绑定返回值
 
-```
+```go
     data := &Response{
 		Code: 200,
 	}
-	router := xmux.NewRouter().BindResponse(data)
+	// 之前默认带了Exit, 现在已经取消， 需要增加.AddPostModule(DefaultPostCacheModuleTemplate) 来处理返回，也可以自己写，毕竟都是 template
+	router := xmux.NewRouter().BindResponse(data).AddPostModule(DefaultPostCacheModuleTemplate)
 ```
 
  通过.BindResponse(nil) 来设置取消使用全局绑定  

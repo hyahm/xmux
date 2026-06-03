@@ -55,6 +55,10 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 - [limit](#limit)
 
 
+##### Version 2.0 Modifications
+1. Modules return true by default to continue execution; return false for immediate exit.
+2. Remove default Exit binding.
+
 
 # Install<a id="install"></a>  
 ```
@@ -477,7 +481,10 @@ func main() {
     data := &Response{
 		Code: 200,
 	}
-	router := xmux.NewRouter().BindResponse(data)
+	// Exit was bound by default previously and has now been removed.
+	// Add .AddPostModule(DefaultPostCacheModuleTemplate) to handle return values;
+	// custom implementations are also supported as these are all templates.
+	router := xmux.NewRouter().BindResponse(data).AddPostModule(DefaultPostCacheModuleTemplate)
 ```
 
 Pass Bind response (nil) to set and cancel a route using global binding

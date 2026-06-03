@@ -87,7 +87,7 @@ func DefaultCacheTemplateCacheWithoutResponse(w http.ResponseWriter, r *http.Req
 }
 
 // 只有使用了 router.BindResponse()  当前路由没有设置 BindResponse(nil) 并且 statuscode = 200 才会使用 默认返回
-func PostCacheModule(w http.ResponseWriter, r *http.Request) {
+func DefaultPostCacheModuleTemplate(w http.ResponseWriter, r *http.Request) bool {
 	// r.Body.Close()
 	if GetInstance(r).Response != nil && GetInstance(r).StatusCode == 200 {
 		cacheKey := GetInstance(r).GetCacheKey()
@@ -96,12 +96,14 @@ func PostCacheModule(w http.ResponseWriter, r *http.Request) {
 			// 如果是缓存的值，并且不在更新中就直接取缓存的值
 			send := GetCache(cacheKey)
 			w.Write(send)
-			return
+			return true
 		}
 		// 如果没有设置缓存，还是以前的处理方法
 		send, err := json.Marshal(GetInstance(r).Response)
 		if err != nil {
 			log.Println(err)
+			w.Write([]byte(err.Error()))
+			return false
 		}
 		if cacheKey != "" {
 			SetCache(cacheKey, send)
@@ -117,6 +119,7 @@ func PostCacheModule(w http.ResponseWriter, r *http.Request) {
 	// 	r.URL.Path, time.Since(start).Seconds(),
 	// 	GetInstance(r).StatusCode,
 	// 	string(send))
+	return true
 }
 
 // func exit(start time.Time, w http.ResponseWriter, r *http.Request) {
