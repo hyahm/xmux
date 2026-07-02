@@ -11,6 +11,15 @@ func DeepCopy(src interface{}) interface{} {
 		return nil
 	}
 	original := reflect.ValueOf(src)
+	if original.Kind() == reflect.Ptr {
+		if original.IsNil() {
+			return reflect.Zero(original.Type()).Interface()
+		}
+		elemCopy := deepCopyRecursive(original.Elem())
+		copyPtr := reflect.New(elemCopy.Type())
+		copyPtr.Elem().Set(elemCopy)
+		return copyPtr.Interface()
+	}
 	return deepCopyRecursive(original).Interface()
 }
 

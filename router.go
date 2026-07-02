@@ -214,7 +214,6 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	if r.Exit != nil {
 		defer r.Exit(w, req, start)
 	}
-	fmt.Println("33333333333", req.Header.Get("content-type"))
 	if route.responseData != nil {
 		fd.Response = DeepCopy(route.responseData)
 	}
@@ -229,12 +228,10 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 		if route.bindType != 0 {
 			if !r.bind(route, w, req, fd) {
-				fmt.Println("444444444", req.URL.Path)
 				return
 			}
 
 		} else {
-			fmt.Println("888888888", req.URL.Path)
 			GetInstance(req).Body = []byte("")
 		}
 	}
@@ -243,7 +240,6 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	// pages
 	fd.pages = route.pagekeys
 	// 当前函数名去掉目录层级后的
-	fmt.Println("5555555555", req.URL.Path)
 	if r.ReadTimeout > 0 {
 		ctx, cancel := context.WithTimeout(req.Context(), r.ReadTimeout)
 		defer cancel()
@@ -281,7 +277,6 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		}
 		return
 	}
-	fmt.Println("6666666666", req.URL.Path)
 	// 请求模块
 	for _, module := range route.module {
 		if !module(w, req) {
