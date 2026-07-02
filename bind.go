@@ -37,10 +37,10 @@ const (
 	MIMEYAML              = "application/x-yaml"
 )
 
-func (r *router) unmarshalJson(req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarshalJson(req *http.Request, fd *FlowData) error {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	req.Body.Close()
@@ -50,13 +50,13 @@ func (r *router) unmarshalJson(req *http.Request, fd *FlowData) (bool, error) {
 		err = json.Unmarshal(b, &fd.Data)
 	}
 
-	return false, err
+	return err
 }
 
-func (r *router) unmarshalYaml(req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarshalYaml(req *http.Request, fd *FlowData) error {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
-		return false, err
+		return err
 	}
 	req.Body.Close()
 	fd.Body = b
@@ -64,13 +64,13 @@ func (r *router) unmarshalYaml(req *http.Request, fd *FlowData) (bool, error) {
 		err = yaml.Unmarshal(b, &fd.Data)
 	}
 
-	return false, err
+	return err
 }
 
-func (r *router) unmarshalXml(req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarshalXml(req *http.Request, fd *FlowData) error {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
-		return false, err
+		return err
 	}
 	req.Body.Close()
 	fd.Body = b
@@ -78,7 +78,7 @@ func (r *router) unmarshalXml(req *http.Request, fd *FlowData) (bool, error) {
 		err = xml.Unmarshal(b, &fd.Data)
 	}
 
-	return false, err
+	return err
 }
 
 func (r *router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *FlowData) bool {
@@ -86,29 +86,29 @@ func (r *router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 	defer req.Body.Close()
 	switch route.bindType {
 	case jsonT:
-		cont, err := r.unmarshalJson(req, fd)
+		err := r.unmarshalJson(req, fd)
 		if err != nil {
 			return r.UnmarshalError(w, req, err)
 		}
-		return cont
+		return true
 	case yamlT:
-		cont, err := r.unmarshalYaml(req, fd)
+		err := r.unmarshalYaml(req, fd)
 		if err != nil {
 			return r.UnmarshalError(w, req, err)
 		}
-		return cont
+		return true
 	case xmlT:
-		cont, err := r.unmarshalXml(req, fd)
+		err := r.unmarshalXml(req, fd)
 		if err != nil {
 			return r.UnmarshalError(w, req, err)
 		}
-		return cont
+		return true
 	case formT:
-		cont, err := r.unmarsharForm(w, req, fd)
+		err := r.unmarsharForm(req, fd)
 		if err != nil {
 			return r.UnmarshalError(w, req, err)
 		}
-		return cont
+		return true
 	case headT:
 		// 根据请求头自动解析
 		ct := req.Header.Get("content-type")
@@ -116,43 +116,41 @@ func (r *router) bind(route *rt, w http.ResponseWriter, req *http.Request, fd *F
 
 		for _, head := range headers {
 			head = strings.Trim(head, " ")
-			if head == MIMEJSON {
-				cont, err := r.unmarshalJson(req, fd)
+			if strings.Contains(head, MIMEJSON) {
+				err := r.unmarshalJson(req, fd)
 				if err != nil {
 					return r.UnmarshalError(w, req, err)
 				}
-				return cont
+				return true
 			}
-			if head == MIMEXML || head == MIMEXML2 {
-				cont, err := r.unmarshalXml(req, fd)
+			if strings.Contains(head, MIMEXML) || strings.Contains(head, MIMEXML2) {
+				err := r.unmarshalXml(req, fd)
 				if err != nil {
 					return r.UnmarshalError(w, req, err)
 				}
-				return cont
-
+				return true
 			}
-			if head == MIMEPOSTForm || head == MIMEMultipartPOSTForm {
-				cont, err := r.unmarsharForm(w, req, fd)
+			if strings.Contains(head, MIMEPOSTForm) || strings.Contains(head, MIMEMultipartPOSTForm) {
+				err := r.unmarsharForm(req, fd)
 				if err != nil {
 					return r.UnmarshalError(w, req, err)
 				}
-				return cont
+				return true
 			}
 
 		}
 
 	}
-	w.Write([]byte("unsupport content-type"))
-	return true
+	return r.UnmarshalError(w, req, errors.New("unsupport content-type"))
 }
 
-func (r *router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *FlowData) (bool, error) {
+func (r *router) unmarsharForm(req *http.Request, fd *FlowData) error {
 	cl := req.Header.Get("Content-Length")
 	length, err := strconv.Atoi(cl)
 	if err == nil && length > 0 {
 		b, err := io.ReadAll(req.Body)
 		if err != nil {
-			return true, err
+			return err
 		}
 		if length > r.MaxPrintLength {
 			fd.Body = b[:r.MaxPrintLength]
@@ -195,8 +193,8 @@ func (r *router) unmarsharForm(w http.ResponseWriter, req *http.Request, fd *Flo
 			vv.Field(i).SetUint(i64)
 
 		default:
-			return false, errors.New("not support type, url: " + req.URL.Path)
+			return errors.New("not support type, url: " + req.URL.Path)
 		}
 	}
-	return false, nil
+	return nil
 }

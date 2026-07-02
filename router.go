@@ -185,18 +185,12 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	for k, v := range route.Header {
 		w.Header().Set(k, v)
 	}
-
 	// 进入前的钩子函数
 	if r.Enter != nil {
 		// if r.ModuleContinue {
 		if !r.Enter(w, req) {
 			return
 		}
-		// } else {
-		// 	if r.Enter(w, req) {
-		// 		return
-		// 	}
-		// }
 
 	}
 	ci := time.Now().UnixNano()
@@ -220,7 +214,7 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	if r.Exit != nil {
 		defer r.Exit(w, req, start)
 	}
-
+	fmt.Println("33333333333", req.Header.Get("content-type"))
 	if route.responseData != nil {
 		fd.Response = DeepCopy(route.responseData)
 	}
@@ -234,17 +228,13 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 		}
 
 		if route.bindType != 0 {
-			// if r.ModuleContinue {
 			if !r.bind(route, w, req, fd) {
+				fmt.Println("444444444", req.URL.Path)
 				return
 			}
-			// } else {
-			// 	if r.bind(route, w, req, fd) {
-			// 		return
-			// 	}
-			// }
 
 		} else {
+			fmt.Println("888888888", req.URL.Path)
 			GetInstance(req).Body = []byte("")
 		}
 	}
@@ -253,7 +243,7 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	// pages
 	fd.pages = route.pagekeys
 	// 当前函数名去掉目录层级后的
-
+	fmt.Println("5555555555", req.URL.Path)
 	if r.ReadTimeout > 0 {
 		ctx, cancel := context.WithTimeout(req.Context(), r.ReadTimeout)
 		defer cancel()
@@ -263,15 +253,9 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 				w.WriteHeader(http.StatusGatewayTimeout)
 				return
 			default:
-				// if r.ModuleContinue {
 				if !module(w, req) {
 					return
 				}
-				// } else {
-				// 	if module(w, req) {
-				// 		return
-				// 	}
-				// }
 			}
 
 		}
@@ -290,31 +274,19 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 				w.WriteHeader(http.StatusGatewayTimeout)
 				return
 			default:
-				// if r.ModuleContinue {
 				if !module(w, req) {
 					return
 				}
-				// } else {
-				// 	if module(w, req) {
-				// 		return
-				// 	}
-				// }
 			}
 		}
 		return
 	}
-
+	fmt.Println("6666666666", req.URL.Path)
 	// 请求模块
 	for _, module := range route.module {
-		// if r.ModuleContinue {
 		if !module(w, req) {
 			return
 		}
-		// } else {
-		// 	if module(w, req) {
-		// 		return
-		// 	}
-		// }
 
 	}
 	// 中间件
@@ -327,15 +299,9 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 	// 处理后置模块
 	for _, module := range route.postModule {
-		// if r.ModuleContinue {
 		if !module(w, req) {
 			return
 		}
-		// } else {
-		// 	if module(w, req) {
-		// 		return
-		// 	}
-		// }
 	}
 }
 
@@ -354,15 +320,9 @@ func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 	if r.HandleAll != nil {
-		// if r.ModuleContinue {
 		if !r.HandleAll(w, req) {
 			return
 		}
-		// } else {
-		// 	if r.HandleAll(w, req) {
-		// 		return
-		// 	}
-		// }
 
 	}
 	atomic.AddInt32(&connections, 1)
@@ -421,7 +381,6 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 				break
 			}
 		}
-
 		// route, ok := r.route[req.URL.Path][req.Method]
 		if (!ok || !matchMethod) && r.HandleNotFound != nil {
 			r.HandleNotFound(w, req)
