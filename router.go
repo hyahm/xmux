@@ -50,7 +50,7 @@ type router struct {
 	addr           string
 	prefix         []string
 	MaxPrintLength int
-	Exit           func(time.Time, http.ResponseWriter, *http.Request)
+	Exit           func(http.ResponseWriter, *http.Request, time.Time)
 	Enter          func(http.ResponseWriter, *http.Request) bool // 当有请求进入时候的执行
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
@@ -218,7 +218,7 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 
 	// 退出前的钩子函数
 	if r.Exit != nil {
-		defer r.Exit(start, w, req)
+		defer r.Exit(w, req, start)
 	}
 
 	if route.responseData != nil {
