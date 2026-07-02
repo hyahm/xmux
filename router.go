@@ -62,7 +62,7 @@ type router struct {
 	HandleRecover  func(http.ResponseWriter, *http.Request, error)
 	HandleAll      func(http.ResponseWriter, *http.Request) bool
 	// NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
-	UnmarshalError func(error, http.ResponseWriter, *http.Request) bool
+	UnmarshalError func(http.ResponseWriter, *http.Request, error) bool
 	IgnoreSlash    bool     // 忽略地址多个斜杠， 默认不忽略
 	urlRoute       UrlRoute // 单实例路由， 组路由最后也会合并过来
 	urlTpl         UrlRoute // 正则路由， 组路由最后也会合并过来
