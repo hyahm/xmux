@@ -411,13 +411,17 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 	}
 	url := req.URL.Path
 	if route, ok := r.urlRoute[url]; ok {
-
+		if req.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		for _, v := range route.methods {
 			if v == req.Method {
 				matchMethod = true
 				break
 			}
 		}
+
 		// route, ok := r.route[req.URL.Path][req.Method]
 		if (!ok || !matchMethod) && r.HandleNotFound != nil {
 			r.HandleNotFound(w, req)
@@ -428,7 +432,10 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 		for subUrl, route := range r.urlTpl {
 
 			if route.regex != nil && route.regex.MatchString(url) {
-
+				if req.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 				// 匹配请求
 				for _, v := range route.methods {
 					if v == req.Method {
