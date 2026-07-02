@@ -55,7 +55,7 @@ English | [English](./README.md) | [简体中文](./README_zh.md)
 - [limit](#limit)
 
 
-##### Version 2.0 Modifications
+##### Version 1.1.0 Modifications
 1. Modules return true by default to continue execution; return false for immediate exit.
 2. Remove default Exit binding.
 
