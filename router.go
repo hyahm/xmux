@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -384,8 +385,9 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 		thisRoute = route
 	} else {
 		for subUrl, route := range r.urlTpl {
-
-			if route.regex != nil && route.regex.MatchString(url) {
+			su := regexp.MustCompile(subUrl)
+			// if route.regex != nil && route.regex.MatchString(url) {
+			if su.MatchString(url) {
 				if req.Method == http.MethodOptions {
 					w.WriteHeader(http.StatusOK)
 					return
@@ -402,7 +404,7 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 					return
 				}
 				ap := make(map[string]string)
-				vl := route.regex.FindStringSubmatch(url)
+				vl := su.FindStringSubmatch(url)
 				for i, v := range route.params {
 					ap[v] = vl[i+1]
 				}

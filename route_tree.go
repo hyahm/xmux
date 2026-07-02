@@ -7,9 +7,10 @@ import (
 )
 
 type Meta struct {
-	MenuType string `json:"menu_type"`
-	Name     string `json:"name"`
-	// URL      string `json:"url"`
+	MenuType  string `json:"menu_type"`
+	Name      string `json:"name"`
+	URL       string `json:"url"`
+	Component string `json:"component"`
 	// Method   string `json:"method"`
 	// UUID       string `json:"uuid"`
 	// ParentUUID string `json:"parent_uuid"`
@@ -63,6 +64,7 @@ func FlattenMenuTree(tree []*MenuTree) []*MenuTree {
 func BuildMenuTree(list []MenuTree) []*MenuTree {
 	// 1. 初始化 Map，预分配空间以提高性能
 	nodeMap := make(map[string]*MenuTree, len(list))
+	filter := make(map[string]struct{})
 	for i := range list {
 		item := list[i]
 		if item.Uuid == "" {
@@ -80,6 +82,10 @@ func BuildMenuTree(list []MenuTree) []*MenuTree {
 			continue // 跳过无效节点
 		}
 		mt.makeMenuId()
+		if _, ok := filter[mt.MenuId]; ok {
+			panic(fmt.Sprintf("menuid duplicated, url: %s, method: %v, menutype: %s, name: %s", mt.URL, mt.Method, mt.Meta.MenuType, mt.Meta.Name))
+		}
+		filter[mt.MenuId] = struct{}{}
 		nodeMap[item.Uuid] = mt
 	}
 
@@ -116,6 +122,7 @@ func BuildMenuTree(list []MenuTree) []*MenuTree {
 func BuildRouteTree(list []MenuTree) []*MenuTree {
 	// 1. 初始化 Map，预分配空间以提高性能
 	nodeMap := make(map[string]*MenuTree, len(list))
+	filter := make(map[string]struct{})
 	for i := range list {
 		item := list[i]
 		mt := &MenuTree{
@@ -127,6 +134,10 @@ func BuildRouteTree(list []MenuTree) []*MenuTree {
 			Children:   make([]*MenuTree, 0), // 初始化切片，避免前端收到 null
 		}
 		mt.makeMenuId()
+		if _, ok := filter[mt.MenuId]; ok {
+			panic(fmt.Sprintf("menuid duplicated, url: %s, method: %v, menutype: %s, name: %s", mt.URL, mt.Method, mt.Meta.MenuType, mt.Meta.Name))
+		}
+		filter[mt.MenuId] = struct{}{}
 		nodeMap[item.Uuid] = mt
 	}
 
