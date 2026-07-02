@@ -59,7 +59,7 @@ type router struct {
 	DisableOption  bool                                     // 禁止全局option
 	HandleOptions  func(http.ResponseWriter, *http.Request) // 预请求 处理函数， 如果存在， 优先处理, 前后端分离后， 前段可能会先发送一个预请求
 	HandleNotFound func(http.ResponseWriter, *http.Request)
-	HandleRecover  func(http.ResponseWriter, *http.Request)
+	HandleRecover  func(http.ResponseWriter, *http.Request, error)
 	HandleAll      func(http.ResponseWriter, *http.Request) bool
 	// NotFoundRequireField func(string, http.ResponseWriter, *http.Request) bool
 	UnmarshalError func(error, http.ResponseWriter, *http.Request) bool
@@ -344,8 +344,7 @@ func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil && r.HandleRecover != nil {
 			errStack := fmt.Errorf("panic: %v\n%s", err, debug.Stack())
-			fmt.Println(errStack)
-			r.HandleRecover(w, req)
+			r.HandleRecover(w, req, errStack)
 		}
 	}()
 
@@ -635,7 +634,7 @@ func NewRouter(cacheSize ...int) *router {
 		HandleFavicon:  handleFavicon,
 		HandleOptions:  handleOptions,
 		HandleNotFound: handleNotFound,
-		HandleRecover:  func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500); w.Write([]byte("server panic")) },
+		// HandleRecover:  func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500); w.Write([]byte("server panic")) },
 		// NotFoundRequireField: notFoundRequireField,
 		UnmarshalError: unmarshalError,
 		menuTree:       make([]*MenuTree, 0),
