@@ -2,6 +2,7 @@ package xmux
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hyahm/xmux/auth"
 )
@@ -11,6 +12,7 @@ type Meta struct {
 	Name      string `json:"name"`
 	URL       string `json:"url"`
 	Component string `json:"component"`
+	Visible   bool   `json:"visible"`
 	// Method   string `json:"method"`
 	// UUID       string `json:"uuid"`
 	// ParentUUID string `json:"parent_uuid"`
@@ -27,10 +29,11 @@ type MenuTree struct {
 	Meta       Meta        `json:"meta"`
 	Roles      []string    `json:"-"`
 	Children   []*MenuTree `json:"children"`
+	Visible    bool        `json:"visible"`
 }
 
 func (m *MenuTree) makeMenuId() {
-	m.MenuId = auth.Md5([]byte(fmt.Sprintf("%s-%s-%s-%s", m.URL, m.Method, m.Meta.MenuType, m.Meta.Name)))
+	m.MenuId = auth.Md5([]byte(fmt.Sprintf("%s-%s", m.URL, strings.Join(m.Method, ","))))
 }
 
 // 扁平化菜单树， 方便权限校验， 方便插入数据库
@@ -76,6 +79,7 @@ func BuildMenuTree(list []MenuTree) []*MenuTree {
 			URL:        item.URL,
 			Method:     item.Method,
 			ParentUUID: item.ParentUUID,
+			Visible:    item.Visible,
 			Children:   make([]*MenuTree, 0), // 初始化切片，避免前端收到 null
 		}
 		if mt.Meta.MenuType == "" || mt.Meta.Name == "" {
@@ -83,7 +87,7 @@ func BuildMenuTree(list []MenuTree) []*MenuTree {
 		}
 		mt.makeMenuId()
 		if _, ok := filter[mt.MenuId]; ok {
-			panic(fmt.Sprintf("menuid duplicated, url: %s, method: %v, menutype: %s, name: %s", mt.URL, mt.Method, mt.Meta.MenuType, mt.Meta.Name))
+			panic(fmt.Sprintf("menuid duplicated, url: %s, method: %v", mt.URL, mt.Method))
 		}
 		filter[mt.MenuId] = struct{}{}
 		nodeMap[item.Uuid] = mt
@@ -131,11 +135,12 @@ func BuildRouteTree(list []MenuTree) []*MenuTree {
 			URL:        item.URL,
 			Method:     item.Method,
 			ParentUUID: item.ParentUUID,
+			Visible:    item.Visible,
 			Children:   make([]*MenuTree, 0), // 初始化切片，避免前端收到 null
 		}
 		mt.makeMenuId()
 		if _, ok := filter[mt.MenuId]; ok {
-			panic(fmt.Sprintf("menuid duplicated, url: %s, method: %v, menutype: %s, name: %s", mt.URL, mt.Method, mt.Meta.MenuType, mt.Meta.Name))
+			panic(fmt.Sprintf("menuid duplicated, url: %s, method: %v", mt.URL, mt.Method))
 		}
 		filter[mt.MenuId] = struct{}{}
 		nodeMap[item.Uuid] = mt
