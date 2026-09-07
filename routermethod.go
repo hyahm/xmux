@@ -6,7 +6,7 @@ import (
 	"path"
 	"regexp"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // get this route

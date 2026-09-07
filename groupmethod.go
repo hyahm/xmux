@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // get this route

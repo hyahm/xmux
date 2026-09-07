@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
+	"uuid"
+
 	"github.com/hyahm/xmux/helper"
 )
 
