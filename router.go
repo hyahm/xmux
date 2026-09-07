@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
-	"runtime/debug"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -301,19 +300,19 @@ func (r *router) readFromCache(route *rt, w http.ResponseWriter, req *http.Reque
 	}
 }
 
+// func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+
+// 	defer func() {
+// 		if err := recover(); err != nil && r.HandleRecover != nil {
+// 			errStack := fmt.Errorf("panic: %v\n%s", err, debug.Stack())
+// 			r.HandleRecover(w, req, errStack)
+// 		}
+// 	}()
+
+// 	r.shhandle(w, req)
+// }
+
 func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-
-	defer func() {
-		if err := recover(); err != nil && r.HandleRecover != nil {
-			errStack := fmt.Errorf("panic: %v\n%s", err, debug.Stack())
-			r.HandleRecover(w, req, errStack)
-		}
-	}()
-
-	r.shhandle(w, req)
-}
-
-func (r *router) shhandle(w http.ResponseWriter, req *http.Request) {
 
 	if r.HandleAll != nil {
 		if !r.HandleAll(w, req) {
@@ -406,10 +405,10 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 				ap := make(map[string]string)
 				vl := su.FindStringSubmatch(url)
 				for i, v := range route.params {
+					fmt.Println(v)
 					ap[v] = vl[i+1]
 				}
 				thisRoute = route
-				url = subUrl
 				setParams(url, ap)
 				goto endloop
 			}
