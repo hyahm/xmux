@@ -405,7 +405,6 @@ func (r *router) findRoute(w http.ResponseWriter, req *http.Request) {
 				ap := make(map[string]string)
 				vl := su.FindStringSubmatch(url)
 				for i, v := range route.params {
-					fmt.Println(v)
 					ap[v] = vl[i+1]
 				}
 				thisRoute = route
